@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import { locales } from "@/i18n";
+import { locales } from "@/i18n/request";
 import "../globals.css";
 
 const geistSans = Geist({
@@ -23,11 +23,13 @@ export const metadata: Metadata = {
 
 export default async function LocaleLayout({
   children,
-  params: { locale }
+  params
 }: {
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
+
   // Validate that the incoming `locale` parameter is valid
   if (!locales.includes(locale as any)) notFound();
 
