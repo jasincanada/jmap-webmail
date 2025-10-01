@@ -223,10 +223,10 @@ export default function Home() {
   // Show loading state while checking auth or loading data
   if (!initialCheckDone || authLoading || (!isAuthenticated || !client || isLoading)) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mx-auto"></div>
-          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">{t("loading")}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-foreground mx-auto"></div>
+          <p className="mt-4 text-sm text-muted-foreground">{t("loading")}</p>
         </div>
       </div>
     );

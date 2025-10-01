@@ -4,7 +4,7 @@ import { locales, defaultLocale } from './i18n/request';
 export default createMiddleware({
   locales,
   defaultLocale,
-  localePrefix: 'as-needed', // Don't show locale in URL for default language
+  localePrefix: 'always', // Always show locale in URL for consistency
   localeDetection: true // Enable browser language detection
 });
 

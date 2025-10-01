@@ -20,11 +20,17 @@ const applyTheme = (theme: 'light' | 'dark') => {
   if (typeof document === 'undefined') return;
 
   const root = document.documentElement;
+  // Ensure both classes are handled properly
   if (theme === 'dark') {
+    root.classList.remove('light');
     root.classList.add('dark');
   } else {
     root.classList.remove('dark');
+    root.classList.add('light');
   }
+
+  // Store in localStorage for immediate access
+  localStorage.setItem('theme-applied', theme);
 };
 
 export const useThemeStore = create<ThemeState>()(

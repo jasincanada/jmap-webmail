@@ -29,8 +29,9 @@ export function LanguageSwitcher({ className }: { className?: string }) {
           onClick={() => handleLanguageChange(locale)}
           className={cn(
             "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded transition-all text-xs",
+            "text-gray-700 dark:text-gray-300",
             currentLocale === locale
-              ? "bg-white dark:bg-gray-700 shadow-sm font-medium"
+              ? "bg-white dark:bg-gray-600 shadow-sm font-medium"
               : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
           )}
           title={t(locale === 'en' ? 'english' : 'french')}

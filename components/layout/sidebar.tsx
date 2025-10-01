@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
@@ -24,6 +25,9 @@ import {
   Sun,
   Moon,
   Monitor,
+  Globe,
+  Settings,
+  ChevronUp,
 } from "lucide-react";
 import { cn, buildMailboxTree, MailboxNode, formatFileSize } from "@/lib/utils";
 import { Mailbox } from "@/lib/jmap/types";
@@ -180,8 +184,10 @@ export function Sidebar({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [showSettings, setShowSettings] = useState(false);
   const { theme, setTheme, resolvedTheme } = useThemeStore();
   const t = useTranslations('sidebar');
+  const params = useParams();
 
   // Load expanded folders from localStorage on mount
   useEffect(() => {
@@ -333,72 +339,127 @@ export function Sidebar({
 
       {/* Footer */}
       {!isCollapsed && (
-        <div className="px-4 py-3 border-t dark:border-gray-800">
+        <>
+          {/* Storage Quota - Always visible */}
           {quota && quota.total > 0 && (
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-              {t("storage")}: {formatFileSize(quota.used)} / {formatFileSize(quota.total)}
+            <div className="px-4 py-3 border-t dark:border-gray-800">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-600 dark:text-gray-400">{t("storage")}</span>
+                <span className="text-gray-900 dark:text-gray-100 font-medium">
+                  {formatFileSize(quota.used)} / {formatFileSize(quota.total)}
+                </span>
+              </div>
+              <div className="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                <div
+                  className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min((quota.used / quota.total) * 100, 100)}%` }}
+                />
+              </div>
             </div>
           )}
 
-          {/* Language Switcher */}
-          <div className="mb-3">
-            <LanguageSwitcher />
-          </div>
+          {/* Settings Panel - Sliding */}
+          <div className={cn(
+            "border-t dark:border-gray-800 overflow-hidden transition-all duration-300",
+            showSettings ? "max-h-96" : "max-h-0"
+          )}>
+            <div className="p-4 space-y-4 bg-gray-50 dark:bg-gray-900/50">
+              {/* Theme Selector */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  {theme === 'light' ? <Sun className="w-3.5 h-3.5" /> :
+                   theme === 'dark' ? <Moon className="w-3.5 h-3.5" /> :
+                   <Monitor className="w-3.5 h-3.5" />}
+                  Theme
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={() => setTheme('light')}
+                    className={cn(
+                      "flex flex-col items-center gap-1 p-2 rounded-lg transition-all",
+                      "border dark:border-gray-700",
+                      theme === 'light'
+                        ? "bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700"
+                        : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    )}
+                  >
+                    <Sun className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <span className="text-xs">{t("theme.light")}</span>
+                  </button>
+                  <button
+                    onClick={() => setTheme('dark')}
+                    className={cn(
+                      "flex flex-col items-center gap-1 p-2 rounded-lg transition-all",
+                      "border dark:border-gray-700",
+                      theme === 'dark'
+                        ? "bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700"
+                        : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    )}
+                  >
+                    <Moon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <span className="text-xs">{t("theme.dark")}</span>
+                  </button>
+                  <button
+                    onClick={() => setTheme('system')}
+                    className={cn(
+                      "flex flex-col items-center gap-1 p-2 rounded-lg transition-all",
+                      "border dark:border-gray-700",
+                      theme === 'system'
+                        ? "bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700"
+                        : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    )}
+                  >
+                    <Monitor className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <span className="text-xs">{t("theme.system")}</span>
+                  </button>
+                </div>
+              </div>
 
-          {/* Theme Toggle */}
-          <div className="mb-3">
-            <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <button
-                onClick={() => setTheme('light')}
-                className={cn(
-                  "flex-1 flex items-center justify-center p-1.5 rounded transition-all",
-                  theme === 'light'
-                    ? "bg-white dark:bg-gray-700 shadow-sm"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                )}
-                title="Light mode"
-              >
-                <Sun className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              </button>
-              <button
-                onClick={() => setTheme('dark')}
-                className={cn(
-                  "flex-1 flex items-center justify-center p-1.5 rounded transition-all",
-                  theme === 'dark'
-                    ? "bg-white dark:bg-gray-700 shadow-sm"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                )}
-                title="Dark mode"
-              >
-                <Moon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              </button>
-              <button
-                onClick={() => setTheme('system')}
-                className={cn(
-                  "flex-1 flex items-center justify-center p-1.5 rounded transition-all",
-                  theme === 'system'
-                    ? "bg-white dark:bg-gray-700 shadow-sm"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                )}
-                title="System theme"
-              >
-                <Monitor className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              </button>
+              {/* Language Switcher */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5" />
+                  Language
+                </label>
+                <LanguageSwitcher />
+              </div>
+
+              {/* Logout Button */}
+              {onLogout && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onLogout}
+                  className="w-full justify-start hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  {t("sign_out")}
+                </Button>
+              )}
             </div>
           </div>
 
-          {onLogout && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onLogout}
-              className="w-full justify-start"
+          {/* Settings Toggle Button */}
+          <div className="border-t dark:border-gray-800">
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className={cn(
+                "w-full px-4 py-3 flex items-center justify-between",
+                "hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors",
+                "text-sm text-gray-700 dark:text-gray-300"
+              )}
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              {t("sign_out")}
-            </Button>
-          )}
-        </div>
+              <span className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                {t("settings")}
+              </span>
+              <ChevronUp className={cn(
+                "w-4 h-4 transition-transform duration-200",
+                showSettings ? "" : "rotate-180"
+              )} />
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

@@ -96,6 +96,12 @@
 - [x] Add SPF/DKIM/DMARC status display with visual indicators
 - [x] Create organized sections for technical email details
 - [x] Parse and display email header information
+- [x] Add dark mode toggle with proper theme persistence
+- [x] Add i18n (internationalization) support with English and French
+- [x] Redesign sidebar footer with improved UI/UX for settings
+- [x] Fix theme switching and light mode application
+- [x] Fix language switcher functionality
+- [x] Add visual storage quota indicator with progress bar
 - [ ] Add loading states and skeletons
 - [ ] Implement error boundaries
 - [ ] Create settings page
@@ -103,9 +109,7 @@
 - [ ] Implement drag-and-drop for emails
 - [ ] Add context menus
 - [ ] Create mobile-responsive design
-- [ ] Add dark mode toggle
 - [ ] Implement pagination/infinite scroll for email list
-- [x] Add i18n (internationalization) support with English and French
 
 ### Address Book & Contacts
 - [ ] Create contact store with Zustand
