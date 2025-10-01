@@ -45,16 +45,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="max-w-md w-full mx-auto">
-        <div className="bg-white dark:bg-gray-950 rounded-lg shadow-sm border dark:border-gray-800 p-8">
+        <div className="bg-secondary rounded-lg shadow-sm border border-border p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
-              <Mail className="w-8 h-8 text-gray-700 dark:text-gray-300" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+              <Mail className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{t("title")}</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{t("subtitle")}</p>
+            <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
+            <p className="text-sm text-muted-foreground mt-2">{t("subtitle")}</p>
           </div>
 
           {/* Error Message */}
@@ -70,11 +70,11 @@ export default function LoginPage() {
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="server" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label htmlFor="server" className="block text-sm font-medium text-foreground mb-1">
                 {t("server_label")}
               </label>
               <div className="relative">
-                <Server className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+                <Server className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="server"
                   type="url"
@@ -88,11 +88,11 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label htmlFor="username" className="block text-sm font-medium text-foreground mb-1">
                 {t("username_label")}
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="username"
                   type="text"
@@ -107,11 +107,11 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
                 {t("password_label")}
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type="password"
@@ -136,10 +136,10 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="mt-6 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-muted-foreground">
               {t("secure_connection")}
             </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+            <p className="text-xs text-muted-foreground/70 mt-2">
               {t("security_note")}
             </p>
           </div>

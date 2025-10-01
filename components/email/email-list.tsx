@@ -24,16 +24,16 @@ export function EmailList({
   const LoadingSkeleton = () => (
     <div className="animate-pulse">
       {[...Array(8)].map((_, i) => (
-        <div key={i} className="border-b border-gray-100 dark:border-gray-800 px-4 py-4">
+        <div key={i} className="border-b border-border px-4 py-4">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full" />
+            <div className="w-10 h-10 bg-muted rounded-full" />
             <div className="flex-1">
               <div className="flex items-center justify-between mb-2">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32" />
-                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16" />
+                <div className="h-4 bg-muted rounded w-32" />
+                <div className="h-3 bg-muted rounded w-16" />
               </div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
-              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+              <div className="h-4 bg-muted rounded w-3/4 mb-2" />
+              <div className="h-3 bg-muted rounded w-full" />
             </div>
           </div>
         </div>
@@ -44,21 +44,21 @@ export function EmailList({
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* List Header */}
-      <div className="px-4 py-3 border-b bg-gray-50 dark:bg-gray-900 dark:border-gray-800">
-        <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      <div className="px-4 py-3 border-b bg-muted/50 border-border">
+        <h2 className="text-sm font-medium text-foreground">
           {isLoading ? 'Loading...' : emails.length > 0 ? `${emails.length} conversations` : 'No conversations'}
         </h2>
       </div>
 
       {/* Email List */}
-      <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-950">
+      <div className="flex-1 overflow-y-auto bg-background">
         {isLoading ? (
           <LoadingSkeleton />
         ) : emails.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full py-12 text-gray-500">
-            <Inbox className="w-16 h-16 mb-4 text-gray-300 dark:text-gray-600" />
-            <p className="text-base font-medium text-gray-600 dark:text-gray-400">No emails in this mailbox</p>
-            <p className="text-sm mt-1 text-gray-400 dark:text-gray-500">New messages will appear here</p>
+          <div className="flex flex-col items-center justify-center h-full py-12">
+            <Inbox className="w-16 h-16 mb-4 text-muted-foreground/50" />
+            <p className="text-base font-medium text-foreground">No emails in this mailbox</p>
+            <p className="text-sm mt-1 text-muted-foreground">New messages will appear here</p>
           </div>
         ) : (
           emails.map((email) => (

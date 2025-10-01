@@ -88,8 +88,8 @@ function MailboxTreeItem({
         className={cn(
           "group w-full flex items-center px-2 py-1 text-sm transition-all duration-200",
           selectedMailbox === node.id
-            ? "bg-blue-50 text-blue-900 dark:bg-blue-900/30 dark:text-blue-100"
-            : "hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300",
+            ? "bg-accent text-accent-foreground"
+            : "hover:bg-muted text-foreground",
           node.depth === 0 && "font-medium" // Root folders are slightly bolder
         )}
       >
@@ -102,15 +102,15 @@ function MailboxTreeItem({
             }}
             className={cn(
               "p-0.5 rounded mr-1 transition-all duration-200",
-              "hover:bg-gray-200 active:bg-gray-300"
+              "hover:bg-muted active:bg-accent"
             )}
             style={{ marginLeft: indentPixels }}
             title={isExpanded ? "Collapse" : "Expand"}
           >
             {isExpanded ? (
-              <ChevronDown className="w-3 h-3 text-gray-600" />
+              <ChevronDown className="w-3 h-3 text-muted-foreground" />
             ) : (
-              <ChevronRight className="w-3 h-3 text-gray-500" />
+              <ChevronRight className="w-3 h-3 text-muted-foreground" />
             )}
           </button>
         )}
@@ -129,9 +129,9 @@ function MailboxTreeItem({
         >
           <Icon className={cn(
             "w-4 h-4 mr-2 flex-shrink-0 transition-colors",
-            hasChildren && isExpanded && "text-blue-600 dark:text-blue-400",
-            selectedMailbox === node.id && "text-blue-700 dark:text-blue-300",
-            !hasChildren && node.depth > 0 && "text-gray-600 dark:text-gray-400"
+            hasChildren && isExpanded && "text-primary",
+            selectedMailbox === node.id && "text-accent-foreground",
+            !hasChildren && node.depth > 0 && "text-muted-foreground"
           )} />
           {!isCollapsed && (
             <>
@@ -140,8 +140,8 @@ function MailboxTreeItem({
                 <span className={cn(
                   "text-xs rounded-full px-2 py-0.5 ml-2 font-medium",
                   selectedMailbox === node.id
-                    ? "bg-blue-700 text-white dark:bg-blue-600"
-                    : "bg-gray-800 text-white dark:bg-gray-600"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-foreground text-background"
                 )}>
                   {node.unreadEmails}
                 </span>
@@ -273,13 +273,13 @@ export function Sidebar({
     <div
       className={cn(
         "flex flex-col h-full border-r transition-all duration-300",
-        "bg-white dark:bg-gray-950 dark:border-gray-800",
+        "bg-secondary border-border",
         isCollapsed ? "w-16" : "w-64",
         className
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b dark:border-gray-800">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <Button
           variant="ghost"
           size="icon"
@@ -299,7 +299,7 @@ export function Sidebar({
       {!isCollapsed && (
         <div className="px-4 py-3">
           <form onSubmit={handleSearch} className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder={t("search_placeholder")}
@@ -315,7 +315,7 @@ export function Sidebar({
       <div className="flex-1 overflow-y-auto">
         <div className="py-1">
           {mailboxes.length === 0 ? (
-            <div className="px-4 py-2 text-sm text-gray-500">
+            <div className="px-4 py-2 text-sm text-muted-foreground">
               {!isCollapsed && t("loading_mailboxes")}
             </div>
           ) : (
@@ -342,16 +342,16 @@ export function Sidebar({
         <>
           {/* Storage Quota - Always visible */}
           {quota && quota.total > 0 && (
-            <div className="px-4 py-3 border-t dark:border-gray-800">
+            <div className="px-4 py-3 border-t border-border">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-600 dark:text-gray-400">{t("storage")}</span>
-                <span className="text-gray-900 dark:text-gray-100 font-medium">
+                <span className="text-muted-foreground">{t("storage")}</span>
+                <span className="text-foreground font-medium">
                   {formatFileSize(quota.used)} / {formatFileSize(quota.total)}
                 </span>
               </div>
-              <div className="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+              <div className="mt-2 w-full bg-muted rounded-full h-1.5">
                 <div
-                  className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                  className="bg-primary h-1.5 rounded-full transition-all duration-300"
                   style={{ width: `${Math.min((quota.used / quota.total) * 100, 100)}%` }}
                 />
               </div>
@@ -360,13 +360,13 @@ export function Sidebar({
 
           {/* Settings Panel - Sliding */}
           <div className={cn(
-            "border-t dark:border-gray-800 overflow-hidden transition-all duration-300",
+            "border-t border-border overflow-hidden transition-all duration-300",
             showSettings ? "max-h-96" : "max-h-0"
           )}>
-            <div className="p-4 space-y-4 bg-gray-50 dark:bg-gray-900/50">
+            <div className="p-4 space-y-4 bg-muted/30">
               {/* Theme Selector */}
               <div className="space-y-2">
-                <label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
                   {theme === 'light' ? <Sun className="w-3.5 h-3.5" /> :
                    theme === 'dark' ? <Moon className="w-3.5 h-3.5" /> :
                    <Monitor className="w-3.5 h-3.5" />}
@@ -377,39 +377,39 @@ export function Sidebar({
                     onClick={() => setTheme('light')}
                     className={cn(
                       "flex flex-col items-center gap-1 p-2 rounded-lg transition-all",
-                      "border dark:border-gray-700",
+                      "border border-border",
                       theme === 'light'
-                        ? "bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700"
-                        : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        ? "bg-accent border-primary"
+                        : "bg-background hover:bg-muted"
                     )}
                   >
-                    <Sun className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <Sun className="w-4 h-4 text-muted-foreground" />
                     <span className="text-xs">{t("theme.light")}</span>
                   </button>
                   <button
                     onClick={() => setTheme('dark')}
                     className={cn(
                       "flex flex-col items-center gap-1 p-2 rounded-lg transition-all",
-                      "border dark:border-gray-700",
+                      "border border-border",
                       theme === 'dark'
-                        ? "bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700"
-                        : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        ? "bg-accent border-primary"
+                        : "bg-background hover:bg-muted"
                     )}
                   >
-                    <Moon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <Moon className="w-4 h-4 text-muted-foreground" />
                     <span className="text-xs">{t("theme.dark")}</span>
                   </button>
                   <button
                     onClick={() => setTheme('system')}
                     className={cn(
                       "flex flex-col items-center gap-1 p-2 rounded-lg transition-all",
-                      "border dark:border-gray-700",
+                      "border border-border",
                       theme === 'system'
-                        ? "bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700"
-                        : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        ? "bg-accent border-primary"
+                        : "bg-background hover:bg-muted"
                     )}
                   >
-                    <Monitor className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <Monitor className="w-4 h-4 text-muted-foreground" />
                     <span className="text-xs">{t("theme.system")}</span>
                   </button>
                 </div>
@@ -417,7 +417,7 @@ export function Sidebar({
 
               {/* Language Switcher */}
               <div className="space-y-2">
-                <label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
                   <Globe className="w-3.5 h-3.5" />
                   Language
                 </label>
@@ -430,7 +430,7 @@ export function Sidebar({
                   variant="ghost"
                   size="sm"
                   onClick={onLogout}
-                  className="w-full justify-start hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  className="w-full justify-start hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   {t("sign_out")}
@@ -440,13 +440,13 @@ export function Sidebar({
           </div>
 
           {/* Settings Toggle Button */}
-          <div className="border-t dark:border-gray-800">
+          <div className="border-t border-border">
             <button
               onClick={() => setShowSettings(!showSettings)}
               className={cn(
                 "w-full px-4 py-3 flex items-center justify-between",
-                "hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors",
-                "text-sm text-gray-700 dark:text-gray-300"
+                "hover:bg-muted transition-colors",
+                "text-sm text-foreground"
               )}
             >
               <span className="flex items-center gap-2">

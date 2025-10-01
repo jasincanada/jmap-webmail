@@ -44,17 +44,17 @@ export function EmailListItem({ email, selected, onClick }: EmailListItemProps) 
   return (
     <div
       className={cn(
-        "relative group cursor-pointer transition-all duration-200 border-b border-gray-100 dark:border-gray-800",
+        "relative group cursor-pointer transition-all duration-200 border-b border-border",
         // Apply color tag as background, with selected and unread states
         colorTag ? colorTag : (
           selected
-            ? "bg-blue-50 dark:bg-blue-900/30"
-            : "bg-white dark:bg-gray-950"
+            ? "bg-accent"
+            : "bg-background"
         ),
         selected && !colorTag && "shadow-sm",
-        !colorTag && !selected && "hover:bg-gray-50 dark:hover:bg-gray-900 hover:shadow-sm",
+        !colorTag && !selected && "hover:bg-muted hover:shadow-sm",
         colorTag && "hover:brightness-95 dark:hover:brightness-110",
-        isUnread && !colorTag && "bg-blue-50/30 dark:bg-blue-900/10"
+        isUnread && !colorTag && "bg-accent/30"
       )}
       onClick={onClick}
     >
@@ -80,10 +80,10 @@ export function EmailListItem({ email, selected, onClick }: EmailListItemProps) 
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <span className={cn(
-                "truncate",
+                "truncate text-sm",
                 isUnread
-                  ? "font-bold text-gray-900 dark:text-gray-100 text-sm"
-                  : "font-medium text-gray-700 dark:text-gray-300 text-sm"
+                  ? "font-bold text-foreground"
+                  : "font-medium text-muted-foreground"
               )}>
                 {sender?.name || sender?.email || "Unknown"}
               </span>
@@ -97,15 +97,15 @@ export function EmailListItem({ email, selected, onClick }: EmailListItemProps) 
                   </span>
                 )}
                 {email.hasAttachment && (
-                  <Paperclip className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                  <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
                 )}
               </div>
             </div>
             <span className={cn(
               "text-xs flex-shrink-0 tabular-nums",
               isUnread
-                ? "text-gray-700 dark:text-gray-300 font-semibold"
-                : "text-gray-500 dark:text-gray-400"
+                ? "text-foreground font-semibold"
+                : "text-muted-foreground"
             )}>
               {formatDate(email.receivedAt)}
             </span>
@@ -113,10 +113,10 @@ export function EmailListItem({ email, selected, onClick }: EmailListItemProps) 
 
           {/* Second Line: Subject */}
           <div className={cn(
-            "mb-1 line-clamp-1",
+            "mb-1 line-clamp-1 text-sm",
             isUnread
-              ? "font-semibold text-gray-900 dark:text-gray-100 text-sm"
-              : "font-normal text-gray-800 dark:text-gray-200 text-sm"
+              ? "font-semibold text-foreground"
+              : "font-normal text-foreground/90"
           )}>
             {email.subject || "(no subject)"}
           </div>
@@ -125,8 +125,8 @@ export function EmailListItem({ email, selected, onClick }: EmailListItemProps) 
           <p className={cn(
             "text-sm leading-relaxed line-clamp-2",
             isUnread
-              ? "text-gray-700 dark:text-gray-300"
-              : "text-gray-600 dark:text-gray-400"
+              ? "text-muted-foreground"
+              : "text-muted-foreground/80"
           )}>
             {email.preview || "No preview available"}
           </p>

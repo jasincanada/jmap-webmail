@@ -233,7 +233,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen bg-background">
       {/* Sidebar */}
       <Sidebar
         mailboxes={mailboxes}
@@ -249,7 +249,7 @@ export default function Home() {
       />
 
       {/* Email List */}
-      <div className="w-96 bg-white dark:bg-gray-950 border-r dark:border-gray-800 flex-shrink-0 shadow-sm">
+      <div className="w-96 bg-background border-r border-border flex-shrink-0 shadow-sm">
         <EmailList
           emails={emails}
           selectedEmailId={selectedEmail?.id}

@@ -279,11 +279,11 @@ export function EmailViewer({
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center p-8">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-white dark:bg-gray-800 shadow-lg flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-background shadow-lg flex items-center justify-center">
             <Mail className="w-10 h-10 text-gray-400 dark:text-gray-500" />
           </div>
           <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">No conversation selected</h3>
-          <p className="text-gray-500 dark:text-gray-400">Choose a conversation from the list to read it here</p>
+          <p className="text-muted-foreground">Choose a conversation from the list to read it here</p>
         </div>
       </div>
     );
@@ -294,9 +294,9 @@ export function EmailViewer({
   const isImportant = email.keywords?.["$important"];
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-white dark:bg-gray-950 overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-background overflow-hidden">
       {/* Modern Header Section */}
-      <div className="bg-white dark:bg-gray-950 border-b dark:border-gray-800">
+      <div className="bg-background border-b border-border">
         {/* Subject Bar */}
         <div className="px-6 py-4">
           <div className="flex items-start justify-between gap-4">
@@ -348,22 +348,22 @@ export function EmailViewer({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="h-8 w-8 hover:bg-gray-100 hover:bg-muted"
                   title="More reply options"
                 >
-                  <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </Button>
                 <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-900 rounded-md shadow-lg border dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
                   <button
                     onClick={onReplyAll}
-                    className="w-full px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-200 flex items-center gap-2"
+                    className="w-full px-3 py-2 text-sm text-left hover:bg-gray-50 hover:bg-muted dark:text-gray-200 flex items-center gap-2"
                   >
                     <ReplyAll className="w-4 h-4" />
                     Reply all
                   </button>
                   <button
                     onClick={onForward}
-                    className="w-full px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-200 flex items-center gap-2"
+                    className="w-full px-3 py-2 text-sm text-left hover:bg-gray-50 hover:bg-muted dark:text-gray-200 flex items-center gap-2"
                   >
                     <Forward className="w-4 h-4" />
                     Forward
@@ -377,7 +377,7 @@ export function EmailViewer({
                 variant="ghost"
                 size="icon"
                 onClick={onArchive}
-                className="h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="h-8 w-8 hover:bg-gray-100 hover:bg-muted"
                 title="Archive"
               >
                 <Archive className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -386,7 +386,7 @@ export function EmailViewer({
                 variant="ghost"
                 size="icon"
                 onClick={onDelete}
-                className="h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="h-8 w-8 hover:bg-gray-100 hover:bg-muted"
                 title="Delete"
               >
                 <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -454,10 +454,10 @@ export function EmailViewer({
                             onSetColorTag?.(email.id, null);
                           }
                         }}
-                        className="w-6 h-6 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center"
+                        className="w-6 h-6 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 hover:bg-muted flex items-center justify-center"
                         title="Remove color"
                       >
-                        <X className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+                        <X className="w-3 h-3 text-muted-foreground" />
                       </button>
                     )}
                   </div>
@@ -467,7 +467,7 @@ export function EmailViewer({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="h-8 w-8 hover:bg-gray-100 hover:bg-muted"
                 title="More actions"
               >
                 <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -492,7 +492,7 @@ export function EmailViewer({
                   {sender?.name || sender?.email || "Unknown"}
                 </span>
                 {sender?.email && sender?.name && (
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                  <span className="text-sm text-muted-foreground">
                     &lt;{sender.email}&gt;
                   </span>
                 )}
@@ -501,7 +501,7 @@ export function EmailViewer({
               <div className="mt-2 space-y-1">
                 {email.to && email.to.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1 text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">To:</span>
+                    <span className="text-muted-foreground">To:</span>
                     <span className="text-gray-700 dark:text-gray-300">
                       {email.to.slice(0, 2).map(r => r.name || r.email).join(", ")}
                       {email.to.length > 2 && (
@@ -518,7 +518,7 @@ export function EmailViewer({
 
                 {(email.cc && email.cc.length > 0) && (
                   <div className="flex flex-wrap items-center gap-1 text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">CC:</span>
+                    <span className="text-muted-foreground">CC:</span>
                     <span className="text-gray-700 dark:text-gray-300">
                       {email.cc.map(r => r.name || r.email).join(", ")}
                     </span>
@@ -538,7 +538,7 @@ export function EmailViewer({
                           Security & Authentication
                         </h3>
                       </div>
-                      <div className="bg-white dark:bg-gray-950 p-4 space-y-3">
+                      <div className="bg-background p-4 space-y-3">
                         {/* Authentication Results */}
                         {email.authenticationResults && (
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -685,7 +685,7 @@ export function EmailViewer({
                           Technical Details
                         </h3>
                       </div>
-                      <div className="bg-white dark:bg-gray-950 p-4">
+                      <div className="bg-background p-4">
                         <div className="space-y-3 text-xs">
                           {/* Message ID */}
                           {email.messageId && (
@@ -762,7 +762,7 @@ export function EmailViewer({
 
               <button
                 onClick={() => setShowFullHeaders(!showFullHeaders)}
-                className="mt-3 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1 transition-colors"
+                className="mt-3 text-xs text-muted-foreground hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1 transition-colors"
               >
                 {showFullHeaders ? (
                   <>
@@ -790,7 +790,7 @@ export function EmailViewer({
             <div className="max-w-4xl mx-auto px-6 py-2">
               <button
                 onClick={() => setAllowExternalContent(true)}
-                className="mx-auto flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                className="mx-auto flex items-center gap-1.5 text-sm text-muted-foreground hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
               >
                 <Image className="w-3.5 h-3.5" />
                 Show images
@@ -850,7 +850,7 @@ export function EmailViewer({
                 !['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(a.name?.split('.').pop()?.toLowerCase() || '')
               ).length > 0 && (
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Paperclip className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <Paperclip className="w-4 h-4 text-muted-foreground" />
                   {email.attachments
                     .filter(a =>
                       !a.type?.startsWith('image/') &&
@@ -873,7 +873,7 @@ export function EmailViewer({
                           <span className="text-sm text-gray-700 dark:text-gray-300">
                             {attachment.name || "Unnamed"}
                           </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="text-xs text-muted-foreground">
                             ({formatFileSize(attachment.size)})
                           </span>
                         </button>
@@ -885,7 +885,7 @@ export function EmailViewer({
           )}
 
           {/* Email Body */}
-          <div className="bg-white dark:bg-gray-950 rounded-lg shadow-sm border dark:border-gray-800 overflow-hidden">
+          <div className="bg-background rounded-lg shadow-sm border border-border overflow-hidden">
             {isLoadingContent && (
               <div className="p-4 bg-amber-50 dark:bg-amber-900/30 border-b border-amber-100 dark:border-amber-800 flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-amber-600 dark:text-amber-400" />
@@ -920,7 +920,7 @@ export function EmailViewer({
           </div>
 
           {/* Quick Reply Section */}
-          <div className="mt-6 bg-white dark:bg-gray-950 rounded-lg shadow-sm border dark:border-gray-800 p-4">
+          <div className="mt-6 bg-background rounded-lg shadow-sm border border-border p-4">
             <div className="flex items-center gap-3">
               <Avatar
                 name="You"

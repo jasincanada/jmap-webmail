@@ -48,7 +48,7 @@ export function ToastItem({ toast, onClose }: ToastProps) {
   return (
     <div
       className={cn(
-        "flex items-start gap-3 p-4 rounded-lg border shadow-lg bg-white dark:bg-gray-900 animate-slide-in",
+        "flex items-start gap-3 p-4 rounded-lg border shadow-lg bg-background animate-slide-in",
         styles[toast.type]
       )}
     >
@@ -61,7 +61,7 @@ export function ToastItem({ toast, onClose }: ToastProps) {
       </div>
       <button
         onClick={() => onClose(toast.id)}
-        className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+        className="text-muted-foreground hover:text-foreground transition-colors"
       >
         <X className="w-4 h-4" />
       </button>
