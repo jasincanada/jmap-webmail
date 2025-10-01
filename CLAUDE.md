@@ -44,3 +44,5 @@ This project uses **next-intl** for internationalization with support for Englis
 7. **Browser language detection**: Automatically detects and uses browser language on first visit
 
 8. **User preference**: Language selection is persisted and overrides browser detection
+- When you are not sure, check the official documentation online.
+- Always use last versions. Reduce external dependencies as well (less is better).
