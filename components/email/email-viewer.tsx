@@ -34,7 +34,7 @@ export function EmailViewer({
 }: EmailViewerProps) {
   if (!email) {
     return (
-      <div className="flex-1 flex items-center justify-center text-muted-foreground">
+      <div className="flex-1 flex items-center justify-center text-gray-500">
         <p>Select an email to view</p>
       </div>
     );
@@ -52,12 +52,12 @@ export function EmailViewer({
             <h2 className="text-xl font-semibold mb-2">
               {email.subject || "(no subject)"}
             </h2>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>From: <span className="text-foreground">{sender?.name || sender?.email}</span></span>
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <span>From: <span className="text-gray-900">{sender?.name || sender?.email}</span></span>
               <span>{formatDate(email.receivedAt)}</span>
             </div>
             {email.to && email.to.length > 0 && (
-              <div className="text-sm text-muted-foreground mt-1">
+              <div className="text-sm text-gray-600 mt-1">
                 To: {email.to.map(addr => addr.name || addr.email).join(", ")}
               </div>
             )}

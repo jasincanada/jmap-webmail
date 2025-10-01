@@ -19,8 +19,8 @@ export function EmailListItem({ email, selected, onClick }: EmailListItemProps) 
   return (
     <div
       className={cn(
-        "flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors border-b",
-        selected ? "bg-accent" : "hover:bg-accent/50",
+        "flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-gray-200",
+        selected ? "bg-gray-50" : "hover:bg-gray-50/50",
         isUnread && "font-semibold"
       )}
       onClick={onClick}
@@ -31,8 +31,8 @@ export function EmailListItem({ email, selected, onClick }: EmailListItemProps) 
             {sender?.name || sender?.email || "Unknown"}
           </span>
           {isStarred && <Star className="w-3 h-3 fill-current text-yellow-500" />}
-          {email.hasAttachment && <Paperclip className="w-3 h-3 text-muted-foreground" />}
-          <span className="text-xs text-muted-foreground ml-auto">
+          {email.hasAttachment && <Paperclip className="w-3 h-3 text-gray-500" />}
+          <span className="text-xs text-gray-500 ml-auto">
             {formatDate(email.receivedAt)}
           </span>
         </div>
@@ -41,7 +41,7 @@ export function EmailListItem({ email, selected, onClick }: EmailListItemProps) 
             {email.subject || "(no subject)"}
           </span>
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-gray-500">
           {truncateText(email.preview || "", 100)}
         </p>
       </div>

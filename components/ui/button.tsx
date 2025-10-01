@@ -13,14 +13,14 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         className={cn(
           "inline-flex items-center justify-center rounded-md font-medium transition-colors",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2",
           "disabled:pointer-events-none disabled:opacity-50",
           {
             default:
-              "bg-primary text-primary-foreground hover:bg-primary/90",
-            ghost: "hover:bg-accent hover:text-accent-foreground",
+              "bg-gray-900 text-white hover:bg-gray-800",
+            ghost: "hover:bg-gray-100",
             outline:
-              "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+              "border border-gray-300 bg-white hover:bg-gray-50",
           }[variant],
           {
             sm: "h-9 px-3 text-sm",

@@ -21,7 +21,7 @@ export function EmailList({
     <div className={cn("flex flex-col", className)}>
       <div className="flex-1 overflow-y-auto">
         {emails.length === 0 ? (
-          <div className="flex items-center justify-center h-64 text-muted-foreground">
+          <div className="flex items-center justify-center h-64 text-gray-500">
             <p>No emails to display</p>
           </div>
         ) : (
