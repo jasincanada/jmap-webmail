@@ -1,0 +1,24 @@
+import { getRequestConfig } from 'next-intl/server';
+
+export const locales = ['en', 'fr'] as const;
+export type Locale = (typeof locales)[number];
+
+export const defaultLocale: Locale = 'en';
+
+export default getRequestConfig(async ({ locale }) => {
+  // Validate that the incoming `locale` parameter is valid
+  if (!locales.includes(locale as any)) {
+    locale = defaultLocale;
+  }
+
+  // Use static imports for better compatibility
+  const messages = locale === 'fr'
+    ? (await import('./locales/fr/common.json')).default
+    : (await import('./locales/en/common.json')).default;
+
+  return {
+    messages,
+    timeZone: 'Europe/Paris',
+    now: new Date()
+  };
+});

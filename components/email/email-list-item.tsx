@@ -3,7 +3,8 @@
 import { formatDate, truncateText } from "@/lib/utils";
 import { Email } from "@/lib/jmap/types";
 import { cn } from "@/lib/utils";
-import { Paperclip, Star } from "lucide-react";
+import { Avatar } from "@/components/ui/avatar";
+import { Paperclip, Star, Circle } from "lucide-react";
 
 interface EmailListItemProps {
   email: Email;
@@ -11,39 +12,125 @@ interface EmailListItemProps {
   onClick?: () => void;
 }
 
+// Color tag mapping - using lighter backgrounds for better readability
+const colorTags = {
+  red: "bg-red-50 dark:bg-red-950/30",
+  orange: "bg-orange-50 dark:bg-orange-950/30",
+  yellow: "bg-yellow-50 dark:bg-yellow-950/30",
+  green: "bg-green-50 dark:bg-green-950/30",
+  blue: "bg-blue-50 dark:bg-blue-950/30",
+  purple: "bg-purple-50 dark:bg-purple-950/30",
+  pink: "bg-pink-50 dark:bg-pink-950/30",
+} as const;
+
+const getEmailColor = (keywords: Record<string, boolean> | undefined) => {
+  if (!keywords) return null;
+  for (const key of Object.keys(keywords)) {
+    if (key.startsWith("$color:") && keywords[key] === true) {
+      const color = key.replace("$color:", "");
+      return colorTags[color as keyof typeof colorTags] || null;
+    }
+  }
+  return null;
+};
+
 export function EmailListItem({ email, selected, onClick }: EmailListItemProps) {
   const isUnread = !email.keywords?.$seen;
   const isStarred = email.keywords?.$flagged;
+  const isImportant = email.keywords?.["$important"];
   const sender = email.from?.[0];
+  const colorTag = getEmailColor(email.keywords);
 
   return (
     <div
       className={cn(
-        "flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-gray-200",
-        selected ? "bg-gray-50" : "hover:bg-gray-50/50",
-        isUnread && "font-semibold"
+        "relative group cursor-pointer transition-all duration-200 border-b border-gray-100 dark:border-gray-800",
+        // Apply color tag as background, with selected and unread states
+        colorTag ? colorTag : (
+          selected
+            ? "bg-blue-50 dark:bg-blue-900/30"
+            : "bg-white dark:bg-gray-950"
+        ),
+        selected && !colorTag && "shadow-sm",
+        !colorTag && !selected && "hover:bg-gray-50 dark:hover:bg-gray-900 hover:shadow-sm",
+        colorTag && "hover:brightness-95 dark:hover:brightness-110",
+        isUnread && !colorTag && "bg-blue-50/30 dark:bg-blue-900/10"
       )}
       onClick={onClick}
     >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className={cn("text-sm", isUnread ? "font-semibold" : "font-normal")}>
-            {sender?.name || sender?.email || "Unknown"}
-          </span>
-          {isStarred && <Star className="w-3 h-3 fill-current text-yellow-500" />}
-          {email.hasAttachment && <Paperclip className="w-3 h-3 text-gray-500" />}
-          <span className="text-xs text-gray-500 ml-auto">
-            {formatDate(email.receivedAt)}
-          </span>
-        </div>
-        <div className="text-sm mb-1">
-          <span className={cn(isUnread ? "font-semibold" : "font-normal")}>
+      <div className="flex items-start gap-3 px-4 py-4">
+        {/* Unread indicator */}
+        {isUnread && (
+          <div className="absolute left-1 top-1/2 -translate-y-1/2">
+            <Circle className="w-2 h-2 fill-blue-600 text-blue-600 dark:fill-blue-400 dark:text-blue-400" />
+          </div>
+        )}
+
+        {/* Avatar */}
+        <Avatar
+          name={sender?.name}
+          email={sender?.email}
+          size="md"
+          className="flex-shrink-0 shadow-sm"
+        />
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {/* First Line: Sender and Date */}
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span className={cn(
+                "truncate",
+                isUnread
+                  ? "font-bold text-gray-900 dark:text-gray-100 text-sm"
+                  : "font-medium text-gray-700 dark:text-gray-300 text-sm"
+              )}>
+                {sender?.name || sender?.email || "Unknown"}
+              </span>
+              <div className="flex items-center gap-1.5">
+                {isStarred && (
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                )}
+                {isImportant && (
+                  <span className="px-1.5 py-0.5 text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded font-medium">
+                    Important
+                  </span>
+                )}
+                {email.hasAttachment && (
+                  <Paperclip className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                )}
+              </div>
+            </div>
+            <span className={cn(
+              "text-xs flex-shrink-0 tabular-nums",
+              isUnread
+                ? "text-gray-700 dark:text-gray-300 font-semibold"
+                : "text-gray-500 dark:text-gray-400"
+            )}>
+              {formatDate(email.receivedAt)}
+            </span>
+          </div>
+
+          {/* Second Line: Subject */}
+          <div className={cn(
+            "mb-1 line-clamp-1",
+            isUnread
+              ? "font-semibold text-gray-900 dark:text-gray-100 text-sm"
+              : "font-normal text-gray-800 dark:text-gray-200 text-sm"
+          )}>
             {email.subject || "(no subject)"}
-          </span>
+          </div>
+
+          {/* Third Line: Preview */}
+          <p className={cn(
+            "text-sm leading-relaxed line-clamp-2",
+            isUnread
+              ? "text-gray-700 dark:text-gray-300"
+              : "text-gray-600 dark:text-gray-400"
+          )}>
+            {email.preview || "No preview available"}
+          </p>
         </div>
-        <p className="text-xs text-gray-500">
-          {truncateText(email.preview || "", 100)}
-        </p>
       </div>
     </div>
   );

@@ -1,0 +1,197 @@
+{
+  "login": {
+    "title": "root.cloud Webmail",
+    "subtitle": "Sign in to access your email",
+    "server_label": "JMAP Server",
+    "server_placeholder": "https://mail.example.com",
+    "username_label": "Username",
+    "username_placeholder": "user@example.com",
+    "password_label": "Password",
+    "password_placeholder": "Enter your password",
+    "sign_in": "Sign in",
+    "signing_in": "Signing in...",
+    "secure_connection": "Secure JMAP connection to your email server",
+    "security_note": "For security, passwords are never stored. Use your browser's password manager for convenience.",
+    "error": {
+      "invalid_credentials": "Invalid username or password",
+      "connection_failed": "Failed to connect to the server",
+      "generic": "An error occurred. Please try again."
+    }
+  },
+  "sidebar": {
+    "compose": "Compose",
+    "search_placeholder": "Search mail...",
+    "storage": "Storage",
+    "sign_out": "Sign out",
+    "loading_mailboxes": "Loading mailboxes...",
+    "theme": {
+      "light": "Light mode",
+      "dark": "Dark mode",
+      "system": "System theme"
+    },
+    "mailboxes": {
+      "inbox": "Inbox",
+      "sent": "Sent",
+      "drafts": "Drafts",
+      "trash": "Trash",
+      "archive": "Archive",
+      "starred": "Starred",
+      "all_mail": "All Mail",
+      "spam": "Spam",
+      "important": "Important"
+    },
+    "expand": "Expand",
+    "collapse": "Collapse"
+  },
+  "email_list": {
+    "no_emails": "No emails",
+    "no_emails_description": "Start by composing a new email",
+    "loading": "Loading emails...",
+    "unread": "unread",
+    "to_me": "To me",
+    "to_recipients": "To {{count}} recipients",
+    "and_others": "and {{count}} others",
+    "draft": "Draft",
+    "starred": "Starred"
+  },
+  "email_viewer": {
+    "no_email_selected": "No email selected",
+    "no_email_description": "Select an email from the list to view it here",
+    "reply": "Reply",
+    "reply_all": "Reply All",
+    "forward": "Forward",
+    "delete": "Delete",
+    "archive": "Archive",
+    "star": "Star",
+    "unstar": "Unstar",
+    "mark_unread": "Mark as unread",
+    "mark_read": "Mark as read",
+    "print": "Print",
+    "attachments": "Attachments",
+    "download": "Download",
+    "from": "From",
+    "to": "To",
+    "cc": "CC",
+    "bcc": "BCC",
+    "date": "Date",
+    "subject": "Subject",
+    "show_details": "Show details",
+    "hide_details": "Hide details",
+    "external_content_warning": "Images and external content have been blocked",
+    "load_external_content": "Load images",
+    "message_details": "Message Details",
+    "authentication": {
+      "title": "Authentication",
+      "status": {
+        "verified": "Verified",
+        "warning": "Warning",
+        "none": "Not authenticated"
+      },
+      "spf": {
+        "pass": "SPF Pass",
+        "fail": "SPF Fail",
+        "none": "No SPF"
+      },
+      "dkim": {
+        "pass": "DKIM Valid",
+        "fail": "DKIM Invalid",
+        "none": "No DKIM"
+      },
+      "dmarc": {
+        "pass": "DMARC Pass",
+        "fail": "DMARC Fail",
+        "none": "No DMARC"
+      },
+      "spam_score": "Spam Score"
+    },
+    "headers": {
+      "routing": "Routing",
+      "received": "Received",
+      "message_id": "Message ID",
+      "list_info": "List Information"
+    },
+    "color_tag": {
+      "title": "Color Tag",
+      "red": "Red",
+      "orange": "Orange",
+      "yellow": "Yellow",
+      "green": "Green",
+      "blue": "Blue",
+      "purple": "Purple",
+      "none": "None"
+    }
+  },
+  "email_composer": {
+    "new_message": "New Message",
+    "reply_to": "Reply",
+    "reply_all_to": "Reply All",
+    "forward_message": "Forward",
+    "to": "To",
+    "cc": "CC",
+    "bcc": "BCC",
+    "subject": "Subject",
+    "body_placeholder": "Write your message...",
+    "send": "Send",
+    "cancel": "Cancel",
+    "attach": "Attach files",
+    "quote": {
+      "reply_header": "On {{date}}, {{sender}} wrote:",
+      "forward_header": "---------- Forwarded message ----------",
+      "from": "From: {{sender}}",
+      "date": "Date: {{date}}",
+      "subject": "Subject: {{subject}}",
+      "to": "To: {{recipients}}"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "search": "Search",
+    "refresh": "Refresh",
+    "settings": "Settings",
+    "help": "Help",
+    "logout": "Logout",
+    "yes": "Yes",
+    "no": "No",
+    "unknown": "Unknown"
+  },
+  "notifications": {
+    "email_sent": "Email sent successfully",
+    "email_deleted": "Email deleted",
+    "email_archived": "Email archived",
+    "email_starred": "Email starred",
+    "email_unstarred": "Email unstarred",
+    "email_marked_read": "Email marked as read",
+    "email_marked_unread": "Email marked as unread",
+    "copied_to_clipboard": "Copied to clipboard",
+    "error_sending": "Failed to send email",
+    "error_deleting": "Failed to delete email",
+    "error_loading": "Failed to load emails"
+  },
+  "date": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "this_week": "This week",
+    "last_week": "Last week",
+    "this_month": "This month",
+    "older": "Older",
+    "just_now": "Just now",
+    "minutes_ago": "{{count}} minute ago",
+    "minutes_ago_plural": "{{count}} minutes ago",
+    "hours_ago": "{{count}} hour ago",
+    "hours_ago_plural": "{{count}} hours ago",
+    "days_ago": "{{count}} day ago",
+    "days_ago_plural": "{{count}} days ago"
+  },
+  "language": {
+    "title": "Language",
+    "english": "English",
+    "french": "Français"
+  }
+}

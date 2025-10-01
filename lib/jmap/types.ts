@@ -15,8 +15,46 @@ export interface Email {
   preview?: string;
   textBody?: EmailBodyPart[];
   htmlBody?: EmailBodyPart[];
+  bodyValues?: Record<string, EmailBodyValue>;
   attachments?: Attachment[];
   hasAttachment: boolean;
+  // Extended header information
+  messageId?: string;
+  inReplyTo?: string[];
+  references?: string[];
+  headers?: Record<string, string | string[]>;
+  // Security headers parsed
+  authenticationResults?: AuthenticationResults;
+  spamScore?: number;
+  spamStatus?: string;
+}
+
+export interface AuthenticationResults {
+  spf?: {
+    result: 'pass' | 'fail' | 'softfail' | 'neutral' | 'none' | 'temperror' | 'permerror';
+    domain?: string;
+    ip?: string;
+  };
+  dkim?: {
+    result: 'pass' | 'fail' | 'policy' | 'neutral' | 'temperror' | 'permerror';
+    domain?: string;
+    selector?: string;
+  };
+  dmarc?: {
+    result: 'pass' | 'fail' | 'none';
+    policy?: 'reject' | 'quarantine' | 'none';
+    domain?: string;
+  };
+  iprev?: {
+    result: 'pass' | 'fail';
+    ip?: string;
+  };
+}
+
+export interface EmailBodyValue {
+  value: string;
+  isEncodingProblem?: boolean;
+  isTruncated?: boolean;
 }
 
 export interface EmailAddress {

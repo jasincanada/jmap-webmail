@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { Email, Mailbox } from "@/lib/jmap/types";
+import { JMAPClient } from "@/lib/jmap/client";
 
 interface EmailStore {
   emails: Email[];
@@ -8,6 +9,9 @@ interface EmailStore {
   selectedMailbox: string;
   isLoading: boolean;
   error: string | null;
+  searchQuery: string;
+  quota: { used: number; total: number } | null;
+  processingReadStatus: Set<string>; // Track emails being marked as read/unread
 
   setEmails: (emails: Email[]) => void;
   setMailboxes: (mailboxes: Mailbox[]) => void;
@@ -15,18 +19,35 @@ interface EmailStore {
   selectMailbox: (mailboxId: string) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setSearchQuery: (query: string) => void;
+  setQuota: (quota: { used: number; total: number } | null) => void;
+
+  // JMAP operations
+  fetchMailboxes: (client: JMAPClient) => Promise<void>;
+  fetchEmails: (client: JMAPClient, mailboxId?: string) => Promise<void>;
+  fetchEmailContent: (client: JMAPClient, emailId: string) => Promise<Email | null>;
+  fetchQuota: (client: JMAPClient) => Promise<void>;
+  sendEmail: (client: JMAPClient, to: string[], subject: string, body: string, cc?: string[], bcc?: string[]) => Promise<void>;
+  deleteEmail: (client: JMAPClient, emailId: string) => Promise<void>;
+  markAsRead: (client: JMAPClient, emailId: string, read: boolean) => Promise<void>;
+  moveToMailbox: (client: JMAPClient, emailId: string, mailboxId: string) => Promise<void>;
+  searchEmails: (client: JMAPClient, query: string) => Promise<void>;
+  toggleStar: (client: JMAPClient, emailId: string) => Promise<void>;
 
   // Mock data for demo
   loadMockData: () => void;
 }
 
-export const useEmailStore = create<EmailStore>((set) => ({
+export const useEmailStore = create<EmailStore>((set, get) => ({
   emails: [],
   mailboxes: [],
   selectedEmail: null,
-  selectedMailbox: "inbox",
+  selectedMailbox: "",
   isLoading: false,
   error: null,
+  searchQuery: "",
+  quota: null,
+  processingReadStatus: new Set(),
 
   setEmails: (emails) => set({ emails }),
   setMailboxes: (mailboxes) => set({ mailboxes }),
@@ -34,6 +55,323 @@ export const useEmailStore = create<EmailStore>((set) => ({
   selectMailbox: (mailboxId) => set({ selectedMailbox: mailboxId }),
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
+  setSearchQuery: (query) => set({ searchQuery: query }),
+  setQuota: (quota) => set({ quota }),
+
+  // JMAP operations
+  fetchMailboxes: async (client) => {
+    set({ isLoading: true, error: null });
+    try {
+      const mailboxes = await client.getMailboxes();
+      set({ mailboxes, isLoading: false });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : "Failed to fetch mailboxes",
+        isLoading: false
+      });
+    }
+  },
+
+  fetchEmails: async (client, mailboxId) => {
+    set({ isLoading: true, error: null, emails: [] }); // Clear emails immediately for better loading UX
+    try {
+      const emails = await client.getEmails(mailboxId || get().selectedMailbox);
+      set({ emails, isLoading: false });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : "Failed to fetch emails",
+        isLoading: false,
+        emails: []
+      });
+    }
+  },
+
+  fetchEmailContent: async (client, emailId) => {
+    try {
+      const email = await client.getEmail(emailId);
+      if (email) {
+        set({ selectedEmail: email });
+      }
+      return email;
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : "Failed to fetch email content"
+      });
+      return null;
+    }
+  },
+
+  fetchQuota: async (client) => {
+    try {
+      const quota = await client.getQuota();
+      set({ quota });
+    } catch (error) {
+      console.log('Failed to fetch quota:', error);
+      // Don't set error state as quota is optional
+    }
+  },
+
+  sendEmail: async (client, to, subject, body, cc, bcc) => {
+    set({ isLoading: true, error: null });
+    try {
+      await client.sendEmail(to, subject, body, cc, bcc);
+      // Refresh emails after sending
+      await get().fetchEmails(client);
+      set({ isLoading: false });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : "Failed to send email",
+        isLoading: false
+      });
+      throw error;
+    }
+  },
+
+  deleteEmail: async (client, emailId) => {
+    try {
+      // Get the email to check if it's unread and which mailboxes it belongs to
+      const email = get().emails.find(e => e.id === emailId);
+      if (!email) return;
+
+      const isUnread = !email.keywords?.$seen;
+
+      await client.deleteEmail(emailId);
+
+      // Remove from local state and update mailbox counters if needed
+      set((state) => {
+        let updatedMailboxes = state.mailboxes;
+
+        // If the email was unread, decrement the unread counters
+        if (isUnread && email.mailboxIds) {
+          updatedMailboxes = state.mailboxes.map(mailbox => {
+            if (email.mailboxIds[mailbox.id]) {
+              return {
+                ...mailbox,
+                totalEmails: Math.max(0, mailbox.totalEmails - 1),
+                unreadEmails: Math.max(0, mailbox.unreadEmails - 1),
+                totalThreads: Math.max(0, mailbox.totalThreads - 1),
+                unreadThreads: Math.max(0, mailbox.unreadThreads - 1)
+              };
+            }
+            return mailbox;
+          });
+        } else if (email.mailboxIds) {
+          // If email was read, only decrement total counters
+          updatedMailboxes = state.mailboxes.map(mailbox => {
+            if (email.mailboxIds[mailbox.id]) {
+              return {
+                ...mailbox,
+                totalEmails: Math.max(0, mailbox.totalEmails - 1),
+                totalThreads: Math.max(0, mailbox.totalThreads - 1)
+              };
+            }
+            return mailbox;
+          });
+        }
+
+        return {
+          emails: state.emails.filter(e => e.id !== emailId),
+          selectedEmail: state.selectedEmail?.id === emailId ? null : state.selectedEmail,
+          mailboxes: updatedMailboxes
+        };
+      });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : "Failed to delete email"
+      });
+      throw error;
+    }
+  },
+
+  markAsRead: async (client, emailId, read) => {
+    try {
+      // Check if this email is already being processed
+      const processingKey = `${emailId}-${read}`;
+      const currentProcessing = get().processingReadStatus;
+      if (currentProcessing.has(processingKey)) {
+        console.log(`Already processing markAsRead for ${emailId} to ${read}`);
+        return; // Already being processed
+      }
+
+      // Get the email to check its current state and mailboxes
+      const email = get().emails.find(e => e.id === emailId);
+      if (!email) return;
+
+      // Check if already in the desired state
+      const isCurrentlyRead = email.keywords?.$seen === true;
+      if (isCurrentlyRead === read) {
+        console.log(`Email ${emailId} already has $seen=${read}`);
+        return; // Already in desired state
+      }
+
+      // Add to processing set
+      set((state) => ({
+        processingReadStatus: new Set([...state.processingReadStatus, processingKey])
+      }));
+
+      await client.markAsRead(emailId, read);
+
+      // Update local state including mailbox counters
+      set((state) => {
+        // Remove from processing set
+        const newProcessingSet = new Set(state.processingReadStatus);
+        newProcessingSet.delete(processingKey);
+
+        // Only update counters if the state is actually changing
+        const emailInState = state.emails.find(e => e.id === emailId);
+        if (!emailInState) return { processingReadStatus: newProcessingSet };
+
+        const wasRead = emailInState.keywords?.$seen === true;
+        if (wasRead === read) {
+          console.log(`Email ${emailId} state unchanged, skipping counter update`);
+          return { processingReadStatus: newProcessingSet }; // State unchanged, skip counter update
+        }
+
+        const updatedMailboxes = state.mailboxes.map(mailbox => {
+          // Check if this email belongs to this mailbox
+          if (emailInState.mailboxIds && emailInState.mailboxIds[mailbox.id]) {
+            // Adjust unread counter: -1 if marking as read, +1 if marking as unread
+            const delta = read ? -1 : 1;
+            return {
+              ...mailbox,
+              unreadEmails: Math.max(0, mailbox.unreadEmails + delta),
+              unreadThreads: Math.max(0, mailbox.unreadThreads + delta)
+            };
+          }
+          return mailbox;
+        });
+
+        return {
+          emails: state.emails.map(e =>
+            e.id === emailId ? { ...e, keywords: { ...e.keywords, $seen: read } } : e
+          ),
+          selectedEmail: state.selectedEmail?.id === emailId
+            ? { ...state.selectedEmail, keywords: { ...state.selectedEmail.keywords, $seen: read } }
+            : state.selectedEmail,
+          mailboxes: updatedMailboxes,
+          processingReadStatus: newProcessingSet
+        };
+      });
+    } catch (error) {
+      // Remove from processing set on error
+      set((state) => {
+        const newProcessingSet = new Set(state.processingReadStatus);
+        newProcessingSet.delete(`${emailId}-${read}`);
+        return {
+          processingReadStatus: newProcessingSet,
+          error: error instanceof Error ? error.message : "Failed to update email"
+        };
+      });
+      throw error;
+    }
+  },
+
+  moveToMailbox: async (client, emailId, destinationMailboxId) => {
+    try {
+      // Get the email to check its current mailboxes and read status
+      const email = get().emails.find(e => e.id === emailId);
+      if (!email) return;
+
+      const isUnread = !email.keywords?.$seen;
+      const currentMailboxIds = email.mailboxIds ? Object.keys(email.mailboxIds) : [];
+
+      await client.moveEmail(emailId, destinationMailboxId);
+
+      // Update local state and mailbox counters
+      set((state) => {
+        // Update mailbox counters
+        const updatedMailboxes = state.mailboxes.map(mailbox => {
+          // Remove from current mailboxes
+          if (currentMailboxIds.includes(mailbox.id)) {
+            return {
+              ...mailbox,
+              totalEmails: Math.max(0, mailbox.totalEmails - 1),
+              unreadEmails: isUnread ? Math.max(0, mailbox.unreadEmails - 1) : mailbox.unreadEmails,
+              totalThreads: Math.max(0, mailbox.totalThreads - 1),
+              unreadThreads: isUnread ? Math.max(0, mailbox.unreadThreads - 1) : mailbox.unreadThreads
+            };
+          }
+          // Add to destination mailbox
+          else if (mailbox.id === destinationMailboxId) {
+            return {
+              ...mailbox,
+              totalEmails: mailbox.totalEmails + 1,
+              unreadEmails: isUnread ? mailbox.unreadEmails + 1 : mailbox.unreadEmails,
+              totalThreads: mailbox.totalThreads + 1,
+              unreadThreads: isUnread ? mailbox.unreadThreads + 1 : mailbox.unreadThreads
+            };
+          }
+          return mailbox;
+        });
+
+        // Update the email's mailboxIds
+        const updatedEmails = state.emails.map(e => {
+          if (e.id === emailId) {
+            return {
+              ...e,
+              mailboxIds: { [destinationMailboxId]: true }
+            };
+          }
+          return e;
+        });
+
+        // If moved email is selected, update selectedEmail too
+        const updatedSelectedEmail = state.selectedEmail?.id === emailId
+          ? { ...state.selectedEmail, mailboxIds: { [destinationMailboxId]: true } }
+          : state.selectedEmail;
+
+        return {
+          emails: updatedEmails,
+          selectedEmail: updatedSelectedEmail,
+          mailboxes: updatedMailboxes
+        };
+      });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : "Failed to move email"
+      });
+      throw error;
+    }
+  },
+
+  searchEmails: async (client, query) => {
+    set({ isLoading: true, error: null, searchQuery: query, emails: [] }); // Clear emails for loading state
+    try {
+      const emails = await client.searchEmails(query);
+      set({ emails, isLoading: false });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : "Failed to search emails",
+        isLoading: false,
+        emails: []
+      });
+    }
+  },
+
+  toggleStar: async (client, emailId) => {
+    try {
+      const email = get().emails.find(e => e.id === emailId);
+      if (!email) return;
+
+      const isFlagged = email.keywords.$flagged || false;
+      await client.toggleStar(emailId, !isFlagged);
+
+      // Update local state
+      set((state) => ({
+        emails: state.emails.map(e =>
+          e.id === emailId ? { ...e, keywords: { ...e.keywords, $flagged: !isFlagged } } : e
+        ),
+        selectedEmail: state.selectedEmail?.id === emailId
+          ? { ...state.selectedEmail, keywords: { ...state.selectedEmail.keywords, $flagged: !isFlagged } }
+          : state.selectedEmail
+      }));
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : "Failed to update star"
+      });
+      throw error;
+    }
+  },
 
   loadMockData: () => {
     const mockEmails: Email[] = [

@@ -16,15 +16,73 @@ interface EmailComposerProps {
   }) => void;
   onClose?: () => void;
   className?: string;
+  mode?: 'compose' | 'reply' | 'replyAll' | 'forward';
+  replyTo?: {
+    from?: { email?: string; name?: string }[];
+    to?: { email?: string; name?: string }[];
+    cc?: { email?: string; name?: string }[];
+    subject?: string;
+    body?: string;
+    receivedAt?: string;
+  };
 }
 
-export function EmailComposer({ onSend, onClose, className }: EmailComposerProps) {
-  const [to, setTo] = useState("");
-  const [cc, setCc] = useState("");
+export function EmailComposer({
+  onSend,
+  onClose,
+  className,
+  mode = 'compose',
+  replyTo
+}: EmailComposerProps) {
+  // Initialize with reply/forward data if provided
+  const getInitialTo = () => {
+    if (!replyTo) return "";
+    if (mode === 'reply') {
+      return replyTo.from?.[0]?.email || "";
+    } else if (mode === 'replyAll') {
+      const from = replyTo.from?.[0]?.email || "";
+      const originalTo = replyTo.to?.filter(r => r.email).map(r => r.email).join(", ") || "";
+      return [from, originalTo].filter(Boolean).join(", ");
+    }
+    return "";
+  };
+
+  const getInitialCc = () => {
+    if (!replyTo || mode !== 'replyAll') return "";
+    return replyTo.cc?.map(r => r.email).join(", ") || "";
+  };
+
+  const getInitialSubject = () => {
+    if (!replyTo?.subject) return "";
+    if (mode === 'forward') {
+      return `Fwd: ${replyTo.subject.replace(/^(Fwd:\s*)+/i, '')}`;
+    } else if (mode === 'reply' || mode === 'replyAll') {
+      return `Re: ${replyTo.subject.replace(/^(Re:\s*)+/i, '')}`;
+    }
+    return "";
+  };
+
+  const getInitialBody = () => {
+    if (!replyTo?.body) return "";
+
+    const date = replyTo.receivedAt ? new Date(replyTo.receivedAt).toLocaleString() : "";
+    const from = replyTo.from?.[0];
+    const fromStr = from ? `${from.name || from.email}` : "Unknown";
+
+    if (mode === 'forward') {
+      return `\n\n---------- Forwarded message ----------\nFrom: ${fromStr}\nDate: ${date}\nSubject: ${replyTo.subject || ""}\n\n${replyTo.body}`;
+    } else if (mode === 'reply' || mode === 'replyAll') {
+      return `\n\nOn ${date}, ${fromStr} wrote:\n> ${replyTo.body.split('\n').join('\n> ')}`;
+    }
+    return "";
+  };
+
+  const [to, setTo] = useState(getInitialTo());
+  const [cc, setCc] = useState(getInitialCc());
   const [bcc, setBcc] = useState("");
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
-  const [showCc, setShowCc] = useState(false);
+  const [subject, setSubject] = useState(getInitialSubject());
+  const [body, setBody] = useState(getInitialBody());
+  const [showCc, setShowCc] = useState(!!getInitialCc());
   const [showBcc, setShowBcc] = useState(false);
 
   const handleSend = () => {

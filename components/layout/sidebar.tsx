@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { useThemeStore } from "@/stores/theme-store";
 import {
   Inbox,
   Send,
@@ -13,8 +16,16 @@ import {
   PenSquare,
   Search,
   Menu,
+  LogOut,
+  ChevronRight,
+  ChevronDown,
+  Folder,
+  FolderOpen,
+  Sun,
+  Moon,
+  Monitor,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, buildMailboxTree, MailboxNode, formatFileSize } from "@/lib/utils";
 import { Mailbox } from "@/lib/jmap/types";
 
 interface SidebarProps {
@@ -22,38 +33,247 @@ interface SidebarProps {
   selectedMailbox?: string;
   onMailboxSelect?: (mailboxId: string) => void;
   onCompose?: () => void;
+  onLogout?: () => void;
+  onSearch?: (query: string) => void;
+  quota?: { used: number; total: number } | null;
   className?: string;
 }
 
-const defaultMailboxes = [
-  { id: "inbox", name: "Inbox", icon: Inbox, unread: 12 },
-  { id: "sent", name: "Sent", icon: Send, unread: 0 },
-  { id: "drafts", name: "Drafts", icon: File, unread: 2 },
-  { id: "starred", name: "Starred", icon: Star, unread: 0 },
-  { id: "archive", name: "Archive", icon: Archive, unread: 0 },
-  { id: "trash", name: "Trash", icon: Trash2, unread: 0 },
-];
+// Map role to icon
+const getIconForMailbox = (role?: string, name?: string, hasChildren?: boolean, isExpanded?: boolean) => {
+  const lowerName = name?.toLowerCase() || "";
+
+  if (hasChildren) {
+    // For folders with children, return open/closed folder icon
+    return isExpanded ? FolderOpen : Folder;
+  }
+
+  if (role === "inbox" || lowerName.includes("inbox")) return Inbox;
+  if (role === "sent" || lowerName.includes("sent")) return Send;
+  if (role === "drafts" || lowerName.includes("draft")) return File;
+  if (role === "trash" || lowerName.includes("trash")) return Trash2;
+  if (role === "archive" || lowerName.includes("archive")) return Archive;
+  if (lowerName.includes("star") || lowerName.includes("flag")) return Star;
+  return Inbox; // Default icon
+};
+
+// Component for rendering a single mailbox node with its children
+function MailboxTreeItem({
+  node,
+  selectedMailbox,
+  expandedFolders,
+  onMailboxSelect,
+  onToggleExpand,
+  isCollapsed,
+}: {
+  node: MailboxNode;
+  selectedMailbox: string;
+  expandedFolders: Set<string>;
+  onMailboxSelect?: (id: string) => void;
+  onToggleExpand: (id: string) => void;
+  isCollapsed: boolean;
+}) {
+  const hasChildren = node.children.length > 0;
+  const isExpanded = expandedFolders.has(node.id);
+  const Icon = getIconForMailbox(node.role, node.name, hasChildren, isExpanded);
+  const indentPixels = node.depth * 16; // 16px per depth level
+
+  return (
+    <>
+      <div
+        className={cn(
+          "group w-full flex items-center px-2 py-1 text-sm transition-all duration-200",
+          selectedMailbox === node.id
+            ? "bg-blue-50 text-blue-900 dark:bg-blue-900/30 dark:text-blue-100"
+            : "hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300",
+          node.depth === 0 && "font-medium" // Root folders are slightly bolder
+        )}
+      >
+        {/* Expand/Collapse Chevron */}
+        {hasChildren && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleExpand(node.id);
+            }}
+            className={cn(
+              "p-0.5 rounded mr-1 transition-all duration-200",
+              "hover:bg-gray-200 active:bg-gray-300"
+            )}
+            style={{ marginLeft: indentPixels }}
+            title={isExpanded ? "Collapse" : "Expand"}
+          >
+            {isExpanded ? (
+              <ChevronDown className="w-3 h-3 text-gray-600" />
+            ) : (
+              <ChevronRight className="w-3 h-3 text-gray-500" />
+            )}
+          </button>
+        )}
+
+        {/* Mailbox Button */}
+        <button
+          onClick={() => onMailboxSelect?.(node.id)}
+          className={cn(
+            "flex-1 flex items-center text-left py-1 px-1 rounded",
+            "transition-colors duration-150"
+          )}
+          style={{
+            paddingLeft: hasChildren ? '4px' : `${indentPixels + 24}px`
+          }}
+          title={isCollapsed ? node.name : undefined}
+        >
+          <Icon className={cn(
+            "w-4 h-4 mr-2 flex-shrink-0 transition-colors",
+            hasChildren && isExpanded && "text-blue-600 dark:text-blue-400",
+            selectedMailbox === node.id && "text-blue-700 dark:text-blue-300",
+            !hasChildren && node.depth > 0 && "text-gray-600 dark:text-gray-400"
+          )} />
+          {!isCollapsed && (
+            <>
+              <span className="flex-1 truncate">{node.name}</span>
+              {node.unreadEmails > 0 && (
+                <span className={cn(
+                  "text-xs rounded-full px-2 py-0.5 ml-2 font-medium",
+                  selectedMailbox === node.id
+                    ? "bg-blue-700 text-white dark:bg-blue-600"
+                    : "bg-gray-800 text-white dark:bg-gray-600"
+                )}>
+                  {node.unreadEmails}
+                </span>
+              )}
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Render children if expanded */}
+      {hasChildren && isExpanded && !isCollapsed && (
+        <div className="relative">
+          {node.children.map((child) => (
+            <MailboxTreeItem
+              key={child.id}
+              node={child}
+              selectedMailbox={selectedMailbox}
+              expandedFolders={expandedFolders}
+              onMailboxSelect={onMailboxSelect}
+              onToggleExpand={onToggleExpand}
+              isCollapsed={isCollapsed}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
 
 export function Sidebar({
   mailboxes = [],
-  selectedMailbox = "inbox",
+  selectedMailbox = "",
   onMailboxSelect,
   onCompose,
+  onLogout,
+  onSearch,
+  quota,
   className,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const { theme, setTheme, resolvedTheme } = useThemeStore();
+  const t = useTranslations('sidebar');
+
+  // Load expanded folders from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('expandedMailboxes');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setExpandedFolders(new Set(parsed));
+      } catch (e) {
+        console.error('Failed to parse expanded mailboxes:', e);
+      }
+    } else {
+      // By default, expand root folders that have children
+      const tree = buildMailboxTree(mailboxes);
+      const defaultExpanded = tree
+        .filter(node => node.children.length > 0)
+        .map(node => node.id);
+      setExpandedFolders(new Set(defaultExpanded));
+    }
+  }, [mailboxes]);
+
+  // Save expanded folders to localStorage when changed
+  const handleToggleExpand = (mailboxId: string) => {
+    setExpandedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(mailboxId)) {
+        next.delete(mailboxId);
+      } else {
+        next.add(mailboxId);
+      }
+      localStorage.setItem('expandedMailboxes', JSON.stringify(Array.from(next)));
+      return next;
+    });
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim() && onSearch) {
+      onSearch(searchQuery);
+    }
+  };
+
+  // Build hierarchical mailbox tree
+  const mailboxTree = buildMailboxTree(mailboxes);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedMailbox || isCollapsed) return;
+
+      // Find the selected node in the tree
+      const findNode = (nodes: MailboxNode[]): MailboxNode | null => {
+        for (const node of nodes) {
+          if (node.id === selectedMailbox) return node;
+          const found = findNode(node.children);
+          if (found) return found;
+        }
+        return null;
+      };
+
+      const selectedNode = findNode(mailboxTree);
+      if (!selectedNode) return;
+
+      // Handle arrow keys for expand/collapse
+      if (e.key === 'ArrowRight' && selectedNode.children.length > 0) {
+        // Expand folder
+        if (!expandedFolders.has(selectedMailbox)) {
+          handleToggleExpand(selectedMailbox);
+        }
+      } else if (e.key === 'ArrowLeft' && selectedNode.children.length > 0) {
+        // Collapse folder
+        if (expandedFolders.has(selectedMailbox)) {
+          handleToggleExpand(selectedMailbox);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedMailbox, isCollapsed, expandedFolders, mailboxTree]);
 
   return (
     <div
       className={cn(
         "flex flex-col h-full border-r transition-all duration-300",
+        "bg-white dark:bg-gray-950 dark:border-gray-800",
         isCollapsed ? "w-16" : "w-64",
         className
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b">
+      <div className="flex items-center justify-between px-4 py-3 border-b dark:border-gray-800">
         <Button
           variant="ghost"
           size="icon"
@@ -64,7 +284,7 @@ export function Sidebar({
         {!isCollapsed && (
           <Button onClick={onCompose} className="ml-2 flex-1">
             <PenSquare className="w-4 h-4 mr-2" />
-            Compose
+            {t("compose")}
           </Button>
         )}
       </div>
@@ -72,51 +292,112 @@ export function Sidebar({
       {/* Search */}
       {!isCollapsed && (
         <div className="px-4 py-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <form onSubmit={handleSearch} className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
             <Input
               type="text"
-              placeholder="Search mail..."
+              placeholder={t("search_placeholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
             />
-          </div>
+          </form>
         </div>
       )}
 
       {/* Mailbox List */}
       <div className="flex-1 overflow-y-auto">
-        <div className="py-2">
-          {defaultMailboxes.map((mailbox) => (
-            <button
-              key={mailbox.id}
-              onClick={() => onMailboxSelect?.(mailbox.id)}
-              className={cn(
-                "w-full flex items-center px-4 py-2 text-sm hover:bg-gray-100 transition-colors",
-                selectedMailbox === mailbox.id && "bg-gray-100"
-              )}
-            >
-              <mailbox.icon className="w-4 h-4 mr-3 flex-shrink-0" />
-              {!isCollapsed && (
-                <>
-                  <span className="flex-1 text-left">{mailbox.name}</span>
-                  {mailbox.unread > 0 && (
-                    <span className="text-xs bg-gray-900 text-white rounded-full px-2 py-0.5">
-                      {mailbox.unread}
-                    </span>
-                  )}
-                </>
-              )}
-            </button>
-          ))}
+        <div className="py-1">
+          {mailboxes.length === 0 ? (
+            <div className="px-4 py-2 text-sm text-gray-500">
+              {!isCollapsed && t("loading_mailboxes")}
+            </div>
+          ) : (
+            <>
+              {/* Render hierarchical mailbox tree */}
+              {mailboxTree.map((node) => (
+                <MailboxTreeItem
+                  key={node.id}
+                  node={node}
+                  selectedMailbox={selectedMailbox}
+                  expandedFolders={expandedFolders}
+                  onMailboxSelect={onMailboxSelect}
+                  onToggleExpand={handleToggleExpand}
+                  isCollapsed={isCollapsed}
+                />
+              ))}
+            </>
+          )}
         </div>
       </div>
 
       {/* Footer */}
       {!isCollapsed && (
-        <div className="px-4 py-3 border-t text-xs text-gray-500">
-          <div>Storage: 2.5 GB / 15 GB</div>
+        <div className="px-4 py-3 border-t dark:border-gray-800">
+          {quota && quota.total > 0 && (
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              {t("storage")}: {formatFileSize(quota.used)} / {formatFileSize(quota.total)}
+            </div>
+          )}
+
+          {/* Language Switcher */}
+          <div className="mb-3">
+            <LanguageSwitcher />
+          </div>
+
+          {/* Theme Toggle */}
+          <div className="mb-3">
+            <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <button
+                onClick={() => setTheme('light')}
+                className={cn(
+                  "flex-1 flex items-center justify-center p-1.5 rounded transition-all",
+                  theme === 'light'
+                    ? "bg-white dark:bg-gray-700 shadow-sm"
+                    : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                )}
+                title="Light mode"
+              >
+                <Sun className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              </button>
+              <button
+                onClick={() => setTheme('dark')}
+                className={cn(
+                  "flex-1 flex items-center justify-center p-1.5 rounded transition-all",
+                  theme === 'dark'
+                    ? "bg-white dark:bg-gray-700 shadow-sm"
+                    : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                )}
+                title="Dark mode"
+              >
+                <Moon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              </button>
+              <button
+                onClick={() => setTheme('system')}
+                className={cn(
+                  "flex-1 flex items-center justify-center p-1.5 rounded transition-all",
+                  theme === 'system'
+                    ? "bg-white dark:bg-gray-700 shadow-sm"
+                    : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                )}
+                title="System theme"
+              >
+                <Monitor className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+          </div>
+
+          {onLogout && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onLogout}
+              className="w-full justify-start"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              {t("sign_out")}
+            </Button>
+          )}
         </div>
       )}
     </div>
