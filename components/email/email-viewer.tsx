@@ -348,7 +348,7 @@ export function EmailViewer({
   const isImportant = email.keywords?.["$important"];
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-300">
       {/* Modern Header Section */}
       <div className="bg-background border-b border-border">
         {/* Subject Bar */}
@@ -940,13 +940,6 @@ export function EmailViewer({
 
           {/* Email Body */}
           <div className="bg-background rounded-lg shadow-sm border border-border overflow-hidden">
-            {isLoadingContent && (
-              <div className="p-4 bg-amber-50 dark:bg-amber-900/30 border-b border-amber-100 dark:border-amber-800 flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-amber-600 dark:text-amber-400" />
-                <span className="text-sm text-amber-700 dark:text-amber-400">Loading full email content...</span>
-              </div>
-            )}
-
             <div className="email-content-wrapper p-6">
               {emailContent.isHtml ? (
                 <div
