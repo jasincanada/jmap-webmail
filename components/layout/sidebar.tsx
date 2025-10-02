@@ -30,6 +30,8 @@ import {
   Globe,
   Settings,
   ChevronUp,
+  Users,
+  User,
 } from "lucide-react";
 import { cn, buildMailboxTree, MailboxNode, formatFileSize } from "@/lib/utils";
 import { Mailbox } from "@/lib/jmap/types";
@@ -46,8 +48,23 @@ interface SidebarProps {
 }
 
 // Map role to icon
-const getIconForMailbox = (role?: string, name?: string, hasChildren?: boolean, isExpanded?: boolean) => {
+const getIconForMailbox = (role?: string, name?: string, hasChildren?: boolean, isExpanded?: boolean, isShared?: boolean, id?: string) => {
   const lowerName = name?.toLowerCase() || "";
+
+  // Shared folders root node
+  if (id === 'shared-folders-root') {
+    return isExpanded ? FolderOpen : Users;
+  }
+
+  // Shared account nodes
+  if (id?.startsWith('shared-account-')) {
+    return isExpanded ? FolderOpen : User;
+  }
+
+  // Shared mailboxes (but not virtual nodes)
+  if (isShared && hasChildren && !id?.startsWith('shared-')) {
+    return isExpanded ? FolderOpen : Folder;
+  }
 
   if (hasChildren) {
     // For folders with children, return open/closed folder icon
@@ -81,8 +98,9 @@ function MailboxTreeItem({
 }) {
   const hasChildren = node.children.length > 0;
   const isExpanded = expandedFolders.has(node.id);
-  const Icon = getIconForMailbox(node.role, node.name, hasChildren, isExpanded);
+  const Icon = getIconForMailbox(node.role, node.name, hasChildren, isExpanded, node.isShared, node.id);
   const indentPixels = node.depth * 16; // 16px per depth level
+  const isVirtualNode = node.id.startsWith('shared-'); // Virtual nodes for shared folder organization
 
   return (
     <>
@@ -119,10 +137,12 @@ function MailboxTreeItem({
 
         {/* Mailbox Button */}
         <button
-          onClick={() => onMailboxSelect?.(node.id)}
+          onClick={() => !isVirtualNode && onMailboxSelect?.(node.id)}
+          disabled={isVirtualNode}
           className={cn(
             "flex-1 flex items-center text-left py-1 px-1 rounded",
-            "transition-colors duration-150"
+            "transition-colors duration-150",
+            isVirtualNode && "cursor-default"
           )}
           style={{
             paddingLeft: hasChildren ? '4px' : `${indentPixels + 24}px`
@@ -133,7 +153,8 @@ function MailboxTreeItem({
             "w-4 h-4 mr-2 flex-shrink-0 transition-colors",
             hasChildren && isExpanded && "text-primary",
             selectedMailbox === node.id && "text-accent-foreground",
-            !hasChildren && node.depth > 0 && "text-muted-foreground"
+            !hasChildren && node.depth > 0 && "text-muted-foreground",
+            node.isShared && "text-blue-500" // Shared folders in blue
           )} />
           {!isCollapsed && (
             <>

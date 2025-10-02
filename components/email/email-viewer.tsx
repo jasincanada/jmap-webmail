@@ -51,7 +51,10 @@ import {
   Network,
   Hash,
   List,
+  Code,
+  Copy,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface EmailViewerProps {
   email: Email | null;
@@ -133,12 +136,15 @@ export function EmailViewer({
   currentUserEmail,
   currentUserName,
 }: EmailViewerProps) {
+  const t = useTranslations('email_viewer');
+  const tNotifications = useTranslations('notifications');
   const [showFullHeaders, setShowFullHeaders] = useState(false);
   const [allowExternalContent, setAllowExternalContent] = useState(false);
   const [hasBlockedContent, setHasBlockedContent] = useState(false);
   const [quickReplyText, setQuickReplyText] = useState("");
   const [isQuickReplyFocused, setIsQuickReplyFocused] = useState(false);
   const [isSendingQuickReply, setIsSendingQuickReply] = useState(false);
+  const [showSourceModal, setShowSourceModal] = useState(false);
   const currentColor = getCurrentColor(email?.keywords);
 
   useEffect(() => {
@@ -154,7 +160,169 @@ export function EmailViewer({
     setHasBlockedContent(false);
     setQuickReplyText("");
     setIsQuickReplyFocused(false);
+    setShowSourceModal(false);
   }, [email?.id]);
+
+  // Generate email source for viewing
+  const generateEmailSource = (email: Email): string => {
+    let source = '';
+
+    // Headers
+    source += '=== EMAIL HEADERS ===\n\n';
+    if (email.messageId) source += `Message-ID: ${email.messageId}\n`;
+    if (email.from) source += `From: ${email.from.map(a => a.name ? `${a.name} <${a.email}>` : a.email).join(', ')}\n`;
+    if (email.to) source += `To: ${email.to.map(a => a.name ? `${a.name} <${a.email}>` : a.email).join(', ')}\n`;
+    if (email.cc) source += `Cc: ${email.cc.map(a => a.name ? `${a.name} <${a.email}>` : a.email).join(', ')}\n`;
+    if (email.bcc) source += `Bcc: ${email.bcc.map(a => a.name ? `${a.name} <${a.email}>` : a.email).join(', ')}\n`;
+    if (email.replyTo) source += `Reply-To: ${email.replyTo.map(a => a.name ? `${a.name} <${a.email}>` : a.email).join(', ')}\n`;
+    if (email.subject) source += `Subject: ${email.subject}\n`;
+    if (email.sentAt) source += `Date: ${new Date(email.sentAt).toUTCString()}\n`;
+    if (email.receivedAt) source += `Received-At: ${new Date(email.receivedAt).toUTCString()}\n`;
+    if (email.inReplyTo) source += `In-Reply-To: ${email.inReplyTo.join(', ')}\n`;
+    if (email.references) source += `References: ${email.references.join(', ')}\n`;
+
+    // Additional headers
+    if (email.headers) {
+      source += '\n--- Additional Headers ---\n';
+      // Check if headers is an array (which seems to be the case based on error)
+      if (Array.isArray(email.headers)) {
+        email.headers.forEach((header: any) => {
+          if (header && typeof header === 'object') {
+            source += `${header.name || 'Unknown'}: ${header.value || ''}\n`;
+          }
+        });
+      } else {
+        // Handle as object
+        Object.entries(email.headers).forEach(([key, value]) => {
+          const val = Array.isArray(value) ? value.join(', ') : String(value);
+          source += `${key}: ${val}\n`;
+        });
+      }
+    }
+
+    // Authentication results
+    if (email.authenticationResults) {
+      source += '\n--- Authentication Results ---\n';
+      if (email.authenticationResults.spf) {
+        source += `SPF: ${email.authenticationResults.spf.result}`;
+        if (email.authenticationResults.spf.domain) source += ` (${email.authenticationResults.spf.domain})`;
+        source += '\n';
+      }
+      if (email.authenticationResults.dkim) {
+        source += `DKIM: ${email.authenticationResults.dkim.result}`;
+        if (email.authenticationResults.dkim.domain) source += ` (${email.authenticationResults.dkim.domain})`;
+        source += '\n';
+      }
+      if (email.authenticationResults.dmarc) {
+        source += `DMARC: ${email.authenticationResults.dmarc.result}`;
+        if (email.authenticationResults.dmarc.policy) source += ` policy=${email.authenticationResults.dmarc.policy}`;
+        source += '\n';
+      }
+    }
+
+    if (email.spamScore !== undefined) {
+      source += `Spam Score: ${email.spamScore}`;
+      if (email.spamStatus) source += ` (${email.spamStatus})`;
+      source += '\n';
+    }
+
+    // Metadata
+    source += '\n=== EMAIL METADATA ===\n\n';
+    source += `Email ID: ${email.id}\n`;
+    source += `Thread ID: ${email.threadId}\n`;
+    source += `Size: ${formatFileSize(email.size)}\n`;
+    source += `Has Attachment: ${email.hasAttachment ? 'Yes' : 'No'}\n`;
+    if (email.keywords) {
+      const keywords = Object.entries(email.keywords)
+        .filter(([_, v]) => v)
+        .map(([k]) => k)
+        .join(', ');
+      if (keywords) source += `Keywords: ${keywords}\n`;
+    }
+
+    // Attachments
+    if (email.attachments && email.attachments.length > 0) {
+      source += '\n=== ATTACHMENTS ===\n\n';
+      email.attachments.forEach((att, i) => {
+        source += `[${i + 1}] ${att.name || 'Unnamed'}\n`;
+        source += `    Type: ${att.type}\n`;
+        source += `    Size: ${formatFileSize(att.size)}\n`;
+        source += `    Blob ID: ${att.blobId}\n`;
+        if (att.cid) source += `    Content-ID: ${att.cid}\n`;
+        source += '\n';
+      });
+    }
+
+    // Body content
+    source += '\n=== EMAIL BODY ===\n\n';
+
+    let hasBodyContent = false;
+
+    // Text version
+    if (email.textBody?.[0]?.partId && email.bodyValues?.[email.textBody[0].partId]) {
+      const textValue = email.bodyValues[email.textBody[0].partId].value;
+      if (textValue && textValue.trim()) {
+        source += '--- Plain Text Version ---\n\n';
+        source += textValue;
+        source += '\n\n';
+        hasBodyContent = true;
+      }
+    }
+
+    // HTML version
+    if (email.htmlBody?.[0]?.partId && email.bodyValues?.[email.htmlBody[0].partId]) {
+      const htmlValue = email.bodyValues[email.htmlBody[0].partId].value;
+      if (htmlValue && htmlValue.trim()) {
+        source += '--- HTML Version ---\n\n';
+        source += htmlValue;
+        source += '\n\n';
+        hasBodyContent = true;
+      }
+    }
+
+    // All body values if we haven't found content yet
+    if (!hasBodyContent && email.bodyValues) {
+      const bodyKeys = Object.keys(email.bodyValues);
+      if (bodyKeys.length > 0) {
+        source += '--- Body Parts ---\n\n';
+        bodyKeys.forEach((key, index) => {
+          const bodyValue = email.bodyValues![key].value;
+          if (bodyValue && bodyValue.trim()) {
+            source += `Part ${index + 1} (${key}):\n`;
+            source += bodyValue;
+            source += '\n\n';
+            hasBodyContent = true;
+          }
+        });
+      }
+    }
+
+    // Preview if no body
+    if (!hasBodyContent && email.preview) {
+      source += '--- Preview Only ---\n\n';
+      source += email.preview;
+      source += '\n';
+    }
+
+    if (!hasBodyContent && !email.preview) {
+      source += '(No body content available)\n';
+    }
+
+    return source;
+  };
+
+  const copySourceToClipboard = async () => {
+    if (!email) return;
+
+    try {
+      const source = generateEmailSource(email);
+      await navigator.clipboard.writeText(source);
+      // Could add a toast notification here
+      console.log(tNotifications('source_copied'));
+    } catch (err) {
+      console.error('Failed to copy source:', err);
+    }
+  };
 
   // Sanitize and prepare email HTML content
   const emailContent = useMemo(() => {
@@ -548,14 +716,33 @@ export function EmailViewer({
                 </div>
               </div>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 hover:bg-muted"
-                title="More actions"
-              >
-                <MoreVertical className="w-4 h-4 text-muted-foreground" />
-              </Button>
+              {/* More Actions Dropdown */}
+              <div className="relative group">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 hover:bg-muted"
+                  title="More actions"
+                >
+                  <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                </Button>
+                <div className="absolute right-0 top-full mt-1 w-44 bg-background rounded-md shadow-lg border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                  <button
+                    onClick={() => setShowSourceModal(true)}
+                    className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
+                  >
+                    <Code className="w-4 h-4" />
+                    {t('view_source')}
+                  </button>
+                  <button
+                    onClick={() => window.print()}
+                    className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
+                  >
+                    <Printer className="w-4 h-4" />
+                    {t('print')}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1090,6 +1277,53 @@ export function EmailViewer({
           </div>
         </div>
       </div>
+
+      {/* Email Source Modal */}
+      {showSourceModal && email && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setShowSourceModal(false)}
+        >
+          <div
+            className="bg-background rounded-lg shadow-2xl border border-border w-full max-w-4xl max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <div className="flex items-center gap-2">
+                <Code className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">{t('email_source')}</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={copySourceToClipboard}
+                  className="flex items-center gap-1.5"
+                >
+                  <Copy className="w-4 h-4" />
+                  {t('copy_source')}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowSourceModal(false)}
+                  className="h-8 w-8"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-auto p-4 bg-muted/30">
+              <pre className="text-xs font-mono text-foreground whitespace-pre-wrap break-words bg-background border border-border rounded-lg p-4">
+                {generateEmailSource(email)}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

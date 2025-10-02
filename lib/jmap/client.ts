@@ -217,6 +217,7 @@ export class JMAPClient {
         const mailboxes = rawMailboxes.map((mb: any) => {
           return {
             id: mb.id,
+            originalId: undefined, // Primary account uses original IDs
             name: mb.name,
             parentId: mb.parentId || undefined,
             role: mb.role || undefined,
@@ -253,6 +254,7 @@ export class JMAPClient {
       // Return default inbox with all required fields
       return [{
         id: 'INBOX',
+        originalId: undefined,
         name: 'Inbox',
         role: 'inbox',
         sortOrder: 0,
@@ -309,9 +311,10 @@ export class JMAPClient {
             // Map mailboxes with account info
             const mailboxes = rawMailboxes.map((mb: any) => {
               return {
-                id: mb.id,
+                id: isPrimary ? mb.id : `${accountId}:${mb.id}`, // Namespace shared mailbox IDs
+                originalId: mb.id, // Keep original ID for JMAP queries
                 name: mb.name,
-                parentId: mb.parentId || undefined,
+                parentId: mb.parentId ? (isPrimary ? mb.parentId : `${accountId}:${mb.parentId}`) : undefined,
                 role: mb.role || undefined,
                 sortOrder: mb.sortOrder ?? 0,
                 totalEmails: mb.totalEmails ?? 0,
@@ -397,10 +400,24 @@ export class JMAPClient {
 
       if (response.methodResponses?.[1]?.[0] === "Email/get") {
         const emails = response.methodResponses[1][1].list || [];
+
+        // If fetching from a shared account, namespace the mailboxIds to match our store
+        const isSharedAccount = accountId && accountId !== this.accountId;
+        if (isSharedAccount) {
+          emails.forEach((email: any) => {
+            if (email.mailboxIds) {
+              const namespacedMailboxIds: Record<string, boolean> = {};
+              Object.keys(email.mailboxIds).forEach(mbId => {
+                namespacedMailboxIds[`${accountId}:${mbId}`] = email.mailboxIds[mbId];
+              });
+              email.mailboxIds = namespacedMailboxIds;
+            }
+          });
+        }
+
         return emails;
       }
 
-      console.warn('Unexpected email response format');
       return [];
     } catch (error) {
       console.error('Failed to get emails:', error);
@@ -408,11 +425,14 @@ export class JMAPClient {
     }
   }
 
-  async getEmail(emailId: string): Promise<Email | null> {
+  async getEmail(emailId: string, accountId?: string): Promise<Email | null> {
     try {
+      // Use provided accountId or fallback to primary account
+      const targetAccountId = accountId || this.accountId;
+
       const response = await this.request([
         ["Email/get", {
-          accountId: this.accountId,
+          accountId: targetAccountId,
           ids: [emailId],
           properties: [
             "id",
@@ -451,6 +471,16 @@ export class JMAPClient {
         const email = emails[0];
 
         if (email) {
+          // If fetching from a shared account, namespace the mailboxIds to match our store
+          const isSharedAccount = accountId && accountId !== this.accountId;
+          if (isSharedAccount && email.mailboxIds) {
+            const namespacedMailboxIds: Record<string, boolean> = {};
+            Object.keys(email.mailboxIds).forEach(mbId => {
+              namespacedMailboxIds[`${accountId}:${mbId}`] = email.mailboxIds[mbId];
+            });
+            email.mailboxIds = namespacedMailboxIds;
+          }
+
           // Parse headers if available
           if (email.headers) {
             // Import the parsing functions
@@ -491,10 +521,13 @@ export class JMAPClient {
     }
   }
 
-  async markAsRead(emailId: string, read: boolean = true): Promise<void> {
+  async markAsRead(emailId: string, read: boolean = true, accountId?: string): Promise<void> {
+    // Use provided accountId or fallback to primary account
+    const targetAccountId = accountId || this.accountId;
+
     await this.request([
       ["Email/set", {
-        accountId: this.accountId,
+        accountId: targetAccountId,
         update: {
           [emailId]: {
             "keywords/$seen": read,

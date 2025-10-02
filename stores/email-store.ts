@@ -97,7 +97,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   fetchMailboxes: async (client) => {
     set({ isLoading: true, error: null });
     try {
-      const mailboxes = await client.getMailboxes();
+      const mailboxes = await client.getAllMailboxes();
       set({ mailboxes, isLoading: false });
     } catch (error) {
       set({
@@ -110,9 +110,20 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   fetchEmails: async (client, mailboxId) => {
     set({ isLoading: true, error: null, emails: [] }); // Clear emails immediately for better loading UX
     try {
-      const emails = await client.getEmails(mailboxId || get().selectedMailbox);
+      const targetMailboxId = mailboxId || get().selectedMailbox;
+
+      // Find the mailbox to get its accountId (for shared folder support)
+      const mailboxes = get().mailboxes;
+      const mailbox = mailboxes.find(mb => mb.id === targetMailboxId);
+      // Only pass accountId for shared mailboxes, not for primary account
+      const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
+      // Use originalId for JMAP queries (shared mailboxes use namespaced IDs in the store)
+      const jmapMailboxId = mailbox?.originalId || targetMailboxId;
+
+      const emails = await client.getEmails(jmapMailboxId, accountId);
       set({ emails, isLoading: false });
     } catch (error) {
+      console.error('Failed to fetch emails:', error);
       set({
         error: error instanceof Error ? error.message : "Failed to fetch emails",
         isLoading: false,
@@ -123,7 +134,16 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
   fetchEmailContent: async (client, emailId) => {
     try {
-      const email = await client.getEmail(emailId);
+      // Find the selected mailbox to determine accountId (for shared folders)
+      const selectedMailboxId = get().selectedMailbox;
+      const mailboxes = get().mailboxes;
+      const mailbox = mailboxes.find(mb => mb.id === selectedMailboxId);
+
+      // Only pass accountId for shared mailboxes
+      const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
+
+      const email = await client.getEmail(emailId, accountId);
+
       if (email) {
         set({ selectedEmail: email });
       }
@@ -241,7 +261,13 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         processingReadStatus: new Set([...state.processingReadStatus, processingKey])
       }));
 
-      await client.markAsRead(emailId, read);
+      // Determine accountId for shared folders
+      const selectedMailboxId = get().selectedMailbox;
+      const mailboxes = get().mailboxes;
+      const mailbox = mailboxes.find(mb => mb.id === selectedMailboxId);
+      const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
+
+      await client.markAsRead(emailId, read, accountId);
 
       // Update local state including mailbox counters
       set((state) => {

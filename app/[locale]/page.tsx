@@ -324,9 +324,19 @@ export default function Home() {
 
             // Fetch the full content
             try {
-              const fullEmail = await client.getEmail(email.id);
+              // Find selected mailbox to determine accountId (for shared folders)
+              const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
+              // Only pass accountId for shared mailboxes
+              const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
+
+              const fullEmail = await client.getEmail(email.id, accountId);
               if (fullEmail) {
                 selectEmail(fullEmail);
+
+                // Automatically mark as read after opening (if unread)
+                if (!fullEmail.keywords?.$seen) {
+                  await markAsRead(client, fullEmail.id, true);
+                }
               }
             } catch (error) {
               console.error('Failed to fetch email content:', error);

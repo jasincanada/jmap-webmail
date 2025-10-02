@@ -1,3 +1,8 @@
+export interface EmailHeader {
+  name: string;
+  value: string;
+}
+
 export interface Email {
   id: string;
   threadId: string;
@@ -22,7 +27,7 @@ export interface Email {
   messageId?: string;
   inReplyTo?: string[];
   references?: string[];
-  headers?: Record<string, string | string[]>;
+  headers?: Record<string, string | string[]> | EmailHeader[];
   // Security headers parsed
   authenticationResults?: AuthenticationResults;
   spamScore?: number;
@@ -89,6 +94,7 @@ export interface Attachment {
 
 export interface Mailbox {
   id: string;
+  originalId?: string; // Original JMAP ID (for shared mailboxes)
   name: string;
   parentId?: string;
   role?: string;
@@ -109,6 +115,10 @@ export interface Mailbox {
     maySubmit: boolean;
   };
   isSubscribed: boolean;
+  // Shared folder support
+  accountId?: string;
+  accountName?: string;
+  isShared?: boolean;
 }
 
 export interface Thread {

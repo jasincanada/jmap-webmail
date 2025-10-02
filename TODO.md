@@ -60,6 +60,10 @@
 - [x] Fetch and display storage quota
 - [x] Add server capability detection
 - [x] Implement keep-alive mechanism
+- [x] Add shared folders support (multi-account access)
+- [x] Implement ID namespacing for shared mailboxes
+- [x] Fix unread counters for shared folders
+- [x] Auto-mark emails as read when opened in shared folders
 
 ### Email Operations
 - [x] Wire up real email fetching from JMAP

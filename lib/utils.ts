@@ -48,13 +48,69 @@ export interface MailboxNode extends Mailbox {
   depth: number;
 }
 
+// Role priority for mailbox ordering (lower number = higher priority)
+const ROLE_PRIORITY: Record<string, number> = {
+  inbox: 0,
+  drafts: 1,
+  sent: 2,
+  archive: 3,
+  junk: 4,
+  spam: 4, // Treat spam same as junk
+  trash: 5,
+};
+
+// Deduplicate mailboxes (e.g., "Sent" vs "Sent Mail")
+function deduplicateMailboxes(mailboxes: Mailbox[]): Mailbox[] {
+  const roleMap = new Map<string, Mailbox>();
+  const nameMap = new Map<string, Mailbox>();
+  const result: Mailbox[] = [];
+
+  // First pass: collect mailboxes with roles
+  mailboxes.forEach(mb => {
+    if (mb.role) {
+      roleMap.set(mb.role, mb);
+    }
+  });
+
+  // Second pass: filter out duplicates
+  mailboxes.forEach(mb => {
+    // If this mailbox has a role, always keep it
+    if (mb.role) {
+      result.push(mb);
+      return;
+    }
+
+    // Check if this is a duplicate of a role-based mailbox
+    const lowerName = mb.name.toLowerCase();
+    const isDuplicate = Array.from(roleMap.values()).some(roleMb => {
+      const roleLowerName = roleMb.name.toLowerCase();
+      // Check for common duplicates: "Sent Mail" vs "Sent", etc.
+      return lowerName.includes(roleLowerName) || roleLowerName.includes(lowerName);
+    });
+
+    // Only keep if not a duplicate
+    if (!isDuplicate) {
+      result.push(mb);
+    }
+  });
+
+  return result;
+}
+
 // Build a hierarchical tree structure from flat mailbox array
 export function buildMailboxTree(mailboxes: Mailbox[]): MailboxNode[] {
+  // Deduplicate mailboxes first
+  const deduplicated = deduplicateMailboxes(mailboxes);
+
+  // Separate own and shared mailboxes
+  const ownMailboxes = deduplicated.filter(mb => !mb.isShared);
+  const sharedMailboxes = deduplicated.filter(mb => mb.isShared);
+
   const mailboxMap = new Map<string, MailboxNode>();
   const rootMailboxes: MailboxNode[] = [];
 
-  // First pass: create nodes for all mailboxes
-  mailboxes.forEach(mailbox => {
+  // First pass: create nodes for own mailboxes
+  ownMailboxes.forEach(mailbox => {
     mailboxMap.set(mailbox.id, {
       ...mailbox,
       children: [],
@@ -62,8 +118,8 @@ export function buildMailboxTree(mailboxes: Mailbox[]): MailboxNode[] {
     });
   });
 
-  // Second pass: build tree structure
-  mailboxes.forEach(mailbox => {
+  // Second pass: build tree structure for own mailboxes
+  ownMailboxes.forEach(mailbox => {
     const node = mailboxMap.get(mailbox.id)!;
 
     if (mailbox.parentId && mailboxMap.has(mailbox.parentId)) {
@@ -77,9 +133,141 @@ export function buildMailboxTree(mailboxes: Mailbox[]): MailboxNode[] {
     }
   });
 
-  // Sort mailboxes at each level by sortOrder
+  // If we have shared mailboxes, create a virtual "Shared Folders" parent
+  if (sharedMailboxes.length > 0) {
+    // Group shared mailboxes by account
+    const accountGroups = new Map<string, Mailbox[]>();
+    sharedMailboxes.forEach(mb => {
+      const accountId = mb.accountId || 'unknown';
+      if (!accountGroups.has(accountId)) {
+        accountGroups.set(accountId, []);
+      }
+      accountGroups.get(accountId)!.push(mb);
+    });
+
+    // Create virtual nodes for each shared account
+    const sharedAccountNodes: MailboxNode[] = [];
+
+    accountGroups.forEach((accountMailboxes, accountId) => {
+      // Create account nodes
+      const accountMailboxMap = new Map<string, MailboxNode>();
+      const accountRootNodes: MailboxNode[] = [];
+
+      // Create nodes for this account's mailboxes
+      accountMailboxes.forEach(mailbox => {
+        accountMailboxMap.set(mailbox.id, {
+          ...mailbox,
+          children: [],
+          depth: 2 // Account level is depth 1, these are depth 2
+        });
+      });
+
+      // Build tree for this account's mailboxes
+      accountMailboxes.forEach(mailbox => {
+        const node = accountMailboxMap.get(mailbox.id)!;
+
+        if (mailbox.parentId && accountMailboxMap.has(mailbox.parentId)) {
+          const parent = accountMailboxMap.get(mailbox.parentId)!;
+          parent.children.push(node);
+          node.depth = parent.depth + 1;
+        } else {
+          accountRootNodes.push(node);
+        }
+      });
+
+      // Create virtual account folder node
+      const accountName = accountMailboxes[0]?.accountName || accountId;
+      const accountNode: MailboxNode = {
+        id: `shared-account-${accountId}`,
+        name: accountName,
+        sortOrder: 1000, // After all own folders
+        totalEmails: accountMailboxes.reduce((sum, mb) => sum + mb.totalEmails, 0),
+        unreadEmails: accountMailboxes.reduce((sum, mb) => sum + mb.unreadEmails, 0),
+        totalThreads: 0,
+        unreadThreads: 0,
+        myRights: {
+          mayReadItems: true,
+          mayAddItems: false,
+          mayRemoveItems: false,
+          maySetSeen: false,
+          maySetKeywords: false,
+          mayCreateChild: false,
+          mayRename: false,
+          mayDelete: false,
+          maySubmit: false,
+        },
+        isSubscribed: true,
+        accountId: accountId,
+        accountName: accountName,
+        isShared: true,
+        children: accountRootNodes,
+        depth: 1,
+      };
+
+      sharedAccountNodes.push(accountNode);
+    });
+
+    // Create virtual "Shared Folders" root node
+    const sharedFoldersNode: MailboxNode = {
+      id: 'shared-folders-root',
+      name: 'Shared Folders',
+      sortOrder: 999, // After all own folders
+      totalEmails: sharedMailboxes.reduce((sum, mb) => sum + mb.totalEmails, 0),
+      unreadEmails: sharedMailboxes.reduce((sum, mb) => sum + mb.unreadEmails, 0),
+      totalThreads: 0,
+      unreadThreads: 0,
+      myRights: {
+        mayReadItems: true,
+        mayAddItems: false,
+        mayRemoveItems: false,
+        maySetSeen: false,
+        maySetKeywords: false,
+        mayCreateChild: false,
+        mayRename: false,
+        mayDelete: false,
+        maySubmit: false,
+      },
+      isSubscribed: true,
+      isShared: true,
+      children: sharedAccountNodes,
+      depth: 0,
+    };
+
+    rootMailboxes.push(sharedFoldersNode);
+  }
+
+  // Smart multi-level sorting
   const sortNodes = (nodes: MailboxNode[]) => {
-    nodes.sort((a, b) => a.sortOrder - b.sortOrder);
+    nodes.sort((a, b) => {
+      // 1. Priority: Own folders before shared folders
+      if (a.isShared !== b.isShared) {
+        return a.isShared ? 1 : -1;
+      }
+
+      // 2. Priority: Role-based ordering (inbox first, trash last, etc.)
+      const aPriority = a.role ? (ROLE_PRIORITY[a.role] ?? 999) : 999;
+      const bPriority = b.role ? (ROLE_PRIORITY[b.role] ?? 999) : 999;
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+
+      // 3. Priority: Year folders (e.g., "2025", "2024") sorted numerically descending
+      const aIsYear = /^\d{4}$/.test(a.name);
+      const bIsYear = /^\d{4}$/.test(b.name);
+      if (aIsYear && bIsYear) {
+        return parseInt(b.name) - parseInt(a.name); // Descending: 2025, 2024, 2023...
+      }
+
+      // 4. Fallback: Server sortOrder
+      if (a.sortOrder !== b.sortOrder) {
+        return a.sortOrder - b.sortOrder;
+      }
+
+      // 5. Fallback: Alphabetical by name
+      return a.name.localeCompare(b.name);
+    });
+
+    // Recursively sort children
     nodes.forEach(node => {
       if (node.children.length > 0) {
         sortNodes(node.children);
