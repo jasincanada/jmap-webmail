@@ -600,13 +600,11 @@ export class JMAPClient {
 
     // Add attachments if provided
     if (attachments && attachments.length > 0) {
-      emailData.attachments = attachments.map((att, index) => ({
+      emailData.attachments = attachments.map(att => ({
         blobId: att.blobId,
         type: att.type,
         name: att.name,
-        size: att.size,
         disposition: "attachment",
-        partId: `att-${index}`,
       }));
     }
 
