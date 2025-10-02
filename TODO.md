@@ -107,7 +107,8 @@
 - [x] Fix theme switching and light mode application
 - [x] Fix language switcher functionality
 - [x] Add visual storage quota indicator with progress bar
-- [ ] Add loading states and skeletons
+- [x] Add loading states and skeletons
+- [x] Add smooth email loading transitions with cross-fade effect
 - [ ] Implement error boundaries
 - [ ] Create settings page
 - [ ] Add keyboard shortcuts (j/k navigation, etc.)
