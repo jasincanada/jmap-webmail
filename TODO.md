@@ -58,8 +58,8 @@
 - [x] Implement session establishment
 - [x] Handle connection errors and retries
 - [x] Fetch and display storage quota
-- [ ] Add server capability detection
-- [ ] Implement keep-alive mechanism
+- [x] Add server capability detection
+- [x] Implement keep-alive mechanism
 
 ### Email Operations
 - [x] Wire up real email fetching from JMAP
@@ -73,9 +73,9 @@
 - [x] Implement delete email
 - [x] Implement archive email
 - [x] Implement full-text search
-- [ ] Add draft auto-save
+- [x] Add draft auto-save
 - [x] Add attachment download support
-- [ ] Add attachment upload support
+- [x] Add attachment upload support
 - [ ] Implement batch operations (mark read/unread, delete multiple)
 - [ ] Add email threading support
 

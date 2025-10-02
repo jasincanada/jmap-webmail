@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Paperclip, Send } from "lucide-react";
+import { X, Paperclip, Send, Save, Check, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth-store";
 
 interface EmailComposerProps {
   onSend?: (data: {
@@ -84,8 +85,147 @@ export function EmailComposer({
   const [body, setBody] = useState(getInitialBody());
   const [showCc, setShowCc] = useState(!!getInitialCc());
   const [showBcc, setShowBcc] = useState(false);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedDataRef = useRef<string>("");
+  const [attachments, setAttachments] = useState<Array<{ file: File; blobId?: string; uploading?: boolean; error?: boolean }>>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSend = () => {
+  const { client } = useAuthStore();
+
+  // Handle file selection
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!client || !event.target.files) return;
+
+    const files = Array.from(event.target.files);
+
+    // Add files to attachments list with uploading state
+    const newAttachments = files.map(file => ({ file, uploading: true }));
+    setAttachments(prev => [...prev, ...newAttachments]);
+
+    // Upload each file
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
+        const { blobId } = await client.uploadBlob(file);
+
+        // Update attachment with blobId
+        setAttachments(prev =>
+          prev.map(att =>
+            att.file === file
+              ? { ...att, blobId, uploading: false }
+              : att
+          )
+        );
+      } catch (error) {
+        console.error(`Failed to upload ${file.name}:`, error);
+
+        // Mark attachment as failed
+        setAttachments(prev =>
+          prev.map(att =>
+            att.file === file
+              ? { ...att, uploading: false, error: true }
+              : att
+          )
+        );
+      }
+    }
+
+    // Clear the input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Remove attachment
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Auto-save draft functionality
+  const saveDraft = async () => {
+    if (!client) return;
+
+    const toAddresses = to.split(",").map(e => e.trim()).filter(Boolean);
+    const ccAddresses = cc.split(",").map(e => e.trim()).filter(Boolean);
+    const bccAddresses = bcc.split(",").map(e => e.trim()).filter(Boolean);
+
+    // Only save if there's some content
+    if (!toAddresses.length && !subject && !body) {
+      return;
+    }
+
+    // Prepare attachments for draft
+    const uploadedAttachments = attachments
+      .filter(att => att.blobId && !att.uploading)
+      .map(att => ({
+        blobId: att.blobId!,
+        name: att.file.name,
+        type: att.file.type,
+        size: att.file.size,
+      }));
+
+    // Create a hash of current data to compare with last saved
+    const currentData = JSON.stringify({ to: toAddresses, cc: ccAddresses, bcc: bccAddresses, subject, body, attachments: uploadedAttachments });
+
+    // Only save if data has changed
+    if (currentData === lastSavedDataRef.current) {
+      return;
+    }
+
+    setSaveStatus('saving');
+
+    try {
+      const savedDraftId = await client.createDraft(
+        toAddresses,
+        subject || "(No subject)",
+        body,
+        ccAddresses,
+        bccAddresses,
+        draftId || undefined,
+        uploadedAttachments
+      );
+
+      setDraftId(savedDraftId);
+      lastSavedDataRef.current = currentData;
+      setSaveStatus('saved');
+
+      // Reset status after 2 seconds
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (error) {
+      console.error('Failed to save draft:', error);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    }
+  };
+
+  // Trigger auto-save when content changes
+  useEffect(() => {
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Don't auto-save if there's no content
+    if (!to && !subject && !body) {
+      return;
+    }
+
+    // Set new timeout for auto-save (2 seconds after last change)
+    saveTimeoutRef.current = setTimeout(() => {
+      saveDraft();
+    }, 2000);
+
+    // Cleanup on unmount
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [to, cc, bcc, subject, body, attachments]);
+
+  const handleSend = async () => {
     const toAddresses = to.split(",").map(e => e.trim()).filter(Boolean);
     const ccAddresses = cc.split(",").map(e => e.trim()).filter(Boolean);
     const bccAddresses = bcc.split(",").map(e => e.trim()).filter(Boolean);
@@ -111,7 +251,27 @@ export function EmailComposer({
   return (
     <div className={cn("flex flex-col h-full bg-background border rounded-lg", className)}>
       <div className="flex items-center justify-between px-4 py-3 border-b">
-        <h3 className="font-semibold">New Message</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold">New Message</h3>
+          {saveStatus === 'saving' && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Save className="w-3 h-3 animate-pulse" />
+              <span>Saving...</span>
+            </div>
+          )}
+          {saveStatus === 'saved' && (
+            <div className="flex items-center gap-1 text-xs text-green-600">
+              <Check className="w-3 h-3" />
+              <span>Draft saved</span>
+            </div>
+          )}
+          {saveStatus === 'error' && (
+            <div className="flex items-center gap-1 text-xs text-red-600">
+              <X className="w-3 h-3" />
+              <span>Failed to save</span>
+            </div>
+          )}
+        </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="w-4 h-4" />
         </Button>
@@ -195,11 +355,60 @@ export function EmailComposer({
           />
         </div>
 
+        {/* Attachments display */}
+        {attachments.length > 0 && (
+          <div className="px-4 py-2 border-t">
+            <div className="flex flex-wrap gap-2">
+              {attachments.map((att, index) => (
+                <div
+                  key={index}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1 rounded-md text-sm",
+                    att.error ? "bg-red-50 text-red-700" : "bg-gray-100 text-gray-700"
+                  )}
+                >
+                  {att.uploading ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : att.error ? (
+                    <AlertCircle className="w-3 h-3" />
+                  ) : (
+                    <Paperclip className="w-3 h-3" />
+                  )}
+                  <span className="max-w-[200px] truncate">{att.file.name}</span>
+                  <span className="text-xs text-gray-500">
+                    ({(att.file.size / 1024).toFixed(1)} KB)
+                  </span>
+                  <button
+                    onClick={() => removeAttachment(index)}
+                    className="ml-1 hover:text-red-600"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between px-4 py-3 border-t">
-          <Button variant="ghost" size="sm">
-            <Paperclip className="w-4 h-4 mr-2" />
-            Attach
-          </Button>
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleFileSelect}
+              className="hidden"
+              accept="*/*"
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Paperclip className="w-4 h-4 mr-2" />
+              Attach
+            </Button>
+          </div>
           <Button onClick={handleSend}>
             <Send className="w-4 h-4 mr-2" />
             Send

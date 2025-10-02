@@ -8,6 +8,10 @@ export class JMAPClient {
   private apiUrl: string = "";
   private accountId: string = "";
   private downloadUrl: string = "";
+  private capabilities: Record<string, any> = {};
+  private session: any = null;
+  private lastPingTime: number = 0;
+  private pingInterval: NodeJS.Timeout | null = null;
 
   constructor(serverUrl: string, username: string, password: string) {
     this.serverUrl = serverUrl.replace(/\/$/, '');
@@ -41,6 +45,13 @@ export class JMAPClient {
       const session = await sessionResponse.json();
       console.log('Session:', session);
 
+      // Store the full session for reference
+      this.session = session;
+
+      // Extract and store capabilities
+      this.capabilities = session.capabilities || {};
+      console.log('Server capabilities:', Object.keys(this.capabilities));
+
       // Extract the API URL
       this.apiUrl = session.apiUrl;
       console.log('API URL:', this.apiUrl);
@@ -63,10 +74,79 @@ export class JMAPClient {
       }
 
       console.log('Account ID:', this.accountId);
+
+      // Start keep-alive mechanism
+      this.startKeepAlive();
     } catch (error) {
       console.error('Connection failed:', error);
       throw error;
     }
+  }
+
+  private startKeepAlive(): void {
+    // Stop any existing interval
+    this.stopKeepAlive();
+
+    // Ping every 30 seconds to keep the connection alive
+    const PING_INTERVAL = 30000; // 30 seconds
+
+    this.pingInterval = setInterval(async () => {
+      try {
+        await this.ping();
+      } catch (error) {
+        console.error('Keep-alive ping failed:', error);
+        // If ping fails, try to reconnect
+        try {
+          await this.reconnect();
+        } catch (reconnectError) {
+          console.error('Reconnection failed:', reconnectError);
+        }
+      }
+    }, PING_INTERVAL);
+
+    console.log('Keep-alive mechanism started (ping every 30s)');
+  }
+
+  private stopKeepAlive(): void {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+      console.log('Keep-alive mechanism stopped');
+    }
+  }
+
+  async ping(): Promise<void> {
+    if (!this.apiUrl) {
+      throw new Error('Not connected');
+    }
+
+    const now = Date.now();
+
+    // Use Echo method for lightweight ping
+    const response = await this.request([
+      ["Core/echo", { ping: "pong" }, "0"]
+    ]);
+
+    if (response.methodResponses?.[0]?.[0] === "Core/echo") {
+      this.lastPingTime = now;
+      console.log('Keep-alive ping successful');
+    } else {
+      throw new Error('Ping failed');
+    }
+  }
+
+  async reconnect(): Promise<void> {
+    console.log('Attempting to reconnect...');
+    await this.connect();
+  }
+
+  disconnect(): void {
+    this.stopKeepAlive();
+    this.apiUrl = "";
+    this.accountId = "";
+    this.session = null;
+    this.capabilities = {};
+    console.log('Disconnected from JMAP server');
   }
 
   private async request(methodCalls: any[]): Promise<any> {
@@ -470,17 +550,115 @@ export class JMAPClient {
     }
   }
 
+  async createDraft(
+    to: string[],
+    subject: string,
+    body: string,
+    cc?: string[],
+    bcc?: string[],
+    draftId?: string,
+    attachments?: Array<{ blobId: string; name: string; type: string; size: number }>
+  ): Promise<string> {
+    // Find the drafts mailbox
+    const mailboxes = await this.getMailboxes();
+    const draftsMailbox = mailboxes.find(mb => mb.role === 'drafts');
+
+    if (!draftsMailbox) {
+      throw new Error('No drafts mailbox found');
+    }
+
+    const emailId = draftId || `draft-${Date.now()}`;
+
+    // Build email object with attachments if provided
+    const emailData: any = {
+      from: [{ email: this.username }],
+      to: to.map(email => ({ email })),
+      cc: cc?.map(email => ({ email })),
+      bcc: bcc?.map(email => ({ email })),
+      subject: subject,
+      keywords: { "$draft": true },
+      mailboxIds: { [draftsMailbox.id]: true },
+      bodyValues: {
+        "1": {
+          value: body,
+        },
+      },
+      textBody: [
+        {
+          partId: "1",
+        },
+      ],
+    };
+
+    // Add attachments if provided
+    if (attachments && attachments.length > 0) {
+      emailData.attachments = attachments.map((att, index) => ({
+        blobId: att.blobId,
+        type: att.type,
+        name: att.name,
+        size: att.size,
+        disposition: "attachment",
+        partId: `att-${index}`,
+      }));
+    }
+
+    const response = await this.request([
+      ["Email/set", {
+        accountId: this.accountId,
+        [draftId ? 'update' : 'create']: draftId ? {
+          [draftId]: emailData
+        } : {
+          [emailId]: emailData
+        },
+      }, "0"],
+    ]);
+
+    // Extract the created/updated email ID
+    if (response.methodResponses?.[0]?.[0] === "Email/set") {
+      const result = response.methodResponses[0][1];
+      if (draftId && result.updated?.[draftId]) {
+        return draftId;
+      } else if (result.created?.[emailId]) {
+        return result.created[emailId].id;
+      }
+    }
+
+    throw new Error('Failed to save draft');
+  }
+
   async sendEmail(
     to: string[],
     subject: string,
     body: string,
     cc?: string[],
-    bcc?: string[]
+    bcc?: string[],
+    draftId?: string
   ): Promise<void> {
-    const emailId = `draft-${Date.now()}`;
+    const emailId = draftId || `draft-${Date.now()}`;
 
-    await this.request([
-      ["Email/set", {
+    const methodCalls: any[] = [];
+
+    // If we have a draftId, update it and remove draft keyword
+    // Otherwise, create a new email
+    if (draftId) {
+      methodCalls.push(["Email/set", {
+        accountId: this.accountId,
+        update: {
+          [draftId]: {
+            "keywords/$draft": false,
+          },
+        },
+      }, "0"]);
+      methodCalls.push(["EmailSubmission/set", {
+        accountId: this.accountId,
+        create: {
+          "1": {
+            emailId: draftId,
+          },
+        },
+      }, "1"]);
+    } else {
+      methodCalls.push(["Email/set", {
         accountId: this.accountId,
         create: {
           [emailId]: {
@@ -503,16 +681,64 @@ export class JMAPClient {
             ],
           },
         },
-      }, "0"],
-      ["EmailSubmission/set", {
+      }, "0"]);
+      methodCalls.push(["EmailSubmission/set", {
         accountId: this.accountId,
         create: {
           "1": {
             emailId: `#${emailId}`,
           },
         },
-      }, "1"],
-    ]);
+      }, "1"]);
+    }
+
+    await this.request(methodCalls);
+  }
+
+  async uploadBlob(file: File): Promise<{ blobId: string; size: number; type: string }> {
+    if (!this.session) {
+      throw new Error('Not connected. Call connect() first.');
+    }
+
+    // Get upload URL from session
+    const uploadUrl = this.session.uploadUrl;
+    if (!uploadUrl) {
+      throw new Error('Upload URL not available');
+    }
+
+    // Replace accountId in the upload URL
+    const finalUploadUrl = uploadUrl.replace('{accountId}', encodeURIComponent(this.accountId));
+
+    // Create FormData with the file
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(finalUploadUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': this.authHeader,
+      },
+      body: file, // Send the file directly as binary
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to upload file: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    // Response should contain accountId -> blobId mapping
+    const blobInfo = result[this.accountId];
+
+    if (!blobInfo || !blobInfo.blobId) {
+      throw new Error('Invalid upload response');
+    }
+
+    return {
+      blobId: blobInfo.blobId,
+      size: blobInfo.size || file.size,
+      type: blobInfo.type || file.type,
+    };
   }
 
   getBlobDownloadUrl(blobId: string, name?: string, type?: string): string {
@@ -538,6 +764,45 @@ export class JMAPClient {
     url = url.replace('{type}', encodeURIComponent(mimeType));
 
     return url;
+  }
+
+  // Capability checking methods
+  getCapabilities(): Record<string, any> {
+    return this.capabilities;
+  }
+
+  hasCapability(capability: string): boolean {
+    return capability in this.capabilities;
+  }
+
+  getMaxSizeUpload(): number {
+    const coreCapability = this.capabilities["urn:ietf:params:jmap:core"];
+    return coreCapability?.maxSizeUpload || 0;
+  }
+
+  getMaxCallsInRequest(): number {
+    const coreCapability = this.capabilities["urn:ietf:params:jmap:core"];
+    return coreCapability?.maxCallsInRequest || 50;
+  }
+
+  getEventSourceUrl(): string | null {
+    const session = this.session;
+    if (!session?.capabilities?.["urn:ietf:params:jmap:core"]?.eventSourceUrl) {
+      return null;
+    }
+    return session.capabilities["urn:ietf:params:jmap:core"].eventSourceUrl;
+  }
+
+  supportsEmailSubmission(): boolean {
+    return this.hasCapability("urn:ietf:params:jmap:submission");
+  }
+
+  supportsQuota(): boolean {
+    return this.hasCapability("urn:ietf:params:jmap:quota");
+  }
+
+  supportsVacationResponse(): boolean {
+    return this.hasCapability("urn:ietf:params:jmap:vacationresponse");
   }
 
   async downloadBlob(blobId: string, name?: string, type?: string): Promise<void> {

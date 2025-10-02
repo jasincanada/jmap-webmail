@@ -71,6 +71,13 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        const state = get();
+
+        // Disconnect the JMAP client if it exists
+        if (state.client) {
+          state.client.disconnect();
+        }
+
         set({
           isAuthenticated: false,
           serverUrl: null,
