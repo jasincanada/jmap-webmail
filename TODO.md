@@ -74,9 +74,12 @@
 - [x] Implement archive email
 - [x] Implement full-text search
 - [x] Add draft auto-save
+- [x] Fix draft auto-save integration (properly use drafts when sending)
+- [x] Add draft discard confirmation with cleanup
 - [x] Add attachment download support
 - [x] Add attachment upload support
 - [x] Implement batch operations (mark read/unread, delete multiple)
+- [x] Implement functional quick reply form
 - [ ] Add email threading support
 
 ### Real-time Updates
@@ -109,6 +112,7 @@
 - [x] Add visual storage quota indicator with progress bar
 - [x] Add loading states and skeletons
 - [x] Add smooth email loading transitions with cross-fade effect
+- [x] Implement functional quick reply with auto-expand and direct send
 - [ ] Implement error boundaries
 - [ ] Create settings page
 - [ ] Add keyboard shortcuts (j/k navigation, etc.)
