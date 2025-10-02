@@ -130,6 +130,7 @@
     "send": "Envoyer",
     "cancel": "Annuler",
     "attach": "Joindre des fichiers",
+    "discard_draft_confirm": "Vous avez des modifications non enregistrées. Voulez-vous supprimer ce brouillon ?",
     "quote": {
       "reply_header": "Le {{date}}, {{sender}} a écrit :",
       "forward_header": "---------- Message transféré ----------",

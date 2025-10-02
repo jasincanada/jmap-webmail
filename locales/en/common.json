@@ -130,6 +130,7 @@
     "send": "Send",
     "cancel": "Cancel",
     "attach": "Attach files",
+    "discard_draft_confirm": "You have unsaved changes. Do you want to discard this draft?",
     "quote": {
       "reply_header": "On {{date}}, {{sender}} wrote:",
       "forward_header": "---------- Forwarded message ----------",

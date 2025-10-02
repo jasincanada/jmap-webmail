@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, Paperclip, Send, Save, Check, Loader2, AlertCircle } from "lucide-react";
@@ -14,8 +15,10 @@ interface EmailComposerProps {
     bcc: string[];
     subject: string;
     body: string;
+    draftId?: string;
   }) => void;
   onClose?: () => void;
+  onDiscardDraft?: (draftId: string) => void;
   className?: string;
   mode?: 'compose' | 'reply' | 'replyAll' | 'forward';
   replyTo?: {
@@ -31,10 +34,13 @@ interface EmailComposerProps {
 export function EmailComposer({
   onSend,
   onClose,
+  onDiscardDraft,
   className,
   mode = 'compose',
   replyTo
 }: EmailComposerProps) {
+  const t = useTranslations('email_composer');
+
   // Initialize with reply/forward data if provided
   const getInitialTo = () => {
     if (!replyTo) return "";
@@ -231,12 +237,19 @@ export function EmailComposer({
     const bccAddresses = bcc.split(",").map(e => e.trim()).filter(Boolean);
 
     if (toAddresses.length > 0 && subject && body) {
+      // Wait for any pending auto-save to complete
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        await saveDraft();
+      }
+
       onSend?.({
         to: toAddresses,
         cc: ccAddresses,
         bcc: bccAddresses,
         subject,
         body,
+        draftId: draftId || undefined,
       });
 
       // Reset form
@@ -245,6 +258,30 @@ export function EmailComposer({
       setBcc("");
       setSubject("");
       setBody("");
+      setDraftId(null);
+    }
+  };
+
+  const handleClose = () => {
+    // If there's a draft with content, ask user if they want to discard
+    if (draftId && (to || subject || body)) {
+      const confirmDiscard = window.confirm(t('discard_draft_confirm'));
+
+      if (confirmDiscard) {
+        // Clear any pending auto-save
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+
+        // Delete the draft if callback is provided
+        if (onDiscardDraft) {
+          onDiscardDraft(draftId);
+        }
+
+        onClose?.();
+      }
+    } else {
+      onClose?.();
     }
   };
 
@@ -272,7 +309,7 @@ export function EmailComposer({
             </div>
           )}
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose}>
+        <Button variant="ghost" size="icon" onClick={handleClose}>
           <X className="w-4 h-4" />
         </Button>
       </div>

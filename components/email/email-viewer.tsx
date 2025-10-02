@@ -65,6 +65,9 @@ interface EmailViewerProps {
   onMarkAsRead?: (emailId: string, read: boolean) => void;
   onSetColorTag?: (emailId: string, color: string | null) => void;
   onDownloadAttachment?: (blobId: string, name: string, type?: string) => void;
+  onQuickReply?: (body: string) => Promise<void>;
+  currentUserEmail?: string;
+  currentUserName?: string;
 }
 
 // Helper function to get file icon based on mime type or extension
@@ -126,10 +129,16 @@ export function EmailViewer({
   onMarkAsRead,
   onSetColorTag,
   onDownloadAttachment,
+  onQuickReply,
+  currentUserEmail,
+  currentUserName,
 }: EmailViewerProps) {
   const [showFullHeaders, setShowFullHeaders] = useState(false);
   const [allowExternalContent, setAllowExternalContent] = useState(false);
   const [hasBlockedContent, setHasBlockedContent] = useState(false);
+  const [quickReplyText, setQuickReplyText] = useState("");
+  const [isQuickReplyFocused, setIsQuickReplyFocused] = useState(false);
+  const [isSendingQuickReply, setIsSendingQuickReply] = useState(false);
   const currentColor = getCurrentColor(email?.keywords);
 
   useEffect(() => {
@@ -139,10 +148,12 @@ export function EmailViewer({
     }
   }, [email?.id, email?.keywords?.$seen, onMarkAsRead]);
 
-  // Reset external content permission when email changes
+  // Reset external content permission and quick reply when email changes
   useEffect(() => {
     setAllowExternalContent(false);
     setHasBlockedContent(false);
+    setQuickReplyText("");
+    setIsQuickReplyFocused(false);
   }, [email?.id]);
 
   // Sanitize and prepare email HTML content
@@ -986,37 +997,95 @@ export function EmailViewer({
           </div>
 
           {/* Quick Reply Section */}
-          <div className="mt-6 bg-background rounded-lg shadow-sm border border-border p-4">
-            <div className="flex items-center gap-3">
-              <Avatar
-                name="You"
-                email=""
-                size="sm"
-              />
-              <div className="flex-1">
-                <input
-                  type="text"
-                  placeholder="Reply..."
-                  className="w-full px-3 py-2 text-sm border border-border bg-background text-foreground rounded-lg hover:border-accent focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all"
-                  onFocus={(e) => {
-                    e.target.placeholder = "Type your reply...";
-                    e.target.parentElement?.parentElement?.classList.add('focused');
-                  }}
-                  onBlur={(e) => {
-                    e.target.placeholder = "Reply...";
-                    if (!e.target.value) {
-                      e.target.parentElement?.parentElement?.classList.remove('focused');
-                    }
-                  }}
+          <div className={cn(
+            "mt-6 bg-background rounded-lg shadow-sm border transition-all",
+            isQuickReplyFocused || quickReplyText ? "border-primary" : "border-border"
+          )}>
+            <div className="p-4">
+              <div className="flex items-start gap-3">
+                <Avatar
+                  name={currentUserName || "You"}
+                  email={currentUserEmail || ""}
+                  size="sm"
                 />
+                <div className="flex-1 space-y-3">
+                  <textarea
+                    value={quickReplyText}
+                    onChange={(e) => setQuickReplyText(e.target.value)}
+                    onFocus={() => setIsQuickReplyFocused(true)}
+                    placeholder="Write a quick reply..."
+                    className={cn(
+                      "w-full px-3 py-2 text-sm border border-border bg-background text-foreground rounded-lg",
+                      "hover:border-accent focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all",
+                      "resize-none"
+                    )}
+                    rows={isQuickReplyFocused || quickReplyText ? 3 : 1}
+                    disabled={isSendingQuickReply}
+                  />
+
+                  {/* Action buttons - show when focused or has text */}
+                  {(isQuickReplyFocused || quickReplyText) && (
+                    <div className="flex items-center justify-between gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <div className="text-xs text-muted-foreground">
+                        {quickReplyText.length > 0 && `${quickReplyText.length} characters`}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setQuickReplyText("");
+                            setIsQuickReplyFocused(false);
+                          }}
+                          disabled={isSendingQuickReply}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={onReply}
+                          disabled={isSendingQuickReply}
+                          className="text-muted-foreground"
+                        >
+                          <MoreVertical className="w-4 h-4 mr-1" />
+                          More options
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            if (!quickReplyText.trim() || !onQuickReply) return;
+
+                            setIsSendingQuickReply(true);
+                            try {
+                              await onQuickReply(quickReplyText);
+                              setQuickReplyText("");
+                              setIsQuickReplyFocused(false);
+                            } catch (error) {
+                              console.error("Failed to send quick reply:", error);
+                            } finally {
+                              setIsSendingQuickReply(false);
+                            }
+                          }}
+                          disabled={!quickReplyText.trim() || isSendingQuickReply}
+                        >
+                          {isSendingQuickReply ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            <>
+                              <Reply className="w-4 h-4 mr-1" />
+                              Send
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <Button
-                onClick={onReply}
-                size="sm"
-                className="opacity-60 hover:opacity-100 transition-opacity"
-              >
-                Send
-              </Button>
             </div>
           </div>
         </div>

@@ -59,7 +59,6 @@ export default function Home() {
   useEffect(() => {
     if (isAuthenticated && client && !dataLoaded) {
       const loadData = async () => {
-        console.log('Loading email data...');
         try {
           // First fetch mailboxes and quota
           await Promise.all([
@@ -72,13 +71,11 @@ export default function Home() {
           const inboxMailbox = state.mailboxes.find(m => m.role === 'inbox');
 
           if (inboxMailbox) {
-            console.log('Found inbox mailbox:', inboxMailbox.id, inboxMailbox.name);
             // Update selected mailbox to actual inbox ID
             state.selectMailbox(inboxMailbox.id);
             // Now fetch emails with correct mailbox ID
             await fetchEmails(client, inboxMailbox.id);
           } else {
-            console.log('No inbox found, fetching all emails');
             await fetchEmails(client);
           }
 
@@ -97,14 +94,25 @@ export default function Home() {
     bcc: string[];
     subject: string;
     body: string;
+    draftId?: string;
   }) => {
     if (!client) return;
 
     try {
-      await sendEmail(client, data.to, data.subject, data.body, data.cc, data.bcc);
+      await sendEmail(client, data.to, data.subject, data.body, data.cc, data.bcc, data.draftId);
       setShowComposer(false);
     } catch (error) {
       console.error("Failed to send email:", error);
+    }
+  };
+
+  const handleDiscardDraft = async (draftId: string) => {
+    if (!client) return;
+
+    try {
+      await client.deleteEmail(draftId);
+    } catch (error) {
+      console.error("Failed to discard draft:", error);
     }
   };
 
@@ -222,6 +230,26 @@ export default function Home() {
     }
   };
 
+  const handleQuickReply = async (body: string) => {
+    if (!client || !selectedEmail) return;
+
+    const sender = selectedEmail.from?.[0];
+    if (!sender?.email) {
+      throw new Error("No sender email found");
+    }
+
+    // Send reply with just the body text
+    await sendEmail(
+      client,
+      [sender.email],
+      `Re: ${selectedEmail.subject || "(no subject)"}`,
+      body
+    );
+
+    // Refresh emails to show the sent reply
+    await fetchEmails(client, selectedMailbox);
+  };
+
   // Show loading state while checking auth
   if (!initialCheckDone || authLoading || (!isAuthenticated || !client)) {
     return (
@@ -295,6 +323,9 @@ export default function Home() {
           }
         }}
         onDownloadAttachment={handleDownloadAttachment}
+        onQuickReply={handleQuickReply}
+        currentUserEmail={client?.["username"]}
+        currentUserName={client?.["username"]?.split("@")[0]}
       />
 
       {/* Email Composer Modal */}
@@ -316,6 +347,7 @@ export default function Home() {
                 setShowComposer(false);
                 setComposerMode('compose');
               }}
+              onDiscardDraft={handleDiscardDraft}
             />
           </div>
         </div>

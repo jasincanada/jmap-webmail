@@ -21,11 +21,8 @@ export class JMAPClient {
   }
 
   async connect(): Promise<void> {
-    console.log('FinalJMAPClient: Connecting to', this.serverUrl);
-
     // Get the session first
     const sessionUrl = `${this.serverUrl}/.well-known/jmap`;
-    console.log('Fetching session from:', sessionUrl);
 
     try {
       const sessionResponse = await fetch(sessionUrl, {
@@ -43,18 +40,15 @@ export class JMAPClient {
       }
 
       const session = await sessionResponse.json();
-      console.log('Session:', session);
 
       // Store the full session for reference
       this.session = session;
 
       // Extract and store capabilities
       this.capabilities = session.capabilities || {};
-      console.log('Server capabilities:', Object.keys(this.capabilities));
 
       // Extract the API URL
       this.apiUrl = session.apiUrl;
-      console.log('API URL:', this.apiUrl);
 
       // Extract the download URL
       this.downloadUrl = session.downloadUrl;
@@ -72,8 +66,6 @@ export class JMAPClient {
           throw new Error('No mail account found in session');
         }
       }
-
-      console.log('Account ID:', this.accountId);
 
       // Start keep-alive mechanism
       this.startKeepAlive();
@@ -683,16 +675,44 @@ export class JMAPClient {
   ): Promise<void> {
     const emailId = draftId || `draft-${Date.now()}`;
 
+    // Find the Sent mailbox
+    const mailboxes = await this.getMailboxes();
+    const sentMailbox = mailboxes.find(mb => mb.role === 'sent');
+
+    if (!sentMailbox) {
+      throw new Error('No sent mailbox found');
+    }
+
+    // Get the identity ID - fetch identities from server
+    const identityResponse = await this.request([
+      ["Identity/get", {
+        accountId: this.accountId,
+      }, "0"]
+    ]);
+
+    let identityId = this.accountId; // fallback
+
+    if (identityResponse.methodResponses?.[0]?.[0] === "Identity/get") {
+      const identities = identityResponse.methodResponses[0][1].list || [];
+
+      if (identities.length > 0) {
+        // Use the first identity (or find one matching the username)
+        const matchingIdentity = identities.find((id: any) => id.email === this.username);
+        identityId = matchingIdentity?.id || identities[0].id;
+      }
+    }
+
     const methodCalls: any[] = [];
 
-    // If we have a draftId, update it and remove draft keyword
-    // Otherwise, create a new email
+    // If we have a draftId, update it and remove draft keyword, move to Sent
+    // Otherwise, create a new email in Sent
     if (draftId) {
       methodCalls.push(["Email/set", {
         accountId: this.accountId,
         update: {
           [draftId]: {
             "keywords/$draft": false,
+            mailboxIds: { [sentMailbox.id]: true },
           },
         },
       }, "0"]);
@@ -701,6 +721,7 @@ export class JMAPClient {
         create: {
           "1": {
             emailId: draftId,
+            identityId: identityId,
           },
         },
       }, "1"]);
@@ -715,7 +736,7 @@ export class JMAPClient {
             bcc: bcc?.map(email => ({ email })),
             subject: subject,
             keywords: {},
-            mailboxIds: {},
+            mailboxIds: { [sentMailbox.id]: true },
             bodyValues: {
               "1": {
                 value: body,
@@ -734,12 +755,31 @@ export class JMAPClient {
         create: {
           "1": {
             emailId: `#${emailId}`,
+            identityId: identityId,
           },
         },
       }, "1"]);
     }
 
-    await this.request(methodCalls);
+    const response = await this.request(methodCalls);
+
+    // Check for errors in the response
+    if (response.methodResponses) {
+      for (const [methodName, result] of response.methodResponses) {
+        if (methodName.endsWith('/error')) {
+          console.error('JMAP method error:', result);
+          throw new Error(result.description || `Failed to send email: ${result.type}`);
+        }
+
+        // Check for notCreated/notUpdated
+        if (result.notCreated || result.notUpdated) {
+          const errors = result.notCreated || result.notUpdated;
+          const firstError = Object.values(errors)[0] as any;
+          console.error('Email send error:', firstError);
+          throw new Error(firstError.description || firstError.type || 'Failed to send email');
+        }
+      }
+    }
   }
 
   async uploadBlob(file: File): Promise<{ blobId: string; size: number; type: string }> {
