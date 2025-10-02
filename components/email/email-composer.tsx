@@ -150,8 +150,8 @@ export function EmailComposer({
   };
 
   // Auto-save draft functionality
-  const saveDraft = async () => {
-    if (!client) return;
+  const saveDraft = async (): Promise<string | null> => {
+    if (!client) return null;
 
     const toAddresses = to.split(",").map(e => e.trim()).filter(Boolean);
     const ccAddresses = cc.split(",").map(e => e.trim()).filter(Boolean);
@@ -159,7 +159,7 @@ export function EmailComposer({
 
     // Only save if there's some content
     if (!toAddresses.length && !subject && !body) {
-      return;
+      return null;
     }
 
     // Prepare attachments for draft
@@ -177,7 +177,7 @@ export function EmailComposer({
 
     // Only save if data has changed
     if (currentData === lastSavedDataRef.current) {
-      return;
+      return draftId;
     }
 
     setSaveStatus('saving');
@@ -199,10 +199,13 @@ export function EmailComposer({
 
       // Reset status after 2 seconds
       setTimeout(() => setSaveStatus('idle'), 2000);
+
+      return savedDraftId;
     } catch (error) {
       console.error('Failed to save draft:', error);
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 3000);
+      return null;
     }
   };
 
@@ -237,10 +240,15 @@ export function EmailComposer({
     const bccAddresses = bcc.split(",").map(e => e.trim()).filter(Boolean);
 
     if (toAddresses.length > 0 && subject && body) {
-      // Wait for any pending auto-save to complete
+      // Wait for any pending auto-save to complete and get the latest draft ID
+      let finalDraftId = draftId;
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
-        await saveDraft();
+        // saveDraft returns the new draft ID after destroy+create
+        const savedId = await saveDraft();
+        if (savedId) {
+          finalDraftId = savedId;
+        }
       }
 
       onSend?.({
@@ -249,7 +257,7 @@ export function EmailComposer({
         bcc: bccAddresses,
         subject,
         body,
-        draftId: draftId || undefined,
+        draftId: finalDraftId || undefined,
       });
 
       // Reset form
