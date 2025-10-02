@@ -239,7 +239,10 @@ export function EmailComposer({
     const ccAddresses = cc.split(",").map(e => e.trim()).filter(Boolean);
     const bccAddresses = bcc.split(",").map(e => e.trim()).filter(Boolean);
 
-    if (toAddresses.length > 0 && subject && body) {
+    // Allow sending if we have recipient, subject, and either body text or attachments
+    const hasContent = body || attachments.some(att => att.blobId && !att.uploading);
+
+    if (toAddresses.length > 0 && subject && hasContent) {
       // Wait for any pending auto-save to complete and get the latest draft ID
       let finalDraftId = draftId;
       if (saveTimeoutRef.current) {
