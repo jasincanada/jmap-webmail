@@ -76,7 +76,7 @@
 - [x] Add draft auto-save
 - [x] Add attachment download support
 - [x] Add attachment upload support
-- [ ] Implement batch operations (mark read/unread, delete multiple)
+- [x] Implement batch operations (mark read/unread, delete multiple)
 - [ ] Add email threading support
 
 ### Real-time Updates
