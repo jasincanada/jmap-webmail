@@ -277,12 +277,12 @@ export function EmailViewer({
 
   if (!email) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-muted/30 to-muted/50">
         <div className="text-center p-8">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-background shadow-lg flex items-center justify-center">
-            <Mail className="w-10 h-10 text-gray-400 dark:text-gray-500" />
+            <Mail className="w-10 h-10 text-muted-foreground" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">No conversation selected</h3>
+          <h3 className="text-xl font-semibold text-foreground mb-2">No conversation selected</h3>
           <p className="text-muted-foreground">Choose a conversation from the list to read it here</p>
         </div>
       </div>
@@ -301,10 +301,10 @@ export function EmailViewer({
         <div className="px-6 py-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight truncate pr-2">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight truncate pr-2">
                 {email.subject || "(no subject)"}
               </h1>
-              <div className="flex items-center gap-3 mt-2 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4" />
                   {new Date(email.receivedAt).toLocaleString('en-US', {
@@ -348,22 +348,22 @@ export function EmailViewer({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 hover:bg-gray-100 hover:bg-muted"
+                  className="h-8 w-8 hover:bg-muted"
                   title="More reply options"
                 >
                   <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </Button>
-                <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-900 rounded-md shadow-lg border dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                <div className="absolute right-0 top-full mt-1 w-40 bg-background rounded-md shadow-lg border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
                   <button
                     onClick={onReplyAll}
-                    className="w-full px-3 py-2 text-sm text-left hover:bg-gray-50 hover:bg-muted dark:text-gray-200 flex items-center gap-2"
+                    className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
                   >
                     <ReplyAll className="w-4 h-4" />
                     Reply all
                   </button>
                   <button
                     onClick={onForward}
-                    className="w-full px-3 py-2 text-sm text-left hover:bg-gray-50 hover:bg-muted dark:text-gray-200 flex items-center gap-2"
+                    className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
                   >
                     <Forward className="w-4 h-4" />
                     Forward
@@ -371,45 +371,45 @@ export function EmailViewer({
                 </div>
               </div>
 
-              <div className="w-px h-5 bg-gray-200 dark:bg-gray-700" />
+              <div className="w-px h-5 bg-border" />
 
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={onArchive}
-                className="h-8 w-8 hover:bg-gray-100 hover:bg-muted"
+                className="h-8 w-8 hover:bg-muted"
                 title="Archive"
               >
-                <Archive className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <Archive className="w-4 h-4 text-muted-foreground" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={onDelete}
-                className="h-8 w-8 hover:bg-gray-100 hover:bg-muted"
+                className="h-8 w-8 hover:bg-muted"
                 title="Delete"
               >
-                <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <Trash2 className="w-4 h-4 text-muted-foreground" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={onToggleStar}
-                className="h-8 w-8 hover:bg-gray-100"
+                className="h-8 w-8 hover:bg-muted"
                 title={isStarred ? "Unstar" : "Star"}
               >
                 <Star className={cn(
                   "w-4 h-4 transition-colors",
-                  isStarred ? "fill-yellow-400 text-yellow-400" : "text-gray-600"
+                  isStarred ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
                 )} />
               </Button>
 
-              <div className="w-px h-5 bg-gray-200 mx-1" />
+              <div className="w-px h-5 bg-border mx-1" />
 
               {/* Compact Dynamic Color Picker */}
               <div className="relative group">
                 <button
-                  className="h-8 w-8 rounded hover:bg-gray-100 flex items-center justify-center"
+                  className="h-8 w-8 rounded hover:bg-muted flex items-center justify-center"
                   title="Set color"
                 >
                   <Circle className={cn(
@@ -426,7 +426,7 @@ export function EmailViewer({
                 </button>
 
                 {/* Colors appear on hover */}
-                <div className="absolute right-0 top-full mt-1 p-1.5 bg-white dark:bg-gray-900 rounded-lg shadow-lg border dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                <div className="absolute right-0 top-full mt-1 p-1.5 bg-background rounded-lg shadow-lg border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
                   <div className="flex gap-1">
                     {colorOptions.map((option) => (
                       <button
@@ -896,7 +896,7 @@ export function EmailViewer({
             <div className="email-content-wrapper p-6">
               {emailContent.isHtml ? (
                 <div
-                  className="email-content prose prose-gray dark:prose-invert max-w-none"
+                  className="email-content prose dark:prose-invert max-w-none"
                   dangerouslySetInnerHTML={{ __html: emailContent.html }}
                   style={{
                     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
@@ -906,7 +906,7 @@ export function EmailViewer({
                 />
               ) : (
                 <div
-                  className="email-content-text text-gray-700 dark:text-gray-300"
+                  className="email-content-text text-foreground"
                   dangerouslySetInnerHTML={{ __html: emailContent.html }}
                   style={{
                     fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace',
