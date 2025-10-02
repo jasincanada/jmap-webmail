@@ -89,9 +89,9 @@ export function EmailList({
           hasSelection ? "max-h-16 opacity-100" : "max-h-0 opacity-0"
         )}
       >
-        <div className="px-4 py-2 border-b bg-blue-50 dark:bg-blue-950/30 border-border flex items-center justify-between">
+        <div className="px-4 py-2 border-b bg-accent/30 border-border flex items-center justify-between">
           <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-3 duration-300">
-            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+            <span className="text-sm font-medium text-foreground">
               {selectedEmailIds.size} {selectedEmailIds.size === 1 ? 'email' : 'emails'} selected
             </span>
           </div>
@@ -102,7 +102,7 @@ export function EmailList({
               onClick={() => handleBatchMarkAsRead(true)}
               title="Mark as read"
               disabled={isProcessing}
-              className="hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50"
+              className="hover:bg-accent transition-colors disabled:opacity-50"
             >
               {isProcessing ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -116,7 +116,7 @@ export function EmailList({
               onClick={() => handleBatchMarkAsRead(false)}
               title="Mark as unread"
               disabled={isProcessing}
-              className="hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50"
+              className="hover:bg-accent transition-colors disabled:opacity-50"
             >
               {isProcessing ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -130,7 +130,7 @@ export function EmailList({
               onClick={handleBatchDelete}
               title="Delete"
               disabled={isProcessing}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
+              className="text-red-600 dark:text-red-400 hover:bg-red-100/50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
             >
               {isProcessing ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -162,7 +162,7 @@ export function EmailList({
               "p-1 rounded transition-all duration-200",
               "hover:bg-muted hover:scale-110",
               "active:scale-95",
-              allSelected && "text-blue-600"
+              allSelected && "text-primary"
             )}
             title={allSelected ? "Deselect all" : "Select all"}
           >

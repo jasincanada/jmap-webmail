@@ -64,7 +64,7 @@ export function EmailListItem({ email, selected, onClick }: EmailListItemProps) 
         colorTag && "hover:brightness-95 dark:hover:brightness-110",
         isUnread && !colorTag && "bg-accent/30",
         // Add visual feedback for checked state
-        isChecked && "ring-2 ring-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20"
+        isChecked && "ring-2 ring-primary/20 bg-accent/40"
       )}
       onClick={onClick}
     >
@@ -76,7 +76,7 @@ export function EmailListItem({ email, selected, onClick }: EmailListItemProps) 
             "p-1 rounded mt-2 flex-shrink-0 transition-all duration-200",
             "hover:bg-muted/50 hover:scale-110",
             "active:scale-95",
-            isChecked && "text-blue-600"
+            isChecked && "text-primary"
           )}
         >
           {isChecked ? (
