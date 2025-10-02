@@ -347,9 +347,9 @@ export function Sidebar({
         <>
           {/* Sliding Menu Panel */}
           <div className={cn(
-            "absolute bottom-12 left-0 right-0 bg-background border border-border rounded-t-lg z-10",
+            "absolute bottom-0 left-0 right-0 bg-background border-t border-border z-10",
             "transform transition-all duration-300 ease-out",
-            showMenu ? "translate-y-0 opacity-100 shadow-lg" : "translate-y-full opacity-0"
+            showMenu ? "-translate-y-12" : "translate-y-full"
           )}>
             {/* Main Menu View */}
             {menuView === 'main' && (
