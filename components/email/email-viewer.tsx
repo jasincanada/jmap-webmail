@@ -53,6 +53,8 @@ import {
   List,
   Code,
   Copy,
+  Brain,
+  Sparkles,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -184,20 +186,11 @@ export function EmailViewer({
     // Additional headers
     if (email.headers) {
       source += '\n--- Additional Headers ---\n';
-      // Check if headers is an array (which seems to be the case based on error)
-      if (Array.isArray(email.headers)) {
-        email.headers.forEach((header: any) => {
-          if (header && typeof header === 'object') {
-            source += `${header.name || 'Unknown'}: ${header.value || ''}\n`;
-          }
-        });
-      } else {
-        // Handle as object
-        Object.entries(email.headers).forEach(([key, value]) => {
-          const val = Array.isArray(value) ? value.join(', ') : String(value);
-          source += `${key}: ${val}\n`;
-        });
-      }
+      // Headers should now always be a Record after client processing
+      Object.entries(email.headers).forEach(([key, value]) => {
+        const val = Array.isArray(value) ? value.join('\n    ') : String(value);
+        source += `${key}: ${val}\n`;
+      });
     }
 
     // Authentication results
@@ -803,8 +796,8 @@ export function EmailViewer({
                   {/* Security & Authentication Section */}
                   {(email.authenticationResults || email.spamScore !== undefined) && (
                     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 px-4 py-2 border-b border-blue-200 dark:border-blue-800">
-                        <h3 className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider flex items-center gap-2">
+                      <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                        <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
                           <ShieldCheck className="w-3.5 h-3.5" />
                           Security & Authentication
                         </h3>
@@ -816,7 +809,7 @@ export function EmailViewer({
                             {/* SPF Check */}
                             {email.authenticationResults.spf && (
                               <div className={cn(
-                                "px-3 py-2 rounded-md border",
+                                "px-3 py-2 rounded-md",
                                 getSecurityStatus(email.authenticationResults.spf.result).bgColor,
                                 getSecurityStatus(email.authenticationResults.spf.result).borderColor
                               )}>
@@ -830,7 +823,7 @@ export function EmailViewer({
                                   {getSecurityStatus(email.authenticationResults.spf.result).icon === 'minus' &&
                                     <Minus className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.spf.result).color)} />}
                                   <div>
-                                    <div className="text-xs font-medium">SPF</div>
+                                    <div className="text-xs font-medium text-gray-900 dark:text-gray-100">SPF</div>
                                     <div className={cn("text-xs capitalize", getSecurityStatus(email.authenticationResults.spf.result).color)}>
                                       {email.authenticationResults.spf.result}
                                     </div>
@@ -847,7 +840,7 @@ export function EmailViewer({
                             {/* DKIM Check */}
                             {email.authenticationResults.dkim && (
                               <div className={cn(
-                                "px-3 py-2 rounded-md border",
+                                "px-3 py-2 rounded-md",
                                 getSecurityStatus(email.authenticationResults.dkim.result).bgColor,
                                 getSecurityStatus(email.authenticationResults.dkim.result).borderColor
                               )}>
@@ -861,7 +854,7 @@ export function EmailViewer({
                                   {getSecurityStatus(email.authenticationResults.dkim.result).icon === 'minus' &&
                                     <Minus className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dkim.result).color)} />}
                                   <div>
-                                    <div className="text-xs font-medium">DKIM</div>
+                                    <div className="text-xs font-medium text-gray-900 dark:text-gray-100">DKIM</div>
                                     <div className={cn("text-xs capitalize", getSecurityStatus(email.authenticationResults.dkim.result).color)}>
                                       {email.authenticationResults.dkim.result}
                                     </div>
@@ -878,7 +871,7 @@ export function EmailViewer({
                             {/* DMARC Check */}
                             {email.authenticationResults.dmarc && (
                               <div className={cn(
-                                "px-3 py-2 rounded-md border",
+                                "px-3 py-2 rounded-md",
                                 getSecurityStatus(email.authenticationResults.dmarc.result).bgColor,
                                 getSecurityStatus(email.authenticationResults.dmarc.result).borderColor
                               )}>
@@ -892,7 +885,7 @@ export function EmailViewer({
                                   {getSecurityStatus(email.authenticationResults.dmarc.result).icon === 'minus' &&
                                     <Minus className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dmarc.result).color)} />}
                                   <div>
-                                    <div className="text-xs font-medium">DMARC</div>
+                                    <div className="text-xs font-medium text-gray-900 dark:text-gray-100">DMARC</div>
                                     <div className={cn("text-xs capitalize", getSecurityStatus(email.authenticationResults.dmarc.result).color)}>
                                       {email.authenticationResults.dmarc.result}
                                     </div>
@@ -909,25 +902,25 @@ export function EmailViewer({
                             {/* Spam Score */}
                             {email.spamScore !== undefined && (
                               <div className={cn(
-                                "px-3 py-2 rounded-md border",
-                                email.spamScore > 5 ? "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800" :
-                                email.spamScore > 2 ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800" :
-                                "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800"
+                                "px-3 py-2 rounded-md",
+                                email.spamScore > 5 ? "bg-gray-50 dark:bg-gray-800 border-l-4 border-red-600 dark:border-red-500" :
+                                email.spamScore > 2 ? "bg-gray-50 dark:bg-gray-800 border-l-4 border-amber-600 dark:border-amber-500" :
+                                "bg-gray-50 dark:bg-gray-800 border-l-4 border-green-600 dark:border-green-500"
                               )}>
                                 <div className="flex items-center gap-2">
                                   <Shield className={cn(
                                     "w-4 h-4",
-                                    email.spamScore > 5 ? "text-red-600 dark:text-red-400" :
-                                    email.spamScore > 2 ? "text-amber-600 dark:text-amber-400" :
-                                    "text-green-600 dark:text-green-400"
+                                    email.spamScore > 5 ? "text-red-700 dark:text-red-400" :
+                                    email.spamScore > 2 ? "text-amber-700 dark:text-amber-400" :
+                                    "text-green-700 dark:text-green-400"
                                   )} />
                                   <div>
-                                    <div className="text-xs font-medium">Spam Score</div>
+                                    <div className="text-xs font-medium text-gray-900 dark:text-gray-100">Spam Score</div>
                                     <div className={cn(
                                       "text-xs",
-                                      email.spamScore > 5 ? "text-red-600 dark:text-red-400" :
-                                      email.spamScore > 2 ? "text-amber-600 dark:text-amber-400" :
-                                      "text-green-600 dark:text-green-400"
+                                      email.spamScore > 5 ? "text-red-700 dark:text-red-400" :
+                                      email.spamScore > 2 ? "text-amber-700 dark:text-amber-400" :
+                                      "text-green-700 dark:text-green-400"
                                     )}>
                                       {email.spamScore.toFixed(1)}
                                     </div>
@@ -942,6 +935,50 @@ export function EmailViewer({
                             )}
                           </div>
                         )}
+
+                        {/* AI Analysis (X-Spam-LLM) - Full width card */}
+                        {email.spamLLM && (
+                          <div className={cn(
+                            "mt-3 px-4 py-3 rounded-lg",
+                            email.spamLLM.verdict === 'LEGITIMATE'
+                              ? "bg-gray-50 dark:bg-gray-800 border-l-4 border-green-600 dark:border-green-500"
+                              : email.spamLLM.verdict === 'SPAM'
+                              ? "bg-gray-50 dark:bg-gray-800 border-l-4 border-red-600 dark:border-red-500"
+                              : "bg-gray-50 dark:bg-gray-800 border-l-4 border-amber-600 dark:border-amber-500"
+                          )}>
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0 mt-0.5">
+                                {email.spamLLM.verdict === 'LEGITIMATE' ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <Brain className="w-4 h-4 text-green-700 dark:text-green-400" />
+                                    <Sparkles className="w-3 h-3 text-green-700 dark:text-green-400" />
+                                  </div>
+                                ) : email.spamLLM.verdict === 'SPAM' ? (
+                                  <ShieldAlert className="w-4 h-4 text-red-700 dark:text-red-400" />
+                                ) : (
+                                  <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className={cn(
+                                    "text-xs font-semibold uppercase tracking-wide",
+                                    email.spamLLM.verdict === 'LEGITIMATE'
+                                      ? "text-green-700 dark:text-green-400"
+                                      : email.spamLLM.verdict === 'SPAM'
+                                      ? "text-red-700 dark:text-red-400"
+                                      : "text-amber-700 dark:text-amber-400"
+                                  )}>
+                                    AI Analysis: {email.spamLLM.verdict}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+                                  {email.spamLLM.explanation}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -949,9 +986,9 @@ export function EmailViewer({
                   {/* Technical Details Section - Only show if we have useful technical info */}
                   {(email.messageId || email.replyTo?.length || (email.sentAt && email.receivedAt &&
                     Math.abs(new Date(email.sentAt).getTime() - new Date(email.receivedAt).getTime()) > 60000)) && (
-                    <div className="border border-border rounded-lg overflow-hidden">
-                      <div className="bg-gradient-to-r from-muted/50 to-muted px-4 py-2 border-b border-border">
-                        <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-2">
+                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                      <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                        <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
                           <Network className="w-3.5 h-3.5" />
                           Technical Details
                         </h3>

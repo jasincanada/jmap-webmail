@@ -204,4 +204,5 @@
 - [x] Fixed plain text emails displaying on one line (smart HTML/text version selection)
 - [x] Fixed light mode not applying properly (replaced hardcoded colors with CSS variables)
 - [x] Fixed all hardcoded colors in email viewer for proper theme support
+- [x] Fixed sidebar footer menu extending page height when scrolling (overflow containment)
 

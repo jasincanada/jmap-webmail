@@ -27,11 +27,15 @@ export interface Email {
   messageId?: string;
   inReplyTo?: string[];
   references?: string[];
-  headers?: Record<string, string | string[]> | EmailHeader[];
+  headers?: Record<string, string | string[]>;
   // Security headers parsed
   authenticationResults?: AuthenticationResults;
   spamScore?: number;
   spamStatus?: string;
+  spamLLM?: {
+    verdict: string;
+    explanation: string;
+  };
 }
 
 export interface AuthenticationResults {

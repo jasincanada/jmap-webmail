@@ -298,7 +298,7 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "relative flex flex-col h-full border-r transition-all duration-300",
+        "relative flex flex-col h-full border-r transition-all duration-300 overflow-hidden",
         "bg-secondary border-border",
         isCollapsed ? "w-16" : "w-64",
         className

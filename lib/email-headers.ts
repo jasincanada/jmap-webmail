@@ -129,36 +129,54 @@ export function getSecurityStatus(result?: string): {
   switch (result) {
     case 'pass':
       return {
-        color: 'text-green-600 dark:text-green-400',
+        color: 'text-green-700 dark:text-green-400',
         icon: 'check',
-        bgColor: 'bg-green-50 dark:bg-green-950/30',
-        borderColor: 'border-green-200 dark:border-green-800'
+        bgColor: 'bg-gray-50 dark:bg-gray-800',
+        borderColor: 'border-l-4 border-green-600 dark:border-green-500'
       };
     case 'fail':
     case 'permerror':
       return {
-        color: 'text-red-600 dark:text-red-400',
+        color: 'text-red-700 dark:text-red-400',
         icon: 'x',
-        bgColor: 'bg-red-50 dark:bg-red-950/30',
-        borderColor: 'border-red-200 dark:border-red-800'
+        bgColor: 'bg-gray-50 dark:bg-gray-800',
+        borderColor: 'border-l-4 border-red-600 dark:border-red-500'
       };
     case 'softfail':
     case 'neutral':
     case 'temperror':
       return {
-        color: 'text-amber-600 dark:text-amber-400',
+        color: 'text-amber-700 dark:text-amber-400',
         icon: 'alert',
-        bgColor: 'bg-amber-50 dark:bg-amber-950/30',
-        borderColor: 'border-amber-200 dark:border-amber-800'
+        bgColor: 'bg-gray-50 dark:bg-gray-800',
+        borderColor: 'border-l-4 border-amber-600 dark:border-amber-500'
       };
     default:
       return {
-        color: 'text-gray-400 dark:text-gray-500',
+        color: 'text-gray-700 dark:text-gray-400',
         icon: 'minus',
-        bgColor: 'bg-gray-50 dark:bg-gray-900',
-        borderColor: 'border-gray-200 dark:border-gray-700'
+        bgColor: 'bg-gray-50 dark:bg-gray-800',
+        borderColor: 'border-l-4 border-gray-400 dark:border-gray-600'
       };
   }
+}
+
+/**
+ * Parse X-Spam-LLM header to extract AI verdict and explanation
+ */
+export function parseSpamLLM(header: string): { verdict: string; explanation: string } | null {
+  // Format: "LEGITIMATE (explanation)" or "SPAM (explanation)"
+  // Trim the header first to remove any leading/trailing whitespace
+  const trimmed = header.trim();
+  const match = trimmed.match(/^(LEGITIMATE|SPAM|SUSPICIOUS)\s*\((.+)\)\s*$/i);
+
+  if (match) {
+    return {
+      verdict: match[1].toUpperCase(),
+      explanation: match[2].trim()
+    };
+  }
+  return null;
 }
 
 /**

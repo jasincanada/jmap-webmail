@@ -46,3 +46,4 @@ This project uses **next-intl** for internationalization with support for Englis
 8. **User preference**: Language selection is persisted and overrides browser detection
 - When you are not sure, check the official documentation online.
 - Always use last versions. Reduce external dependencies as well (less is better).
+- Only commit/push when I confirm the issue/task you are working on is ok.

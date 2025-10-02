@@ -43,6 +43,26 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const stored = localStorage.getItem('theme-storage');
+                  const theme = stored ? JSON.parse(stored).state.theme : 'system';
+                  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  const resolved = theme === 'system' ? systemTheme : theme;
+                  document.documentElement.classList.remove('light', 'dark');
+                  document.documentElement.classList.add(resolved);
+                } catch (e) {
+                  document.documentElement.classList.add('light');
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
