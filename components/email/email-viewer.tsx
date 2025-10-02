@@ -467,10 +467,10 @@ export function EmailViewer({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 hover:bg-gray-100 hover:bg-muted"
+                className="h-8 w-8 hover:bg-muted"
                 title="More actions"
               >
-                <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                <MoreVertical className="w-4 h-4 text-muted-foreground" />
               </Button>
             </div>
           </div>
@@ -488,7 +488,7 @@ export function EmailViewer({
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                <span className="font-semibold text-foreground">
                   {sender?.name || sender?.email || "Unknown"}
                 </span>
                 {sender?.email && sender?.name && (
@@ -502,7 +502,7 @@ export function EmailViewer({
                 {email.to && email.to.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1 text-sm">
                     <span className="text-muted-foreground">To:</span>
-                    <span className="text-gray-700 dark:text-gray-300">
+                    <span className="text-foreground">
                       {email.to.slice(0, 2).map(r => r.name || r.email).join(", ")}
                       {email.to.length > 2 && (
                         <button
@@ -519,7 +519,7 @@ export function EmailViewer({
                 {(email.cc && email.cc.length > 0) && (
                   <div className="flex flex-wrap items-center gap-1 text-sm">
                     <span className="text-muted-foreground">CC:</span>
-                    <span className="text-gray-700 dark:text-gray-300">
+                    <span className="text-foreground">
                       {email.cc.map(r => r.name || r.email).join(", ")}
                     </span>
                   </div>
