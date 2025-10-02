@@ -347,7 +347,7 @@ export function Sidebar({
         <>
           {/* Sliding Menu Panel */}
           <div className={cn(
-            "absolute bottom-0 left-0 right-0 bg-background border-t border-border z-10",
+            "absolute bottom-0 left-0 right-0 bg-background border-t border-border z-10 shadow-lg",
             "transform transition-all duration-300 ease-out",
             showMenu ? "-translate-y-12" : "translate-y-full"
           )}>

@@ -220,8 +220,8 @@ export default function Home() {
     }
   };
 
-  // Show loading state while checking auth or loading data
-  if (!initialCheckDone || authLoading || (!isAuthenticated || !client || isLoading)) {
+  // Show loading state while checking auth
+  if (!initialCheckDone || authLoading || (!isAuthenticated || !client)) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-center">

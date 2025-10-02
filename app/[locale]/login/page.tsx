@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/auth-store";
-import { Mail, AlertCircle, Loader2 } from "lucide-react";
+import { Mail, AlertCircle, Loader2, X } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,6 +21,58 @@ export default function LoginPage() {
     password: "",
   });
 
+  const [savedUsernames, setSavedUsernames] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Load saved usernames from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("webmail_usernames");
+    if (saved) {
+      try {
+        const usernames = JSON.parse(saved);
+        setSavedUsernames(usernames);
+      } catch (e) {
+        console.error("Failed to parse saved usernames");
+      }
+    }
+  }, []);
+
+  // Save username on successful login
+  const saveUsername = (username: string) => {
+    const saved = localStorage.getItem("webmail_usernames");
+    let usernames: string[] = [];
+
+    if (saved) {
+      try {
+        usernames = JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse saved usernames");
+      }
+    }
+
+    // Add username if not already present, keep max 5 recent usernames
+    if (!usernames.includes(username)) {
+      usernames = [username, ...usernames].slice(0, 5);
+      localStorage.setItem("webmail_usernames", JSON.stringify(usernames));
+      setSavedUsernames(usernames);
+    }
+  };
+
+  // Remove a username from saved list
+  const removeUsername = (username: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = savedUsernames.filter(u => u !== username);
+    localStorage.setItem("webmail_usernames", JSON.stringify(updated));
+    setSavedUsernames(updated);
+    setFilteredSuggestions(updated.filter(u =>
+      u.toLowerCase().includes(formData.username.toLowerCase())
+    ));
+  };
+
   useEffect(() => {
     if (isAuthenticated) {
       router.push(`/${params.locale}`);
@@ -30,6 +82,76 @@ export default function LoginPage() {
   useEffect(() => {
     clearError();
   }, [formData, clearError]);
+
+  // Filter suggestions based on input
+  useEffect(() => {
+    if (formData.username && savedUsernames.length > 0) {
+      const filtered = savedUsernames.filter(username =>
+        username.toLowerCase().includes(formData.username.toLowerCase())
+      );
+      setFilteredSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+    } else if (formData.username === "" && savedUsernames.length > 0) {
+      setFilteredSuggestions(savedUsernames);
+      setShowSuggestions(false); // Don't show on empty input
+    } else {
+      setShowSuggestions(false);
+    }
+    setSelectedSuggestionIndex(-1);
+  }, [formData.username, savedUsernames]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node) &&
+          inputRef.current && !inputRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, username: e.target.value });
+  };
+
+  const handleUsernameFocus = () => {
+    if (savedUsernames.length > 0 && formData.username === "") {
+      setFilteredSuggestions(savedUsernames);
+      setShowSuggestions(true);
+    } else if (filteredSuggestions.length > 0) {
+      setShowSuggestions(true);
+    }
+  };
+
+  const selectSuggestion = (username: string) => {
+    setFormData({ ...formData, username });
+    setShowSuggestions(false);
+    // Focus password field
+    document.getElementById("password")?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || filteredSuggestions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedSuggestionIndex(prev =>
+        prev < filteredSuggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedSuggestionIndex(prev => prev > 0 ? prev - 1 : -1);
+    } else if (e.key === "Enter" && selectedSuggestionIndex >= 0) {
+      e.preventDefault();
+      selectSuggestion(filteredSuggestions[selectedSuggestionIndex]);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+      setSelectedSuggestionIndex(-1);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +163,7 @@ export default function LoginPage() {
     );
 
     if (success) {
+      saveUsername(formData.username);
       router.push(`/${params.locale}`);
     }
   };
@@ -71,19 +194,52 @@ export default function LoginPage() {
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-4">
-            <Input
-              id="username"
-              type="text"
-              value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              className="h-12 px-4 bg-secondary/50 border-border/50 focus:bg-secondary focus:border-primary/50 transition-colors"
-              placeholder={t("username_placeholder")}
-              required
-              autoComplete="off"
-              data-form-type="other"
-              data-lpignore="true"
-              autoFocus
-            />
+            <div className="relative">
+              <Input
+                ref={inputRef}
+                id="username"
+                type="text"
+                value={formData.username}
+                onChange={handleUsernameChange}
+                onFocus={handleUsernameFocus}
+                onKeyDown={handleKeyDown}
+                className="h-12 px-4 bg-secondary/50 border-border/50 focus:bg-secondary focus:border-primary/50 transition-colors"
+                placeholder={t("username_placeholder")}
+                required
+                autoComplete="off"
+                data-form-type="other"
+                data-lpignore="true"
+                autoFocus
+              />
+
+              {/* Custom autocomplete dropdown */}
+              {showSuggestions && filteredSuggestions.length > 0 && (
+                <div
+                  ref={suggestionsRef}
+                  className="absolute top-full mt-1 w-full bg-secondary border border-border rounded-md shadow-lg z-50 overflow-hidden"
+                >
+                  {filteredSuggestions.map((username, index) => (
+                    <div
+                      key={username}
+                      className={`px-4 py-2.5 flex items-center justify-between hover:bg-muted cursor-pointer transition-colors ${
+                        index === selectedSuggestionIndex ? "bg-muted" : ""
+                      }`}
+                      onClick={() => selectSuggestion(username)}
+                    >
+                      <span className="text-sm text-foreground">{username}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => removeUsername(username, e)}
+                        className="p-1 hover:bg-background rounded transition-colors"
+                        title="Remove from history"
+                      >
+                        <X className="w-3 h-3 text-muted-foreground" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <Input
               id="password"
