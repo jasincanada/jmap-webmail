@@ -277,7 +277,7 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "flex flex-col h-full border-r transition-all duration-300",
+        "relative flex flex-col h-full border-r transition-all duration-300",
         "bg-secondary border-border",
         isCollapsed ? "w-16" : "w-64",
         className
@@ -347,9 +347,9 @@ export function Sidebar({
         <>
           {/* Sliding Menu Panel */}
           <div className={cn(
-            "absolute bottom-0 left-0 right-0 bg-background border-t border-border",
-            "transform transition-transform duration-300 ease-out",
-            showMenu ? "translate-y-0" : "translate-y-full"
+            "absolute bottom-12 left-0 right-0 bg-background border border-border rounded-t-lg z-10",
+            "transform transition-all duration-300 ease-out",
+            showMenu ? "translate-y-0 opacity-100 shadow-lg" : "translate-y-full opacity-0"
           )}>
             {/* Main Menu View */}
             {menuView === 'main' && (
