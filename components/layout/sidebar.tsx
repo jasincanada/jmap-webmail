@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useThemeStore } from "@/stores/theme-store";
+import { locales } from "@/i18n/request";
 import {
   Inbox,
   Send,
@@ -20,6 +21,7 @@ import {
   LogOut,
   ChevronRight,
   ChevronDown,
+  ChevronLeft,
   Folder,
   FolderOpen,
   Sun,
@@ -184,10 +186,13 @@ export function Sidebar({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
-  const [showSettings, setShowSettings] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [menuView, setMenuView] = useState<'main' | 'settings'>('main');
   const { theme, setTheme, resolvedTheme } = useThemeStore();
   const t = useTranslations('sidebar');
   const params = useParams();
+  const router = useRouter();
+  const pathname = usePathname();
 
   // Load expanded folders from localStorage on mount
   useEffect(() => {
@@ -340,109 +345,146 @@ export function Sidebar({
       {/* Footer */}
       {!isCollapsed && (
         <>
-          {/* Storage Quota - Always visible */}
-          {quota && quota.total > 0 && (
-            <div className="px-4 py-3 border-t border-border">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">{t("storage")}</span>
-                <span className="text-foreground font-medium">
-                  {formatFileSize(quota.used)} / {formatFileSize(quota.total)}
-                </span>
-              </div>
-              <div className="mt-2 w-full bg-muted rounded-full h-1.5">
-                <div
-                  className="bg-primary h-1.5 rounded-full transition-all duration-300"
-                  style={{ width: `${Math.min((quota.used / quota.total) * 100, 100)}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Settings Panel - Sliding */}
+          {/* Sliding Menu Panel */}
           <div className={cn(
-            "border-t border-border overflow-hidden transition-all duration-300",
-            showSettings ? "max-h-96" : "max-h-0"
+            "absolute bottom-0 left-0 right-0 bg-background border-t border-border",
+            "transform transition-transform duration-300 ease-out",
+            showMenu ? "translate-y-0" : "translate-y-full"
           )}>
-            <div className="p-4 space-y-4 bg-muted/30">
-              {/* Theme Selector */}
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
-                  {theme === 'light' ? <Sun className="w-3.5 h-3.5" /> :
-                   theme === 'dark' ? <Moon className="w-3.5 h-3.5" /> :
-                   <Monitor className="w-3.5 h-3.5" />}
-                  Theme
-                </label>
-                <div className="grid grid-cols-3 gap-2">
+            {/* Main Menu View */}
+            {menuView === 'main' && (
+              <div className="py-2">
+                {/* Storage Info */}
+                {quota && quota.total > 0 && (
+                  <div className="px-4 py-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">{t("storage")}</span>
+                      <span className="text-foreground">
+                        {formatFileSize(quota.used)} / {formatFileSize(quota.total)}
+                      </span>
+                    </div>
+                    <div className="mt-1 w-full bg-muted rounded-full h-1">
+                      <div
+                        className="bg-primary h-1 rounded-full"
+                        style={{ width: `${Math.min((quota.used / quota.total) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="border-t border-border mt-2 pt-2">
+                  {/* Settings */}
                   <button
-                    onClick={() => setTheme('light')}
-                    className={cn(
-                      "flex flex-col items-center gap-1 p-2 rounded-lg transition-all",
-                      "border border-border",
-                      theme === 'light'
-                        ? "bg-accent border-primary"
-                        : "bg-background hover:bg-muted"
-                    )}
+                    onClick={() => setMenuView('settings')}
+                    className="w-full px-4 py-2 flex items-center justify-between hover:bg-muted transition-colors text-sm"
                   >
-                    <Sun className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-xs">{t("theme.light")}</span>
+                    <span className="flex items-center gap-2">
+                      <Settings className="w-4 h-4" />
+                      {t("settings")}
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   </button>
-                  <button
-                    onClick={() => setTheme('dark')}
-                    className={cn(
-                      "flex flex-col items-center gap-1 p-2 rounded-lg transition-all",
-                      "border border-border",
-                      theme === 'dark'
-                        ? "bg-accent border-primary"
-                        : "bg-background hover:bg-muted"
-                    )}
-                  >
-                    <Moon className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-xs">{t("theme.dark")}</span>
-                  </button>
-                  <button
-                    onClick={() => setTheme('system')}
-                    className={cn(
-                      "flex flex-col items-center gap-1 p-2 rounded-lg transition-all",
-                      "border border-border",
-                      theme === 'system'
-                        ? "bg-accent border-primary"
-                        : "bg-background hover:bg-muted"
-                    )}
-                  >
-                    <Monitor className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-xs">{t("theme.system")}</span>
-                  </button>
+
+                  {/* Sign Out */}
+                  {onLogout && (
+                    <button
+                      onClick={onLogout}
+                      className="w-full px-4 py-2 flex items-center gap-2 hover:bg-muted transition-colors text-sm"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      {t("sign_out")}
+                    </button>
+                  )}
                 </div>
               </div>
+            )}
 
-              {/* Language Switcher */}
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-foreground flex items-center gap-1.5">
-                  <Globe className="w-3.5 h-3.5" />
-                  Language
-                </label>
-                <LanguageSwitcher />
-              </div>
-
-              {/* Logout Button */}
-              {onLogout && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onLogout}
-                  className="w-full justify-start hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+            {/* Settings Submenu View */}
+            {menuView === 'settings' && (
+              <div className="py-2">
+                {/* Back Button */}
+                <button
+                  onClick={() => setMenuView('main')}
+                  className="w-full px-4 py-2 flex items-center gap-2 hover:bg-muted transition-colors text-sm border-b border-border mb-2"
                 >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  {t("sign_out")}
-                </Button>
-              )}
-            </div>
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="font-medium">{t("settings")}</span>
+                </button>
+
+                {/* Theme */}
+                <div className="px-4 py-2 space-y-1">
+                  <div className="text-xs text-muted-foreground mb-2">Theme</div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setTheme('light')}
+                      className={cn(
+                        "flex-1 px-3 py-1.5 text-xs rounded transition-colors",
+                        theme === 'light'
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted hover:bg-accent"
+                      )}
+                    >
+                      Light
+                    </button>
+                    <button
+                      onClick={() => setTheme('dark')}
+                      className={cn(
+                        "flex-1 px-3 py-1.5 text-xs rounded transition-colors",
+                        theme === 'dark'
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted hover:bg-accent"
+                      )}
+                    >
+                      Dark
+                    </button>
+                    <button
+                      onClick={() => setTheme('system')}
+                      className={cn(
+                        "flex-1 px-3 py-1.5 text-xs rounded transition-colors",
+                        theme === 'system'
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted hover:bg-accent"
+                      )}
+                    >
+                      System
+                    </button>
+                  </div>
+                </div>
+
+                {/* Language */}
+                <div className="px-4 py-2 space-y-1">
+                  <div className="text-xs text-muted-foreground mb-2">Language</div>
+                  <div className="flex gap-2">
+                    {locales.map((locale) => (
+                      <button
+                        key={locale}
+                        onClick={() => {
+                          const pathWithoutLocale = pathname.replace(`/${params.locale}`, '');
+                          router.push(`/${locale}${pathWithoutLocale}`);
+                        }}
+                        className={cn(
+                          "flex-1 px-3 py-1.5 text-xs rounded transition-colors",
+                          params.locale === locale
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted hover:bg-accent"
+                        )}
+                      >
+                        {locale === 'en' ? 'English' : 'Français'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Settings Toggle Button */}
-          <div className="border-t border-border">
+          {/* Menu Toggle Button */}
+          <div className="border-t border-border relative">
             <button
-              onClick={() => setShowSettings(!showSettings)}
+              onClick={() => {
+                setShowMenu(!showMenu);
+                if (!showMenu) setMenuView('main');
+              }}
               className={cn(
                 "w-full px-4 py-3 flex items-center justify-between",
                 "hover:bg-muted transition-colors",
@@ -450,12 +492,12 @@ export function Sidebar({
               )}
             >
               <span className="flex items-center gap-2">
-                <Settings className="w-4 h-4" />
-                {t("settings")}
+                <Menu className="w-4 h-4" />
+                Menu
               </span>
               <ChevronUp className={cn(
                 "w-4 h-4 transition-transform duration-200",
-                showSettings ? "" : "rotate-180"
+                showMenu ? "" : "rotate-180"
               )} />
             </button>
           </div>
