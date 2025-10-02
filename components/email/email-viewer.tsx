@@ -348,7 +348,19 @@ export function EmailViewer({
   const isImportant = email.keywords?.["$important"];
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-300">
+    <div
+      key={email.id}
+      className="flex-1 flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-300 relative"
+    >
+      {/* Loading overlay when fetching new email */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-50 flex items-center justify-center animate-in fade-in duration-200">
+          <div className="bg-background rounded-lg shadow-lg border border-border p-4 flex items-center gap-3">
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+            <span className="text-sm font-medium text-foreground">Loading email...</span>
+          </div>
+        </div>
+      )}
       {/* Modern Header Section */}
       <div className="bg-background border-b border-border">
         {/* Subject Bar */}
@@ -386,6 +398,13 @@ export function EmailViewer({
 
             {/* Quick Actions */}
             <div className="flex items-center gap-0.5 flex-shrink-0">
+              {/* Loading indicator */}
+              {isLoading && (
+                <div className="mr-2 flex items-center gap-1.5 text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-xs">Loading...</span>
+                </div>
+              )}
               {/* Primary Reply Button */}
               <Button
                 onClick={onReply}

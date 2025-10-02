@@ -259,9 +259,8 @@ export default function Home() {
           onEmailSelect={async (email) => {
             if (!client || !email) return;
 
-            // Set loading state immediately
+            // Set loading state immediately (keep current email visible)
             setLoadingEmail(true);
-            selectEmail(null); // Clear selected email to show loading state
 
             // Fetch the full content
             try {
