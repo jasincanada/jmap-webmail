@@ -4,7 +4,7 @@ import { Email } from "@/lib/jmap/types";
 import { EmailListItem } from "./email-list-item";
 import { cn } from "@/lib/utils";
 import { Inbox, CheckSquare, Square, Trash2, Mail, MailOpen, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useEmailStore } from "@/stores/email-store";
 import { useAuthStore } from "@/stores/auth-store";
@@ -32,10 +32,14 @@ export function EmailList({
     clearSelection,
     batchMarkAsRead,
     batchDelete,
+    loadMoreEmails,
+    hasMoreEmails,
+    isLoadingMore,
     isLoading: storeIsLoading
   } = useEmailStore();
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const observerTarget = useRef<HTMLDivElement>(null);
   // Loading skeleton component
   const LoadingSkeleton = () => (
     <div className="animate-pulse">
@@ -79,6 +83,35 @@ export function EmailList({
       setTimeout(() => setIsProcessing(false), 500);
     }
   };
+
+  // Intersection observer for infinite scroll
+  const handleLoadMore = useCallback(() => {
+    if (client && hasMoreEmails && !isLoadingMore && !isLoading) {
+      loadMoreEmails(client);
+    }
+  }, [client, hasMoreEmails, isLoadingMore, isLoading, loadMoreEmails]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          handleLoadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [handleLoadMore]);
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
@@ -189,14 +222,35 @@ export function EmailList({
             <p className="text-sm mt-1 text-muted-foreground">New messages will appear here</p>
           </div>
         ) : (
-          emails.map((email) => (
-            <EmailListItem
-              key={email.id}
-              email={email}
-              selected={email.id === selectedEmailId}
-              onClick={() => onEmailSelect?.(email)}
-            />
-          ))
+          <>
+            {emails.map((email) => (
+              <EmailListItem
+                key={email.id}
+                email={email}
+                selected={email.id === selectedEmailId}
+                onClick={() => onEmailSelect?.(email)}
+              />
+            ))}
+
+            {/* Intersection observer target for infinite scroll */}
+            {hasMoreEmails && (
+              <div ref={observerTarget} className="py-4 flex justify-center">
+                {isLoadingMore && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Loading more emails...</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* End of list indicator */}
+            {!hasMoreEmails && emails.length > 0 && (
+              <div className="py-6 text-center text-sm text-muted-foreground border-t border-border">
+                No more emails to load
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

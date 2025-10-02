@@ -9,11 +9,14 @@ interface EmailStore {
   selectedMailbox: string;
   isLoading: boolean;
   isLoadingEmail: boolean; // Track when a full email is being fetched
+  isLoadingMore: boolean; // Track when loading more emails (pagination)
   error: string | null;
   searchQuery: string;
   quota: { used: number; total: number } | null;
   processingReadStatus: Set<string>; // Track emails being marked as read/unread
   selectedEmailIds: Set<string>; // Track selected emails for batch operations
+  hasMoreEmails: boolean; // Track if more emails are available to load
+  totalEmails: number; // Total number of emails in the current mailbox/query
 
   setEmails: (emails: Email[]) => void;
   setMailboxes: (mailboxes: Mailbox[]) => void;
@@ -31,6 +34,7 @@ interface EmailStore {
   // JMAP operations
   fetchMailboxes: (client: JMAPClient) => Promise<void>;
   fetchEmails: (client: JMAPClient, mailboxId?: string) => Promise<void>;
+  loadMoreEmails: (client: JMAPClient) => Promise<void>;
   fetchEmailContent: (client: JMAPClient, emailId: string) => Promise<Email | null>;
   fetchQuota: (client: JMAPClient) => Promise<void>;
   sendEmail: (client: JMAPClient, to: string[], subject: string, body: string, cc?: string[], bcc?: string[], draftId?: string) => Promise<void>;
@@ -56,11 +60,14 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   selectedMailbox: "",
   isLoading: false,
   isLoadingEmail: false,
+  isLoadingMore: false,
   error: null,
   searchQuery: "",
   quota: null,
   processingReadStatus: new Set(),
   selectedEmailIds: new Set(),
+  hasMoreEmails: false,
+  totalEmails: 0,
 
   setEmails: (emails) => set({ emails }),
   setMailboxes: (mailboxes) => set({ mailboxes }),
@@ -108,7 +115,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   },
 
   fetchEmails: async (client, mailboxId) => {
-    set({ isLoading: true, error: null, emails: [] }); // Clear emails immediately for better loading UX
+    set({ isLoading: true, error: null, emails: [], hasMoreEmails: false, totalEmails: 0 }); // Clear emails immediately for better loading UX
     try {
       const targetMailboxId = mailboxId || get().selectedMailbox;
 
@@ -120,14 +127,54 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       // Use originalId for JMAP queries (shared mailboxes use namespaced IDs in the store)
       const jmapMailboxId = mailbox?.originalId || targetMailboxId;
 
-      const emails = await client.getEmails(jmapMailboxId, accountId);
-      set({ emails, isLoading: false });
+      const result = await client.getEmails(jmapMailboxId, accountId, 50, 0);
+      set({
+        emails: result.emails,
+        hasMoreEmails: result.hasMore,
+        totalEmails: result.total,
+        isLoading: false
+      });
     } catch (error) {
       console.error('Failed to fetch emails:', error);
       set({
         error: error instanceof Error ? error.message : "Failed to fetch emails",
         isLoading: false,
-        emails: []
+        emails: [],
+        hasMoreEmails: false,
+        totalEmails: 0
+      });
+    }
+  },
+
+  loadMoreEmails: async (client) => {
+    const { isLoadingMore, hasMoreEmails, emails, selectedMailbox } = get();
+
+    // Don't load if already loading or no more emails
+    if (isLoadingMore || !hasMoreEmails) return;
+
+    set({ isLoadingMore: true, error: null });
+    try {
+      // Find the mailbox to get its accountId (for shared folder support)
+      const mailboxes = get().mailboxes;
+      const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
+      // Only pass accountId for shared mailboxes, not for primary account
+      const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
+      // Use originalId for JMAP queries (shared mailboxes use namespaced IDs in the store)
+      const jmapMailboxId = mailbox?.originalId || selectedMailbox;
+
+      const result = await client.getEmails(jmapMailboxId, accountId, 50, emails.length);
+
+      set({
+        emails: [...emails, ...result.emails],
+        hasMoreEmails: result.hasMore,
+        totalEmails: result.total,
+        isLoadingMore: false
+      });
+    } catch (error) {
+      console.error('Failed to load more emails:', error);
+      set({
+        error: error instanceof Error ? error.message : "Failed to load more emails",
+        isLoadingMore: false
       });
     }
   },
@@ -392,15 +439,17 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   },
 
   searchEmails: async (client, query) => {
-    set({ isLoading: true, error: null, searchQuery: query, emails: [] }); // Clear emails for loading state
+    set({ isLoading: true, error: null, searchQuery: query, emails: [], hasMoreEmails: false, totalEmails: 0 }); // Clear emails for loading state
     try {
       const emails = await client.searchEmails(query);
-      set({ emails, isLoading: false });
+      set({ emails, isLoading: false, hasMoreEmails: false, totalEmails: emails.length });
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : "Failed to search emails",
         isLoading: false,
-        emails: []
+        emails: [],
+        hasMoreEmails: false,
+        totalEmails: 0
       });
     }
   },

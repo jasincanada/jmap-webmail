@@ -356,7 +356,7 @@ export class JMAPClient {
     }
   }
 
-  async getEmails(mailboxId?: string, accountId?: string, limit: number = 50): Promise<Email[]> {
+  async getEmails(mailboxId?: string, accountId?: string, limit: number = 50, position: number = 0): Promise<{ emails: Email[], hasMore: boolean, total: number }> {
     try {
       // Use provided accountId or fallback to primary account
       const targetAccountId = accountId || this.accountId;
@@ -373,6 +373,7 @@ export class JMAPClient {
           filter: filter,
           sort: [{ property: "receivedAt", isAscending: false }],
           limit: limit,
+          position: position,
         }, "0"],
         ["Email/get", {
           accountId: targetAccountId,
@@ -398,8 +399,13 @@ export class JMAPClient {
         }, "1"],
       ]);
 
-      if (response.methodResponses?.[1]?.[0] === "Email/get") {
-        const emails = response.methodResponses[1][1].list || [];
+      const queryResponse = response.methodResponses?.[0]?.[1];
+      const getResponse = response.methodResponses?.[1]?.[1];
+
+      if (response.methodResponses?.[1]?.[0] === "Email/get" && getResponse) {
+        const emails = getResponse.list || [];
+        const total = queryResponse?.total || 0;
+        const hasMore = (position + emails.length) < total;
 
         // If fetching from a shared account, namespace the mailboxIds to match our store
         const isSharedAccount = accountId && accountId !== this.accountId;
@@ -415,13 +421,13 @@ export class JMAPClient {
           });
         }
 
-        return emails;
+        return { emails, hasMore, total };
       }
 
-      return [];
+      return { emails: [], hasMore: false, total: 0 };
     } catch (error) {
       console.error('Failed to get emails:', error);
-      return [];
+      return { emails: [], hasMore: false, total: 0 };
     }
   }
 
@@ -484,10 +490,34 @@ export class JMAPClient {
           // Parse headers if available
           if (email.headers) {
             // Import the parsing functions
-            const { parseAuthenticationResults, parseSpamScore } = await import('@/lib/email-headers');
+            const { parseAuthenticationResults, parseSpamScore, parseSpamLLM } = await import('@/lib/email-headers');
+
+            // Convert headers array to Record format if needed
+            let headersRecord: Record<string, string | string[]>;
+            if (Array.isArray(email.headers)) {
+              headersRecord = {};
+              email.headers.forEach((header: any) => {
+                if (header && header.name && header.value) {
+                  // If header already exists, convert to array or append
+                  if (headersRecord[header.name]) {
+                    if (Array.isArray(headersRecord[header.name])) {
+                      (headersRecord[header.name] as string[]).push(header.value);
+                    } else {
+                      headersRecord[header.name] = [headersRecord[header.name] as string, header.value];
+                    }
+                  } else {
+                    headersRecord[header.name] = header.value;
+                  }
+                }
+              });
+              // Replace array with record for easier access
+              email.headers = headersRecord;
+            } else {
+              headersRecord = email.headers as Record<string, string | string[]>;
+            }
 
             // Parse Authentication-Results header
-            const authResultsHeader = email.headers['Authentication-Results'];
+            const authResultsHeader = headersRecord['Authentication-Results'];
             if (authResultsHeader) {
               const headerValue = Array.isArray(authResultsHeader) ? authResultsHeader[0] : authResultsHeader;
               email.authenticationResults = parseAuthenticationResults(headerValue);
@@ -496,14 +526,25 @@ export class JMAPClient {
             // Parse Spam headers
             const spamHeaders = ['X-Spam-Status', 'X-Spam-Result', 'X-Rspamd-Score'];
             for (const header of spamHeaders) {
-              if (email.headers[header]) {
-                const headerValue = Array.isArray(email.headers[header]) ? email.headers[header][0] : email.headers[header];
-                const spamResult = parseSpamScore(headerValue);
+              if (headersRecord[header]) {
+                const headerValue = Array.isArray(headersRecord[header]) ? headersRecord[header][0] : headersRecord[header];
+                const spamResult = parseSpamScore(headerValue as string);
                 if (spamResult) {
                   email.spamScore = spamResult.score;
                   email.spamStatus = spamResult.status;
                   break;
                 }
+              }
+            }
+
+            // Parse X-Spam-LLM header
+            if (headersRecord['X-Spam-LLM']) {
+              const llmHeader = Array.isArray(headersRecord['X-Spam-LLM'])
+                ? headersRecord['X-Spam-LLM'][0]
+                : headersRecord['X-Spam-LLM'];
+              const llmResult = parseSpamLLM(llmHeader as string);
+              if (llmResult) {
+                email.spamLLM = llmResult;
               }
             }
           }

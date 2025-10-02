@@ -123,7 +123,7 @@
 - [ ] Implement drag-and-drop for emails
 - [ ] Add context menus
 - [ ] Create mobile-responsive design
-- [ ] Implement pagination/infinite scroll for email list
+- [x] Implement pagination/infinite scroll for email list
 
 ### Address Book & Contacts
 - [ ] Create contact store with Zustand
