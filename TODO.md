@@ -43,6 +43,9 @@
 ### Authentication
 - [x] Create auth store with Zustand
 - [x] Create login page with JMAP server URL input
+- [x] Use environment variable for JMAP server URL configuration
+- [x] Simplify login UI with minimalistic design (no technical jargon)
+- [x] Disable browser autocomplete for username field
 - [x] Add session management
 - [x] Implement logout functionality
 - [x] Add remember me functionality

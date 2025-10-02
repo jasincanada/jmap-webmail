@@ -1,19 +1,14 @@
 {
   "login": {
     "title": "root.cloud Webmail",
-    "subtitle": "Connectez-vous pour accéder à vos emails",
-    "server_label": "Serveur JMAP",
-    "server_placeholder": "https://mail.exemple.com",
-    "username_label": "Nom d'utilisateur",
+    "username_label": "Email",
     "username_placeholder": "utilisateur@exemple.com",
     "password_label": "Mot de passe",
     "password_placeholder": "Entrez votre mot de passe",
     "sign_in": "Se connecter",
     "signing_in": "Connexion en cours...",
-    "secure_connection": "Connexion JMAP sécurisée à votre serveur de messagerie",
-    "security_note": "Pour votre sécurité, les mots de passe ne sont jamais stockés. Utilisez le gestionnaire de mots de passe de votre navigateur pour plus de commodité.",
     "error": {
-      "invalid_credentials": "Nom d'utilisateur ou mot de passe invalide",
+      "invalid_credentials": "Email ou mot de passe invalide",
       "connection_failed": "Échec de la connexion au serveur",
       "generic": "Une erreur s'est produite. Veuillez réessayer."
     }
