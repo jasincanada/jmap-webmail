@@ -180,7 +180,7 @@
 ## 🐛 Known Issues
 - [ ] Fix Next.js workspace root warning
 - [x] Handle port conflicts more gracefully (using port 3001)
-- [ ] Improve error messages for failed JMAP operations
+- [x] Improve error messages for failed JMAP operations (login errors now properly displayed)
 - [x] Fixed JamClient import issue from jmap-jam library
 - [x] Fixed multiple JMAP client files issue (cleaned up to single client.ts)
 - [x] Fixed session persistence on page refresh (using sessionStorage for credentials)
