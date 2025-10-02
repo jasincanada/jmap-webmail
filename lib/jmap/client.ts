@@ -95,15 +95,12 @@ export class JMAPClient {
         }
       }
     }, PING_INTERVAL);
-
-    console.log('Keep-alive mechanism started (ping every 30s)');
   }
 
   private stopKeepAlive(): void {
     if (this.pingInterval) {
       clearInterval(this.pingInterval);
       this.pingInterval = null;
-      console.log('Keep-alive mechanism stopped');
     }
   }
 
@@ -121,14 +118,12 @@ export class JMAPClient {
 
     if (response.methodResponses?.[0]?.[0] === "Core/echo") {
       this.lastPingTime = now;
-      console.log('Keep-alive ping successful');
     } else {
       throw new Error('Ping failed');
     }
   }
 
   async reconnect(): Promise<void> {
-    console.log('Attempting to reconnect...');
     await this.connect();
   }
 
@@ -138,7 +133,6 @@ export class JMAPClient {
     this.accountId = "";
     this.session = null;
     this.capabilities = {};
-    console.log('Disconnected from JMAP server');
   }
 
   private async request(methodCalls: any[]): Promise<any> {
@@ -150,9 +144,6 @@ export class JMAPClient {
       using: ["urn:ietf:params:jmap:core", "urn:ietf:params:jmap:mail"],
       methodCalls: methodCalls,
     };
-
-    console.log('Making request to:', this.apiUrl);
-    console.log('Request:', JSON.stringify(requestBody, null, 2));
 
     const response = await fetch(this.apiUrl, {
       method: 'POST',
@@ -178,7 +169,6 @@ export class JMAPClient {
       throw new Error('Invalid JSON response from server');
     }
 
-    console.log('Response:', data);
     return data;
   }
 
@@ -205,7 +195,6 @@ export class JMAPClient {
 
       return null;
     } catch (error) {
-      console.log('Quota not available or not supported:', error);
       return null;
     }
   }
@@ -220,12 +209,9 @@ export class JMAPClient {
 
       if (response.methodResponses?.[0]?.[0] === "Mailbox/get") {
         const rawMailboxes = response.methodResponses[0][1].list || [];
-        console.log(`Got ${rawMailboxes.length} mailboxes`);
 
         // Map and ensure all required fields are present
         const mailboxes = rawMailboxes.map((mb: any) => {
-          console.log(`Mailbox: ${mb.name} (ID: ${mb.id}, Role: ${mb.role}, Emails: ${mb.totalEmails}, Unread: ${mb.unreadEmails})`);
-
           return {
             id: mb.id,
             name: mb.name,
@@ -285,15 +271,11 @@ export class JMAPClient {
 
   async getEmails(mailboxId?: string, limit: number = 50): Promise<Email[]> {
     try {
-      console.log(`Fetching emails for mailbox: ${mailboxId || 'all'}`);
-
       // Build filter - only add inMailbox if we have a mailboxId
       const filter: any = {};
       if (mailboxId && mailboxId !== '') {
         filter.inMailbox = mailboxId;
       }
-
-      console.log('Email filter:', JSON.stringify(filter));
 
       const response = await this.request([
         ["Email/query", {
@@ -326,21 +308,8 @@ export class JMAPClient {
         }, "1"],
       ]);
 
-      // Log query results
-      if (response.methodResponses?.[0]?.[0] === "Email/query") {
-        const queryResult = response.methodResponses[0][1];
-        console.log(`Email/query returned ${queryResult.total} total, ${queryResult.ids?.length || 0} ids`);
-      }
-
       if (response.methodResponses?.[1]?.[0] === "Email/get") {
         const emails = response.methodResponses[1][1].list || [];
-        console.log(`Got ${emails.length} emails from Email/get`);
-
-        // Log first few emails for debugging
-        emails.slice(0, 3).forEach((email: any) => {
-          console.log(`Email: "${email.subject}" from ${email.from?.[0]?.email || 'unknown'}`);
-        });
-
         return emails;
       }
 

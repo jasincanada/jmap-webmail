@@ -141,7 +141,6 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       const quota = await client.getQuota();
       set({ quota });
     } catch (error) {
-      console.log('Failed to fetch quota:', error);
       // Don't set error state as quota is optional
     }
   },
@@ -224,7 +223,6 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       const processingKey = `${emailId}-${read}`;
       const currentProcessing = get().processingReadStatus;
       if (currentProcessing.has(processingKey)) {
-        console.log(`Already processing markAsRead for ${emailId} to ${read}`);
         return; // Already being processed
       }
 
@@ -235,7 +233,6 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       // Check if already in the desired state
       const isCurrentlyRead = email.keywords?.$seen === true;
       if (isCurrentlyRead === read) {
-        console.log(`Email ${emailId} already has $seen=${read}`);
         return; // Already in desired state
       }
 
@@ -258,7 +255,6 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
         const wasRead = emailInState.keywords?.$seen === true;
         if (wasRead === read) {
-          console.log(`Email ${emailId} state unchanged, skipping counter update`);
           return { processingReadStatus: newProcessingSet }; // State unchanged, skip counter update
         }
 
