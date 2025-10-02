@@ -62,11 +62,32 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   setEmails: (emails) => set({ emails }),
   setMailboxes: (mailboxes) => set({ mailboxes }),
   selectEmail: (email) => set({ selectedEmail: email }),
-  selectMailbox: (mailboxId) => set({ selectedMailbox: mailboxId }),
+  selectMailbox: (mailboxId) => set({ selectedMailbox: mailboxId, selectedEmail: null, selectedEmailIds: new Set() }),
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
   setSearchQuery: (query) => set({ searchQuery: query }),
   setQuota: (quota) => set({ quota }),
+
+  toggleEmailSelection: (emailId) => {
+    const { selectedEmailIds } = get();
+    const newSelection = new Set(selectedEmailIds);
+    if (newSelection.has(emailId)) {
+      newSelection.delete(emailId);
+    } else {
+      newSelection.add(emailId);
+    }
+    set({ selectedEmailIds: newSelection });
+  },
+
+  selectAllEmails: () => {
+    const { emails } = get();
+    const allIds = new Set(emails.map(e => e.id));
+    set({ selectedEmailIds: allIds });
+  },
+
+  clearSelection: () => {
+    set({ selectedEmailIds: new Set() });
+  },
 
   // JMAP operations
   fetchMailboxes: async (client) => {
@@ -380,6 +401,136 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         error: error instanceof Error ? error.message : "Failed to update star"
       });
       throw error;
+    }
+  },
+
+  // Batch operations
+  batchMarkAsRead: async (client, read) => {
+    const { selectedEmailIds, emails, mailboxes } = get();
+    if (selectedEmailIds.size === 0) return;
+
+    set({ isLoading: true, error: null });
+    try {
+      const emailIdsArray = Array.from(selectedEmailIds);
+      await client.batchMarkAsRead(emailIdsArray, read);
+
+      // Update local state
+      const updatedEmails = emails.map(email =>
+        selectedEmailIds.has(email.id)
+          ? { ...email, keywords: { ...email.keywords, $seen: read } }
+          : email
+      );
+
+      // Update mailbox counters
+      const affectedEmails = emails.filter(e => selectedEmailIds.has(e.id));
+      const updatedMailboxes = mailboxes.map(mailbox => {
+        let deltaUnread = 0;
+        affectedEmails.forEach(email => {
+          if (email.mailboxIds?.[mailbox.id]) {
+            const wasRead = email.keywords?.$seen === true;
+            if (wasRead !== read) {
+              deltaUnread += read ? -1 : 1;
+            }
+          }
+        });
+
+        return {
+          ...mailbox,
+          unreadEmails: Math.max(0, mailbox.unreadEmails + deltaUnread),
+          unreadThreads: Math.max(0, mailbox.unreadThreads + deltaUnread)
+        };
+      });
+
+      set({
+        emails: updatedEmails,
+        mailboxes: updatedMailboxes,
+        selectedEmailIds: new Set(),
+        isLoading: false
+      });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : "Failed to update emails",
+        isLoading: false
+      });
+    }
+  },
+
+  batchDelete: async (client) => {
+    const { selectedEmailIds, emails, mailboxes } = get();
+    if (selectedEmailIds.size === 0) return;
+
+    set({ isLoading: true, error: null });
+    try {
+      const emailIdsArray = Array.from(selectedEmailIds);
+      await client.batchDeleteEmails(emailIdsArray);
+
+      // Remove deleted emails from local state
+      const remainingEmails = emails.filter(e => !selectedEmailIds.has(e.id));
+
+      // Update mailbox counters
+      const deletedEmails = emails.filter(e => selectedEmailIds.has(e.id));
+      const updatedMailboxes = mailboxes.map(mailbox => {
+        let deltaTotalEmails = 0;
+        let deltaUnreadEmails = 0;
+
+        deletedEmails.forEach(email => {
+          if (email.mailboxIds?.[mailbox.id]) {
+            deltaTotalEmails--;
+            if (!email.keywords?.$seen) {
+              deltaUnreadEmails--;
+            }
+          }
+        });
+
+        return {
+          ...mailbox,
+          totalEmails: Math.max(0, mailbox.totalEmails + deltaTotalEmails),
+          unreadEmails: Math.max(0, mailbox.unreadEmails + deltaUnreadEmails),
+          totalThreads: Math.max(0, mailbox.totalThreads + deltaTotalEmails),
+          unreadThreads: Math.max(0, mailbox.unreadThreads + deltaUnreadEmails)
+        };
+      });
+
+      set({
+        emails: remainingEmails,
+        mailboxes: updatedMailboxes,
+        selectedEmailIds: new Set(),
+        selectedEmail: null,
+        isLoading: false
+      });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : "Failed to delete emails",
+        isLoading: false
+      });
+    }
+  },
+
+  batchMoveToMailbox: async (client, toMailboxId) => {
+    const { selectedEmailIds, emails } = get();
+    if (selectedEmailIds.size === 0) return;
+
+    set({ isLoading: true, error: null });
+    try {
+      const emailIdsArray = Array.from(selectedEmailIds);
+      await client.batchMoveEmails(emailIdsArray, toMailboxId);
+
+      // Update local state - remove from current view since they moved
+      const remainingEmails = emails.filter(e => !selectedEmailIds.has(e.id));
+
+      set({
+        emails: remainingEmails,
+        selectedEmailIds: new Set(),
+        isLoading: false
+      });
+
+      // Refresh emails to get updated list
+      await get().fetchEmails(client, get().selectedMailbox);
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : "Failed to move emails",
+        isLoading: false
+      });
     }
   },
 

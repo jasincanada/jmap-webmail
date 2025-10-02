@@ -4,7 +4,8 @@ import { formatDate, truncateText } from "@/lib/utils";
 import { Email } from "@/lib/jmap/types";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
-import { Paperclip, Star, Circle } from "lucide-react";
+import { Paperclip, Star, Circle, CheckSquare, Square } from "lucide-react";
+import { useEmailStore } from "@/stores/email-store";
 
 interface EmailListItemProps {
   email: Email;
@@ -35,11 +36,18 @@ const getEmailColor = (keywords: Record<string, boolean> | undefined) => {
 };
 
 export function EmailListItem({ email, selected, onClick }: EmailListItemProps) {
+  const { selectedEmailIds, toggleEmailSelection } = useEmailStore();
+  const isChecked = selectedEmailIds.has(email.id);
   const isUnread = !email.keywords?.$seen;
   const isStarred = email.keywords?.$flagged;
   const isImportant = email.keywords?.["$important"];
   const sender = email.from?.[0];
   const colorTag = getEmailColor(email.keywords);
+
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleEmailSelection(email.id);
+  };
 
   return (
     <div
@@ -59,6 +67,18 @@ export function EmailListItem({ email, selected, onClick }: EmailListItemProps) 
       onClick={onClick}
     >
       <div className="flex items-start gap-3 px-4 py-4">
+        {/* Checkbox */}
+        <button
+          onClick={handleCheckboxClick}
+          className="p-1 hover:bg-muted/50 rounded mt-2 flex-shrink-0"
+        >
+          {isChecked ? (
+            <CheckSquare className="w-4 h-4 text-blue-600" />
+          ) : (
+            <Square className="w-4 h-4 text-muted-foreground" />
+          )}
+        </button>
+
         {/* Unread indicator */}
         {isUnread && (
           <div className="absolute left-1 top-1/2 -translate-y-1/2">

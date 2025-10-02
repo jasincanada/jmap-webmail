@@ -3,7 +3,10 @@
 import { Email } from "@/lib/jmap/types";
 import { EmailListItem } from "./email-list-item";
 import { cn } from "@/lib/utils";
-import { Inbox } from "lucide-react";
+import { Inbox, CheckSquare, Square, Trash2, Mail, MailOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useEmailStore } from "@/stores/email-store";
+import { useAuthStore } from "@/stores/auth-store";
 
 interface EmailListProps {
   emails: Email[];
@@ -20,6 +23,15 @@ export function EmailList({
   className,
   isLoading = false
 }: EmailListProps) {
+  const { client } = useAuthStore();
+  const {
+    selectedEmailIds,
+    toggleEmailSelection,
+    selectAllEmails,
+    clearSelection,
+    batchMarkAsRead,
+    batchDelete
+  } = useEmailStore();
   // Loading skeleton component
   const LoadingSkeleton = () => (
     <div className="animate-pulse">
@@ -41,13 +53,86 @@ export function EmailList({
     </div>
   );
 
+  const hasSelection = selectedEmailIds.size > 0;
+  const allSelected = emails.length > 0 && emails.every(e => selectedEmailIds.has(e.id));
+
+  const handleBatchMarkAsRead = async (read: boolean) => {
+    if (!client) return;
+    await batchMarkAsRead(client, read);
+  };
+
+  const handleBatchDelete = async () => {
+    if (!client || !confirm(`Delete ${selectedEmailIds.size} emails?`)) return;
+    await batchDelete(client);
+  };
+
   return (
     <div className={cn("flex flex-col h-full", className)}>
+      {/* Batch Actions Toolbar */}
+      {hasSelection && (
+        <div className="px-4 py-2 border-b bg-blue-50 dark:bg-blue-950/30 border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">
+              {selectedEmailIds.size} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleBatchMarkAsRead(true)}
+              title="Mark as read"
+            >
+              <MailOpen className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleBatchMarkAsRead(false)}
+              title="Mark as unread"
+            >
+              <Mail className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBatchDelete}
+              title="Delete"
+              className="text-red-600 hover:text-red-700"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearSelection}
+              title="Clear selection"
+              className="ml-2"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* List Header */}
-      <div className="px-4 py-3 border-b bg-muted/50 border-border">
-        <h2 className="text-sm font-medium text-foreground">
-          {isLoading ? 'Loading...' : emails.length > 0 ? `${emails.length} conversations` : 'No conversations'}
-        </h2>
+      <div className="px-4 py-3 border-b bg-muted/50 border-border flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => allSelected ? clearSelection() : selectAllEmails()}
+            className="p-1 hover:bg-muted rounded"
+            title={allSelected ? "Deselect all" : "Select all"}
+          >
+            {allSelected ? (
+              <CheckSquare className="w-4 h-4" />
+            ) : (
+              <Square className="w-4 h-4" />
+            )}
+          </button>
+          <h2 className="text-sm font-medium text-foreground">
+            {isLoading ? 'Loading...' : emails.length > 0 ? `${emails.length} conversations` : 'No conversations'}
+          </h2>
+        </div>
       </div>
 
       {/* Email List */}

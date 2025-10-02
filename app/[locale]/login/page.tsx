@@ -27,6 +27,7 @@ export default function LoginPage() {
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const justSelectedSuggestion = useRef(false);
 
   // Load saved usernames from localStorage on mount
   useEffect(() => {
@@ -85,6 +86,12 @@ export default function LoginPage() {
 
   // Filter suggestions based on input
   useEffect(() => {
+    // Skip showing suggestions if we just selected one
+    if (justSelectedSuggestion.current) {
+      justSelectedSuggestion.current = false;
+      return;
+    }
+
     if (formData.username && savedUsernames.length > 0) {
       const filtered = savedUsernames.filter(username =>
         username.toLowerCase().includes(formData.username.toLowerCase())
@@ -127,6 +134,7 @@ export default function LoginPage() {
   };
 
   const selectSuggestion = (username: string) => {
+    justSelectedSuggestion.current = true;
     setFormData({ ...formData, username });
     setShowSuggestions(false);
     // Focus password field
