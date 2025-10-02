@@ -8,6 +8,7 @@ interface EmailStore {
   selectedEmail: Email | null;
   selectedMailbox: string;
   isLoading: boolean;
+  isLoadingEmail: boolean; // Track when a full email is being fetched
   error: string | null;
   searchQuery: string;
   quota: { used: number; total: number } | null;
@@ -19,6 +20,7 @@ interface EmailStore {
   selectEmail: (email: Email | null) => void;
   selectMailbox: (mailboxId: string) => void;
   setLoading: (loading: boolean) => void;
+  setLoadingEmail: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setSearchQuery: (query: string) => void;
   setQuota: (quota: { used: number; total: number } | null) => void;
@@ -53,6 +55,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   selectedEmail: null,
   selectedMailbox: "",
   isLoading: false,
+  isLoadingEmail: false,
   error: null,
   searchQuery: "",
   quota: null,
@@ -64,6 +67,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   selectEmail: (email) => set({ selectedEmail: email }),
   selectMailbox: (mailboxId) => set({ selectedMailbox: mailboxId, selectedEmail: null, selectedEmailIds: new Set() }),
   setLoading: (loading) => set({ isLoading: loading }),
+  setLoadingEmail: (loading) => set({ isLoadingEmail: loading }),
   setError: (error) => set({ error }),
   setSearchQuery: (query) => set({ searchQuery: query }),
   setQuota: (quota) => set({ quota }),

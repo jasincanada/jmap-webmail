@@ -37,6 +37,8 @@ export default function Home() {
     moveToMailbox,
     searchEmails,
     isLoading,
+    isLoadingEmail,
+    setLoadingEmail,
   } = useEmailStore();
 
   // Check auth on mount
@@ -257,10 +259,11 @@ export default function Home() {
           onEmailSelect={async (email) => {
             if (!client || !email) return;
 
-            // First, select the email to show it immediately
-            selectEmail(email);
+            // Set loading state immediately
+            setLoadingEmail(true);
+            selectEmail(null); // Clear selected email to show loading state
 
-            // Then fetch the full content
+            // Fetch the full content
             try {
               const fullEmail = await client.getEmail(email.id);
               if (fullEmail) {
@@ -268,6 +271,8 @@ export default function Home() {
               }
             } catch (error) {
               console.error('Failed to fetch email content:', error);
+            } finally {
+              setLoadingEmail(false);
             }
           }}
           className="h-full"
@@ -277,6 +282,7 @@ export default function Home() {
       {/* Email Viewer */}
       <EmailViewer
         email={selectedEmail}
+        isLoading={isLoadingEmail}
         onReply={handleReply}
         onReplyAll={handleReplyAll}
         onForward={handleForward}

@@ -55,6 +55,7 @@ import {
 
 interface EmailViewerProps {
   email: Email | null;
+  isLoading?: boolean;
   onReply?: () => void;
   onReplyAll?: () => void;
   onForward?: () => void;
@@ -115,6 +116,7 @@ const getCurrentColor = (keywords: Record<string, boolean> | undefined) => {
 
 export function EmailViewer({
   email,
+  isLoading = false,
   onReply,
   onReplyAll,
   onForward,
@@ -126,10 +128,8 @@ export function EmailViewer({
   onDownloadAttachment,
 }: EmailViewerProps) {
   const [showFullHeaders, setShowFullHeaders] = useState(false);
-  const [isLoadingContent, setIsLoadingContent] = useState(false);
   const [allowExternalContent, setAllowExternalContent] = useState(false);
   const [hasBlockedContent, setHasBlockedContent] = useState(false);
-  const [isLoadingEmail, setIsLoadingEmail] = useState(false);
   const currentColor = getCurrentColor(email?.keywords);
 
   useEffect(() => {
@@ -148,8 +148,6 @@ export function EmailViewer({
   // Sanitize and prepare email HTML content
   const emailContent = useMemo(() => {
     if (!email) return { html: "", isHtml: false };
-
-    setIsLoadingContent(false);
 
     // Check if we have body values
     if (email.bodyValues) {
@@ -259,12 +257,18 @@ export function EmailViewer({
       }
     }
 
-    // Last resort: use preview
+    // If no body content is available, show the preview or a message
     if (email.preview) {
-      setIsLoadingContent(true); // Show that we're using limited content
+      const previewHtml = email.preview
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\r\n/g, '<br>')
+        .replace(/\r/g, '<br>')
+        .replace(/\n/g, '<br>');
+
       return {
-        html: `<p style="color: #666; font-style: italic;">Loading full email content...</p>
-               <div>${email.preview}</div>`,
+        html: `<div style="color: #666; font-style: italic;">${previewHtml}</div>`,
         isHtml: false
       };
     }
@@ -274,6 +278,56 @@ export function EmailViewer({
       isHtml: false
     };
   }, [email, allowExternalContent, hasBlockedContent]);
+
+  // Show loading skeleton while email is being fetched
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex flex-col h-full bg-background overflow-hidden">
+        {/* Loading Header Skeleton */}
+        <div className="bg-background border-b border-border">
+          <div className="px-6 py-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0 space-y-3">
+                <div className="h-8 bg-muted rounded-md w-3/4 animate-pulse"></div>
+                <div className="flex items-center gap-3">
+                  <div className="h-4 bg-muted rounded w-32 animate-pulse"></div>
+                  <div className="h-4 bg-muted rounded w-24 animate-pulse"></div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-20 bg-muted rounded animate-pulse"></div>
+                <div className="h-8 w-8 bg-muted rounded animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Loading Sender Info Skeleton */}
+          <div className="px-6 pb-4">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-muted rounded-full animate-pulse"></div>
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-muted rounded w-48 animate-pulse"></div>
+                <div className="h-3 bg-muted rounded w-64 animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Loading Content Skeleton */}
+        <div className="flex-1 overflow-auto bg-muted/30">
+          <div className="max-w-4xl mx-auto p-6">
+            <div className="bg-background rounded-lg shadow-sm border border-border overflow-hidden p-6 space-y-3">
+              <div className="h-4 bg-muted rounded w-full animate-pulse"></div>
+              <div className="h-4 bg-muted rounded w-5/6 animate-pulse"></div>
+              <div className="h-4 bg-muted rounded w-4/6 animate-pulse"></div>
+              <div className="h-4 bg-muted rounded w-full animate-pulse"></div>
+              <div className="h-4 bg-muted rounded w-3/4 animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!email) {
     return (

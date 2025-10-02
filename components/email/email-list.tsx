@@ -3,7 +3,8 @@
 import { Email } from "@/lib/jmap/types";
 import { EmailListItem } from "./email-list-item";
 import { cn } from "@/lib/utils";
-import { Inbox, CheckSquare, Square, Trash2, Mail, MailOpen } from "lucide-react";
+import { Inbox, CheckSquare, Square, Trash2, Mail, MailOpen, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useEmailStore } from "@/stores/email-store";
 import { useAuthStore } from "@/stores/auth-store";
@@ -30,8 +31,11 @@ export function EmailList({
     selectAllEmails,
     clearSelection,
     batchMarkAsRead,
-    batchDelete
+    batchDelete,
+    isLoading: storeIsLoading
   } = useEmailStore();
+
+  const [isProcessing, setIsProcessing] = useState(false);
   // Loading skeleton component
   const LoadingSkeleton = () => (
     <div className="animate-pulse">
@@ -57,74 +61,113 @@ export function EmailList({
   const allSelected = emails.length > 0 && emails.every(e => selectedEmailIds.has(e.id));
 
   const handleBatchMarkAsRead = async (read: boolean) => {
-    if (!client) return;
-    await batchMarkAsRead(client, read);
+    if (!client || isProcessing) return;
+    setIsProcessing(true);
+    try {
+      await batchMarkAsRead(client, read);
+    } finally {
+      setTimeout(() => setIsProcessing(false), 500); // Small delay for visual feedback
+    }
   };
 
   const handleBatchDelete = async () => {
-    if (!client || !confirm(`Delete ${selectedEmailIds.size} emails?`)) return;
-    await batchDelete(client);
+    if (!client || isProcessing || !confirm(`Delete ${selectedEmailIds.size} emails?`)) return;
+    setIsProcessing(true);
+    try {
+      await batchDelete(client);
+    } finally {
+      setTimeout(() => setIsProcessing(false), 500);
+    }
   };
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
-      {/* Batch Actions Toolbar */}
-      {hasSelection && (
+      {/* Batch Actions Toolbar with smooth transition */}
+      <div
+        className={cn(
+          "transition-all duration-300 ease-in-out overflow-hidden",
+          hasSelection ? "max-h-16 opacity-100" : "max-h-0 opacity-0"
+        )}
+      >
         <div className="px-4 py-2 border-b bg-blue-50 dark:bg-blue-950/30 border-border flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">
-              {selectedEmailIds.size} selected
+          <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-3 duration-300">
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+              {selectedEmailIds.size} {selectedEmailIds.size === 1 ? 'email' : 'emails'} selected
             </span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-3 duration-300">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handleBatchMarkAsRead(true)}
               title="Mark as read"
+              disabled={isProcessing}
+              className="hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50"
             >
-              <MailOpen className="w-4 h-4" />
+              {isProcessing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <MailOpen className="w-4 h-4" />
+              )}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handleBatchMarkAsRead(false)}
               title="Mark as unread"
+              disabled={isProcessing}
+              className="hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50"
             >
-              <Mail className="w-4 h-4" />
+              {isProcessing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Mail className="w-4 h-4" />
+              )}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleBatchDelete}
               title="Delete"
-              className="text-red-600 hover:text-red-700"
+              disabled={isProcessing}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
             >
-              <Trash2 className="w-4 h-4" />
+              {isProcessing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
             </Button>
+            <div className="w-px h-6 bg-border mx-1" />
             <Button
               variant="ghost"
               size="sm"
               onClick={clearSelection}
               title="Clear selection"
-              className="ml-2"
+              disabled={isProcessing}
+              className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             >
               Cancel
             </Button>
           </div>
         </div>
-      )}
+      </div>
 
       {/* List Header */}
       <div className="px-4 py-3 border-b bg-muted/50 border-border flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button
             onClick={() => allSelected ? clearSelection() : selectAllEmails()}
-            className="p-1 hover:bg-muted rounded"
+            className={cn(
+              "p-1 rounded transition-all duration-200",
+              "hover:bg-muted hover:scale-110",
+              "active:scale-95",
+              allSelected && "text-blue-600"
+            )}
             title={allSelected ? "Deselect all" : "Select all"}
           >
             {allSelected ? (
-              <CheckSquare className="w-4 h-4" />
+              <CheckSquare className="w-4 h-4 animate-in zoom-in-50 duration-200" />
             ) : (
               <Square className="w-4 h-4" />
             )}
