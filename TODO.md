@@ -45,7 +45,9 @@
 - [x] Create login page with JMAP server URL input
 - [x] Use environment variable for JMAP server URL configuration
 - [x] Simplify login UI with minimalistic design (no technical jargon)
+- [x] Redesign login page with modern minimalist UI
 - [x] Disable browser autocomplete for username field
+- [x] Implement custom username autocomplete with localStorage
 - [x] Add session management
 - [x] Implement logout functionality
 - [x] Add remember me functionality
@@ -160,7 +162,7 @@
 - [ ] Create contributing guidelines
 
 ### Deployment
-- [ ] Create environment variable management
+- [x] Create environment variable management (.env.local and .env.example)
 - [ ] Add health check endpoint
 - [ ] Configure production build optimizations
 - [ ] Set up monitoring and logging

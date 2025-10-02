@@ -678,9 +678,9 @@ export function EmailViewer({
                   {/* Technical Details Section - Only show if we have useful technical info */}
                   {(email.messageId || email.replyTo?.length || (email.sentAt && email.receivedAt &&
                     Math.abs(new Date(email.sentAt).getTime() - new Date(email.receivedAt).getTime()) > 60000)) && (
-                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                      <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                        <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                    <div className="border border-border rounded-lg overflow-hidden">
+                      <div className="bg-gradient-to-r from-muted/50 to-muted px-4 py-2 border-b border-border">
+                        <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-2">
                           <Network className="w-3.5 h-3.5" />
                           Technical Details
                         </h3>
@@ -690,10 +690,10 @@ export function EmailViewer({
                           {/* Message ID */}
                           {email.messageId && (
                             <div className="flex items-start gap-2">
-                              <Hash className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 mt-0.5" />
+                              <Hash className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
                               <div className="flex-1 min-w-0">
-                                <span className="font-medium text-gray-600 dark:text-gray-400">Message-ID:</span>
-                                <div className="text-gray-700 dark:text-gray-300 break-all font-mono text-xs mt-0.5">
+                                <span className="font-medium text-muted-foreground">Message-ID:</span>
+                                <div className="text-foreground break-all font-mono text-xs mt-0.5">
                                   {email.messageId}
                                 </div>
                               </div>
@@ -704,9 +704,9 @@ export function EmailViewer({
                           {email.replyTo && email.replyTo.length > 0 &&
                            (!email.from || email.replyTo[0].email !== email.from[0]?.email) && (
                             <div className="flex items-start gap-2">
-                              <Mail className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 mt-0.5" />
+                              <Mail className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
                               <div className="flex-1">
-                                <span className="font-medium text-gray-600 dark:text-gray-400">Reply-To:</span>
+                                <span className="font-medium text-muted-foreground">Reply-To:</span>
                                 <div className="flex flex-wrap gap-2 mt-1">
                                   {email.replyTo.map((recipient, i) => (
                                     <span key={i} className="inline-flex items-center px-2 py-1 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded text-xs">
