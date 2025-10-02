@@ -12,6 +12,7 @@ interface EmailStore {
   searchQuery: string;
   quota: { used: number; total: number } | null;
   processingReadStatus: Set<string>; // Track emails being marked as read/unread
+  selectedEmailIds: Set<string>; // Track selected emails for batch operations
 
   setEmails: (emails: Email[]) => void;
   setMailboxes: (mailboxes: Mailbox[]) => void;
@@ -21,6 +22,9 @@ interface EmailStore {
   setError: (error: string | null) => void;
   setSearchQuery: (query: string) => void;
   setQuota: (quota: { used: number; total: number } | null) => void;
+  toggleEmailSelection: (emailId: string) => void;
+  selectAllEmails: () => void;
+  clearSelection: () => void;
 
   // JMAP operations
   fetchMailboxes: (client: JMAPClient) => Promise<void>;
@@ -33,6 +37,11 @@ interface EmailStore {
   moveToMailbox: (client: JMAPClient, emailId: string, mailboxId: string) => Promise<void>;
   searchEmails: (client: JMAPClient, query: string) => Promise<void>;
   toggleStar: (client: JMAPClient, emailId: string) => Promise<void>;
+
+  // Batch operations
+  batchMarkAsRead: (client: JMAPClient, read: boolean) => Promise<void>;
+  batchDelete: (client: JMAPClient) => Promise<void>;
+  batchMoveToMailbox: (client: JMAPClient, mailboxId: string) => Promise<void>;
 
   // Mock data for demo
   loadMockData: () => void;
@@ -48,6 +57,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   searchQuery: "",
   quota: null,
   processingReadStatus: new Set(),
+  selectedEmailIds: new Set(),
 
   setEmails: (emails) => set({ emails }),
   setMailboxes: (mailboxes) => set({ mailboxes }),

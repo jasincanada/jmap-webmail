@@ -456,6 +456,24 @@ export class JMAPClient {
     ]);
   }
 
+  async batchMarkAsRead(emailIds: string[], read: boolean = true): Promise<void> {
+    if (emailIds.length === 0) return;
+
+    const updates: Record<string, any> = {};
+    emailIds.forEach(id => {
+      updates[id] = {
+        "keywords/$seen": read,
+      };
+    });
+
+    await this.request([
+      ["Email/set", {
+        accountId: this.accountId,
+        update: updates,
+      }, "0"],
+    ]);
+  }
+
   async toggleStar(emailId: string, starred: boolean): Promise<void> {
     await this.request([
       ["Email/set", {
@@ -487,6 +505,35 @@ export class JMAPClient {
       ["Email/set", {
         accountId: this.accountId,
         destroy: [emailId],
+      }, "0"],
+    ]);
+  }
+
+  async batchDeleteEmails(emailIds: string[]): Promise<void> {
+    if (emailIds.length === 0) return;
+
+    await this.request([
+      ["Email/set", {
+        accountId: this.accountId,
+        destroy: emailIds,
+      }, "0"],
+    ]);
+  }
+
+  async batchMoveEmails(emailIds: string[], toMailboxId: string): Promise<void> {
+    if (emailIds.length === 0) return;
+
+    const updates: Record<string, any> = {};
+    emailIds.forEach(id => {
+      updates[id] = {
+        mailboxIds: { [toMailboxId]: true },
+      };
+    });
+
+    await this.request([
+      ["Email/set", {
+        accountId: this.accountId,
+        update: updates,
       }, "0"],
     ]);
   }
