@@ -575,7 +575,7 @@ export class JMAPClient {
       throw new Error('No drafts mailbox found');
     }
 
-    const emailId = draftId || `draft-${Date.now()}`;
+    const emailId = `draft-${Date.now()}`;
 
     // Build email object with attachments if provided
     const emailData: any = {
@@ -610,27 +610,60 @@ export class JMAPClient {
       }));
     }
 
-    const response = await this.request([
-      ["Email/set", {
+    // If updating an existing draft, destroy it first then create new one
+    // This is simpler than trying to update individual fields
+    const methodCalls: any[] = [];
+
+    if (draftId) {
+      // Delete old draft
+      methodCalls.push(["Email/set", {
         accountId: this.accountId,
-        [draftId ? 'update' : 'create']: draftId ? {
-          [draftId]: emailData
-        } : {
+        destroy: [draftId],
+      }, "0"]);
+
+      // Create new draft
+      methodCalls.push(["Email/set", {
+        accountId: this.accountId,
+        create: {
           [emailId]: emailData
         },
-      }, "0"],
-    ]);
+      }, "1"]);
+    } else {
+      // Just create new draft
+      methodCalls.push(["Email/set", {
+        accountId: this.accountId,
+        create: {
+          [emailId]: emailData
+        },
+      }, "0"]);
+    }
 
-    // Extract the created/updated email ID
-    if (response.methodResponses?.[0]?.[0] === "Email/set") {
-      const result = response.methodResponses[0][1];
-      if (draftId && result.updated?.[draftId]) {
-        return draftId;
-      } else if (result.created?.[emailId]) {
+    const response = await this.request(methodCalls);
+
+    console.log('Draft save response:', JSON.stringify(response, null, 2));
+
+    // If we're updating (destroy + create), check the second response
+    // Otherwise check the first response
+    const responseIndex = draftId ? 1 : 0;
+
+    if (response.methodResponses?.[responseIndex]?.[0] === "Email/set") {
+      const result = response.methodResponses[responseIndex][1];
+
+      // Check for errors
+      if (result.notCreated || result.notUpdated) {
+        const errors = result.notCreated || result.notUpdated;
+        const firstError = Object.values(errors)[0] as any;
+        console.error('Draft save error:', firstError);
+        throw new Error(firstError.description || firstError.type || 'Failed to save draft');
+      }
+
+      if (result.created?.[emailId]) {
+        console.log('Draft created successfully:', result.created[emailId].id);
         return result.created[emailId].id;
       }
     }
 
+    console.error('Unexpected draft save response:', response);
     throw new Error('Failed to save draft');
   }
 
@@ -764,37 +797,63 @@ export class JMAPClient {
 
     // Replace accountId in the upload URL
     const finalUploadUrl = uploadUrl.replace('{accountId}', encodeURIComponent(this.accountId));
-
-    // Create FormData with the file
-    const formData = new FormData();
-    formData.append('file', file);
+    console.log('Uploading file to:', finalUploadUrl);
+    console.log('File info:', { name: file.name, size: file.size, type: file.type });
 
     const response = await fetch(finalUploadUrl, {
       method: 'POST',
       headers: {
         'Authorization': this.authHeader,
+        'Content-Type': file.type || 'application/octet-stream',
       },
       body: file, // Send the file directly as binary
     });
 
+    console.log('Upload response status:', response.status);
+
     if (!response.ok) {
-      throw new Error(`Failed to upload file: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Upload failed:', errorText);
+      throw new Error(`Failed to upload file: ${response.status} - ${errorText}`);
     }
 
-    const result = await response.json();
+    const responseText = await response.text();
+    console.log('Upload response body:', responseText);
 
-    // Response should contain accountId -> blobId mapping
+    let result;
+    try {
+      result = JSON.parse(responseText);
+      console.log('Parsed upload response:', JSON.stringify(result, null, 2));
+    } catch (e) {
+      console.error('Failed to parse upload response as JSON:', responseText);
+      throw new Error('Invalid JSON response from upload');
+    }
+
+    // Try different response formats
+    // Format 1: Direct response { blobId, type, size }
+    if (result.blobId) {
+      console.log('Using direct response format');
+      return {
+        blobId: result.blobId,
+        size: result.size || file.size,
+        type: result.type || file.type,
+      };
+    }
+
+    // Format 2: Nested under accountId { accountId: { blobId, type, size } }
     const blobInfo = result[this.accountId];
-
-    if (!blobInfo || !blobInfo.blobId) {
-      throw new Error('Invalid upload response');
+    if (blobInfo && blobInfo.blobId) {
+      console.log('Using accountId-nested response format');
+      return {
+        blobId: blobInfo.blobId,
+        size: blobInfo.size || file.size,
+        type: blobInfo.type || file.type,
+      };
     }
 
-    return {
-      blobId: blobInfo.blobId,
-      size: blobInfo.size || file.size,
-      type: blobInfo.type || file.type,
-    };
+    // If neither format works, show what we got
+    console.error('Unexpected upload response format:', result);
+    throw new Error('Invalid upload response: blobId not found');
   }
 
   getBlobDownloadUrl(blobId: string, name?: string, type?: string): string {
