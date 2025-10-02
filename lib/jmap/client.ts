@@ -12,6 +12,7 @@ export class JMAPClient {
   private session: any = null;
   private lastPingTime: number = 0;
   private pingInterval: NodeJS.Timeout | null = null;
+  private accounts: Record<string, any> = {}; // All accounts (primary + shared)
 
   constructor(serverUrl: string, username: string, password: string) {
     this.serverUrl = serverUrl.replace(/\/$/, '');
@@ -53,15 +54,17 @@ export class JMAPClient {
       // Extract the download URL
       this.downloadUrl = session.downloadUrl;
 
-      // Extract the account ID
+      // Extract and store all accounts (primary + shared)
+      this.accounts = session.accounts || {};
+
+      // Extract the primary account ID
       const mailAccount = session.primaryAccounts?.["urn:ietf:params:jmap:mail"];
       if (mailAccount) {
         this.accountId = mailAccount;
       } else {
         // Try to find any account
-        const accounts = session.accounts;
-        if (accounts && Object.keys(accounts).length > 0) {
-          this.accountId = Object.keys(accounts)[0];
+        if (this.accounts && Object.keys(this.accounts).length > 0) {
+          this.accountId = Object.keys(this.accounts)[0];
         } else {
           throw new Error('No mail account found in session');
         }
@@ -234,6 +237,10 @@ export class JMAPClient {
               maySubmit: true,
             },
             isSubscribed: mb.isSubscribed ?? true,
+            // Account info for primary account
+            accountId: this.accountId,
+            accountName: this.accounts[this.accountId]?.name || this.username,
+            isShared: false,
           } as Mailbox;
         });
 
@@ -265,12 +272,92 @@ export class JMAPClient {
           maySubmit: true,
         },
         isSubscribed: true,
+        accountId: this.accountId,
+        accountName: this.username,
+        isShared: false,
       }] as Mailbox[];
     }
   }
 
-  async getEmails(mailboxId?: string, limit: number = 50): Promise<Email[]> {
+  async getAllMailboxes(): Promise<Mailbox[]> {
     try {
+      const allMailboxes: Mailbox[] = [];
+
+      // Get all account IDs
+      const accountIds = Object.keys(this.accounts);
+
+      // If no accounts, fallback to primary only
+      if (accountIds.length === 0) {
+        return this.getMailboxes();
+      }
+
+      // Fetch mailboxes for each account
+      for (const accountId of accountIds) {
+        const account = this.accounts[accountId];
+        const isPrimary = accountId === this.accountId;
+
+        try {
+          const response = await this.request([
+            ["Mailbox/get", {
+              accountId: accountId,
+            }, "0"]
+          ]);
+
+          if (response.methodResponses?.[0]?.[0] === "Mailbox/get") {
+            const rawMailboxes = response.methodResponses[0][1].list || [];
+
+            // Map mailboxes with account info
+            const mailboxes = rawMailboxes.map((mb: any) => {
+              return {
+                id: mb.id,
+                name: mb.name,
+                parentId: mb.parentId || undefined,
+                role: mb.role || undefined,
+                sortOrder: mb.sortOrder ?? 0,
+                totalEmails: mb.totalEmails ?? 0,
+                unreadEmails: mb.unreadEmails ?? 0,
+                totalThreads: mb.totalThreads ?? 0,
+                unreadThreads: mb.unreadThreads ?? 0,
+                myRights: mb.myRights || {
+                  mayReadItems: true,
+                  mayAddItems: true,
+                  mayRemoveItems: true,
+                  maySetSeen: true,
+                  maySetKeywords: true,
+                  mayCreateChild: true,
+                  mayRename: true,
+                  mayDelete: true,
+                  maySubmit: true,
+                },
+                isSubscribed: mb.isSubscribed ?? true,
+                // Account info
+                accountId: accountId,
+                accountName: account?.name || (isPrimary ? this.username : accountId),
+                isShared: !isPrimary,
+              } as Mailbox;
+            });
+
+            allMailboxes.push(...mailboxes);
+          }
+        } catch (error) {
+          console.error(`Failed to fetch mailboxes for account ${accountId}:`, error);
+          // Continue with other accounts even if one fails
+        }
+      }
+
+      return allMailboxes;
+    } catch (error) {
+      console.error("Failed to fetch all mailboxes:", error);
+      // Fallback to primary account mailboxes
+      return this.getMailboxes();
+    }
+  }
+
+  async getEmails(mailboxId?: string, accountId?: string, limit: number = 50): Promise<Email[]> {
+    try {
+      // Use provided accountId or fallback to primary account
+      const targetAccountId = accountId || this.accountId;
+
       // Build filter - only add inMailbox if we have a mailboxId
       const filter: any = {};
       if (mailboxId && mailboxId !== '') {
@@ -279,13 +366,13 @@ export class JMAPClient {
 
       const response = await this.request([
         ["Email/query", {
-          accountId: this.accountId,
+          accountId: targetAccountId,
           filter: filter,
           sort: [{ property: "receivedAt", isAscending: false }],
           limit: limit,
         }, "0"],
         ["Email/get", {
-          accountId: this.accountId,
+          accountId: targetAccountId,
           "#ids": {
             resultOf: "0",
             name: "Email/query",
@@ -712,6 +799,7 @@ export class JMAPClient {
         update: {
           [draftId]: {
             "keywords/$draft": false,
+            "keywords/$seen": true,
             mailboxIds: { [sentMailbox.id]: true },
           },
         },
@@ -735,7 +823,7 @@ export class JMAPClient {
             cc: cc?.map(email => ({ email })),
             bcc: bcc?.map(email => ({ email })),
             subject: subject,
-            keywords: {},
+            keywords: { "$seen": true },
             mailboxIds: { [sentMailbox.id]: true },
             bodyValues: {
               "1": {
