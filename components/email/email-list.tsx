@@ -232,24 +232,20 @@ export function EmailList({
               />
             ))}
 
-            {/* Intersection observer target for infinite scroll */}
-            {hasMoreEmails && (
-              <div ref={observerTarget} className="py-4 flex justify-center">
-                {isLoadingMore && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Loading more emails...</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* End of list indicator */}
-            {!hasMoreEmails && emails.length > 0 && (
-              <div className="py-6 text-center text-sm text-muted-foreground border-t border-border">
-                No more emails to load
-              </div>
-            )}
+            {/* Intersection observer target for infinite scroll - always present */}
+            <div ref={observerTarget} className="py-4 flex justify-center">
+              {isLoadingMore && hasMoreEmails && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Loading more emails...</span>
+                </div>
+              )}
+              {!hasMoreEmails && emails.length > 0 && (
+                <div className="text-sm text-muted-foreground border-t border-border pt-6">
+                  No more emails to load
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>

@@ -404,8 +404,14 @@ export class JMAPClient {
 
       if (response.methodResponses?.[1]?.[0] === "Email/get" && getResponse) {
         const emails = getResponse.list || [];
+
+        // Stalwart doesn't return 'total', so we use a different strategy:
+        // If we got exactly 'limit' emails, there might be more
+        // If we got fewer, we've reached the end
         const total = queryResponse?.total || 0;
-        const hasMore = (position + emails.length) < total;
+        const hasMore = total > 0
+          ? (position + emails.length) < total  // Use total if available
+          : emails.length === limit;             // Otherwise, check if we got a full page
 
         // If fetching from a shared account, namespace the mailboxIds to match our store
         const isSharedAccount = accountId && accountId !== this.accountId;
