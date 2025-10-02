@@ -16,6 +16,11 @@ export default function LoginPage() {
 
   const serverUrl = process.env.NEXT_PUBLIC_JMAP_SERVER_URL || "https://mail.ma2t.com";
 
+  // Set page title
+  useEffect(() => {
+    document.title = `${t('title')} - Webmail`;
+  }, [t]);
+
   const [formData, setFormData] = useState({
     username: "",
     password: "",

@@ -53,6 +53,7 @@
   "email_viewer": {
     "no_email_selected": "No email selected",
     "no_email_description": "Select an email from the list to view it here",
+    "no_subject": "(No Subject)",
     "reply": "Reply",
     "reply_all": "Reply All",
     "forward": "Forward",
@@ -119,6 +120,9 @@
   },
   "email_composer": {
     "new_message": "New Message",
+    "reply": "Reply",
+    "reply_all": "Reply All",
+    "forward": "Forward",
     "reply_to": "Reply",
     "reply_all_to": "Reply All",
     "forward_message": "Forward",

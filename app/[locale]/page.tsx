@@ -41,6 +41,38 @@ export default function Home() {
     setLoadingEmail,
   } = useEmailStore();
 
+  // Update page title based on context
+  useEffect(() => {
+    let title = "Webmail";
+
+    if (showComposer) {
+      // Composing email
+      const modeText = {
+        compose: t('email_composer.new_message'),
+        reply: t('email_composer.reply'),
+        replyAll: t('email_composer.reply_all'),
+        forward: t('email_composer.forward'),
+      }[composerMode] || t('email_composer.new_message');
+      title = `${modeText} - Webmail`;
+    } else if (selectedEmail) {
+      // Reading email
+      const subject = selectedEmail.subject || t('email_viewer.no_subject');
+      title = `${subject} - Webmail`;
+    } else if (selectedMailbox && mailboxes.length > 0) {
+      // Mailbox view
+      const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
+      if (mailbox) {
+        const mailboxName = mailbox.name;
+        const unreadCount = mailbox.unreadEmails || 0;
+        title = unreadCount > 0
+          ? `${mailboxName} (${unreadCount}) - Webmail`
+          : `${mailboxName} - Webmail`;
+      }
+    }
+
+    document.title = title;
+  }, [showComposer, composerMode, selectedEmail, selectedMailbox, mailboxes, t]);
+
   // Check auth on mount
   useEffect(() => {
     checkAuth().finally(() => {

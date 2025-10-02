@@ -53,6 +53,7 @@
   "email_viewer": {
     "no_email_selected": "Aucun email sélectionné",
     "no_email_description": "Sélectionnez un email dans la liste pour le voir ici",
+    "no_subject": "(Sans objet)",
     "reply": "Répondre",
     "reply_all": "Répondre à tous",
     "forward": "Transférer",
@@ -119,6 +120,9 @@
   },
   "email_composer": {
     "new_message": "Nouveau message",
+    "reply": "Répondre",
+    "reply_all": "Répondre à tous",
+    "forward": "Transférer",
     "reply_to": "Répondre",
     "reply_all_to": "Répondre à tous",
     "forward_message": "Transférer",
