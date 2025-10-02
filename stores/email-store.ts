@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { Email, Mailbox } from "@/lib/jmap/types";
 import { JMAPClient } from "@/lib/jmap/client";
+import { useSettingsStore } from "@/stores/settings-store";
 
 interface EmailStore {
   emails: Email[];
@@ -105,7 +106,20 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const mailboxes = await client.getAllMailboxes();
-      set({ mailboxes, isLoading: false });
+
+      // Auto-select inbox if no mailbox is currently selected
+      const currentSelectedMailbox = get().selectedMailbox;
+      if (!currentSelectedMailbox) {
+        // Find inbox from PRIMARY account (not shared accounts)
+        const inboxMailbox = mailboxes.find(m => m.role === 'inbox' && !m.isShared);
+        if (inboxMailbox) {
+          set({ mailboxes, selectedMailbox: inboxMailbox.id, isLoading: false });
+        } else {
+          set({ mailboxes, isLoading: false });
+        }
+      } else {
+        set({ mailboxes, isLoading: false });
+      }
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : "Failed to fetch mailboxes",
@@ -127,7 +141,10 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       // Use originalId for JMAP queries (shared mailboxes use namespaced IDs in the store)
       const jmapMailboxId = mailbox?.originalId || targetMailboxId;
 
-      const result = await client.getEmails(jmapMailboxId, accountId, 50, 0);
+      // Get emails per page from settings
+      const emailsPerPage = useSettingsStore.getState().emailsPerPage;
+
+      const result = await client.getEmails(jmapMailboxId, accountId, emailsPerPage, 0);
       set({
         emails: result.emails,
         hasMoreEmails: result.hasMore,
@@ -162,7 +179,10 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       // Use originalId for JMAP queries (shared mailboxes use namespaced IDs in the store)
       const jmapMailboxId = mailbox?.originalId || selectedMailbox;
 
-      const result = await client.getEmails(jmapMailboxId, accountId, 50, emails.length);
+      // Get emails per page from settings
+      const emailsPerPage = useSettingsStore.getState().emailsPerPage;
+
+      const result = await client.getEmails(jmapMailboxId, accountId, emailsPerPage, emails.length);
 
       set({
         emails: [...emails, ...result.emails],

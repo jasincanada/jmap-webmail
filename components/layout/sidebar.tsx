@@ -6,8 +6,6 @@ import { useParams, useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
-import { useThemeStore } from "@/stores/theme-store";
-import { locales } from "@/i18n/request";
 import {
   Inbox,
   Send,
@@ -208,8 +206,6 @@ export function Sidebar({
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [showMenu, setShowMenu] = useState(false);
-  const [menuView, setMenuView] = useState<'main' | 'settings'>('main');
-  const { theme, setTheme, resolvedTheme } = useThemeStore();
   const t = useTranslations('sidebar');
   const params = useParams();
   const router = useRouter();
@@ -372,9 +368,7 @@ export function Sidebar({
             "transform transition-all duration-300 ease-out",
             showMenu ? "-translate-y-12" : "translate-y-full"
           )}>
-            {/* Main Menu View */}
-            {menuView === 'main' && (
-              <div className="py-2">
+            <div className="py-2">
                 {/* Storage Info */}
                 {quota && quota.total > 0 && (
                   <div className="px-4 py-2">
@@ -396,7 +390,7 @@ export function Sidebar({
                 <div className="border-t border-border mt-2 pt-2">
                   {/* Settings */}
                   <button
-                    onClick={() => setMenuView('settings')}
+                    onClick={() => router.push(`/${params.locale}/settings`)}
                     className="w-full px-4 py-2 flex items-center justify-between hover:bg-muted transition-colors text-sm"
                   >
                     <span className="flex items-center gap-2">
@@ -417,95 +411,13 @@ export function Sidebar({
                     </button>
                   )}
                 </div>
-              </div>
-            )}
-
-            {/* Settings Submenu View */}
-            {menuView === 'settings' && (
-              <div className="py-2">
-                {/* Back Button */}
-                <button
-                  onClick={() => setMenuView('main')}
-                  className="w-full px-4 py-2 flex items-center gap-2 hover:bg-muted transition-colors text-sm border-b border-border mb-2"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span className="font-medium">{t("settings")}</span>
-                </button>
-
-                {/* Theme */}
-                <div className="px-4 py-2 space-y-1">
-                  <div className="text-xs text-muted-foreground mb-2">Theme</div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setTheme('light')}
-                      className={cn(
-                        "flex-1 px-3 py-1.5 text-xs rounded transition-colors",
-                        theme === 'light'
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted hover:bg-accent"
-                      )}
-                    >
-                      Light
-                    </button>
-                    <button
-                      onClick={() => setTheme('dark')}
-                      className={cn(
-                        "flex-1 px-3 py-1.5 text-xs rounded transition-colors",
-                        theme === 'dark'
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted hover:bg-accent"
-                      )}
-                    >
-                      Dark
-                    </button>
-                    <button
-                      onClick={() => setTheme('system')}
-                      className={cn(
-                        "flex-1 px-3 py-1.5 text-xs rounded transition-colors",
-                        theme === 'system'
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted hover:bg-accent"
-                      )}
-                    >
-                      System
-                    </button>
-                  </div>
-                </div>
-
-                {/* Language */}
-                <div className="px-4 py-2 space-y-1">
-                  <div className="text-xs text-muted-foreground mb-2">Language</div>
-                  <div className="flex gap-2">
-                    {locales.map((locale) => (
-                      <button
-                        key={locale}
-                        onClick={() => {
-                          const pathWithoutLocale = pathname.replace(`/${params.locale}`, '');
-                          router.push(`/${locale}${pathWithoutLocale}`);
-                        }}
-                        className={cn(
-                          "flex-1 px-3 py-1.5 text-xs rounded transition-colors",
-                          params.locale === locale
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted hover:bg-accent"
-                        )}
-                      >
-                        {locale === 'en' ? 'English' : 'Français'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
 
           {/* Menu Toggle Button */}
           <div className="border-t border-border relative">
             <button
-              onClick={() => {
-                setShowMenu(!showMenu);
-                if (!showMenu) setMenuView('main');
-              }}
+              onClick={() => setShowMenu(!showMenu)}
               className={cn(
                 "w-full px-4 py-3 flex items-center justify-between",
                 "hover:bg-muted transition-colors",

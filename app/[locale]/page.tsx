@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -9,6 +9,7 @@ import { EmailViewer } from "@/components/email/email-viewer";
 import { EmailComposer } from "@/components/email/email-composer";
 import { useEmailStore } from "@/stores/email-store";
 import { useAuthStore } from "@/stores/auth-store";
+import { useSettingsStore } from "@/stores/settings-store";
 
 export default function Home() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function Home() {
   const [composerMode, setComposerMode] = useState<'compose' | 'reply' | 'replyAll' | 'forward'>('compose');
   const [dataLoaded, setDataLoaded] = useState(false);
   const [initialCheckDone, setInitialCheckDone] = useState(false);
+  const markAsReadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { isAuthenticated, client, logout, checkAuth, isLoading: authLoading } = useAuthStore();
   const {
     emails,
@@ -80,9 +82,10 @@ export default function Home() {
     });
   }, [checkAuth]);
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated and reset data loaded flag
   useEffect(() => {
     if (initialCheckDone && !isAuthenticated && !authLoading) {
+      setDataLoaded(false); // Reset so data is reloaded on next login
       router.push(`/${params.locale}/login`);
     }
   }, [initialCheckDone, isAuthenticated, authLoading, router, params.locale]);
@@ -92,21 +95,19 @@ export default function Home() {
     if (isAuthenticated && client && !dataLoaded) {
       const loadData = async () => {
         try {
-          // First fetch mailboxes and quota
+          // First fetch mailboxes and quota (inbox will be auto-selected in fetchMailboxes)
           await Promise.all([
             fetchMailboxes(client),
             fetchQuota(client)
           ]);
 
-          // Get the actual inbox mailbox ID
+          // Get the selected mailbox (should be inbox by default)
           const state = useEmailStore.getState();
-          const inboxMailbox = state.mailboxes.find(m => m.role === 'inbox');
+          const selectedMailboxId = state.selectedMailbox;
 
-          if (inboxMailbox) {
-            // Update selected mailbox to actual inbox ID
-            state.selectMailbox(inboxMailbox.id);
-            // Now fetch emails with correct mailbox ID
-            await fetchEmails(client, inboxMailbox.id);
+          // Fetch emails for the selected mailbox
+          if (selectedMailboxId) {
+            await fetchEmails(client, selectedMailboxId);
           } else {
             await fetchEmails(client);
           }
@@ -119,6 +120,52 @@ export default function Home() {
       loadData();
     }
   }, [isAuthenticated, client, dataLoaded, fetchMailboxes, fetchEmails, fetchQuota]);
+
+  // Handle mark-as-read with delay based on settings
+  useEffect(() => {
+    // Clear any existing timeout when email changes
+    if (markAsReadTimeoutRef.current) {
+      console.log('[Mark as Read] Clearing previous timeout');
+      clearTimeout(markAsReadTimeoutRef.current);
+      markAsReadTimeoutRef.current = null;
+    }
+
+    // Only set timeout if there's a selected email, it's unread, and we have a client
+    if (!selectedEmail || !client || selectedEmail.keywords?.$seen) {
+      return;
+    }
+
+    // Get current setting value
+    const markAsReadDelay = useSettingsStore.getState().markAsReadDelay;
+    console.log('[Mark as Read] Delay setting:', markAsReadDelay, 'ms for email:', selectedEmail.id);
+
+    if (markAsReadDelay === -1) {
+      // Never mark as read automatically
+      console.log('[Mark as Read] Never mode - email will stay unread');
+    } else if (markAsReadDelay === 0) {
+      // Mark as read instantly
+      console.log('[Mark as Read] Instant mode - marking as read now');
+      markAsRead(client, selectedEmail.id, true);
+    } else {
+      // Mark as read after delay
+      console.log('[Mark as Read] Delayed mode - will mark as read in', markAsReadDelay, 'ms');
+      markAsReadTimeoutRef.current = setTimeout(() => {
+        console.log('[Mark as Read] Timeout fired - marking as read now');
+        markAsRead(client, selectedEmail.id, true);
+        markAsReadTimeoutRef.current = null;
+      }, markAsReadDelay);
+    }
+
+    // Cleanup on unmount or when dependencies change
+    return () => {
+      if (markAsReadTimeoutRef.current) {
+        console.log('[Mark as Read] Cleanup - clearing timeout');
+        clearTimeout(markAsReadTimeoutRef.current);
+        markAsReadTimeoutRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedEmail?.id]);
 
   const handleEmailSend = async (data: {
     to: string[];
@@ -332,11 +379,7 @@ export default function Home() {
               const fullEmail = await client.getEmail(email.id, accountId);
               if (fullEmail) {
                 selectEmail(fullEmail);
-
-                // Automatically mark as read after opening (if unread)
-                if (!fullEmail.keywords?.$seen) {
-                  await markAsRead(client, fullEmail.id, true);
-                }
+                // Mark-as-read logic is now handled by useEffect
               }
             } catch (error) {
               console.error('Failed to fetch email content:', error);

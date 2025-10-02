@@ -67,8 +67,12 @@ export function EmailListItem({ email, selected, onClick }: EmailListItemProps) 
         isChecked && "ring-2 ring-primary/20 bg-accent/40"
       )}
       onClick={onClick}
+      style={{ minHeight: 'var(--list-item-height)' }}
     >
-      <div className="flex items-start gap-3 px-4 py-4">
+      <div className="flex items-start gap-3 px-4" style={{
+        paddingTop: 'calc((var(--list-item-height) - 40px) / 2)',
+        paddingBottom: 'calc((var(--list-item-height) - 40px) / 2)'
+      }}>
         {/* Checkbox with smooth animation */}
         <button
           onClick={handleCheckboxClick}

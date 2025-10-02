@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { JMAPClient } from '@/lib/jmap/client';
+import { useEmailStore } from './email-store';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -91,6 +92,18 @@ export const useAuthStore = create<AuthState>()(
 
         // Clear persisted storage
         localStorage.removeItem('auth-storage');
+
+        // Clear email store state
+        useEmailStore.setState({
+          emails: [],
+          mailboxes: [],
+          selectedEmail: null,
+          selectedMailbox: "",
+          isLoading: false,
+          error: null,
+          searchQuery: "",
+          quota: null,
+        });
       },
 
       checkAuth: async () => {

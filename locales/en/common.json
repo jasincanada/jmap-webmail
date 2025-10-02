@@ -199,5 +199,210 @@
     "title": "Language",
     "english": "English",
     "french": "Français"
+  },
+  "settings": {
+    "title": "Settings",
+    "back_to_mail": "Back to Mail",
+    "save_success": "Settings saved successfully",
+    "import_success": "Settings imported successfully",
+    "import_error": "Failed to import settings",
+    "reset_confirm": "Are you sure you want to reset all settings to defaults?",
+    "tabs": {
+      "appearance": "Appearance",
+      "language": "Language & Region",
+      "email": "Email Behavior",
+      "composer": "Composer",
+      "privacy": "Privacy & Security",
+      "account": "Account",
+      "advanced": "Advanced"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize the look and feel of your webmail",
+      "theme": {
+        "label": "Theme",
+        "description": "Choose your preferred color scheme",
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
+      },
+      "font_size": {
+        "label": "Font Size",
+        "description": "Adjust text size for better readability",
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large"
+      },
+      "list_density": {
+        "label": "List Density",
+        "description": "Control spacing in email lists",
+        "compact": "Compact",
+        "regular": "Regular",
+        "comfortable": "Comfortable"
+      },
+      "animations": {
+        "label": "Enable Animations",
+        "description": "Show smooth transitions and effects"
+      }
+    },
+    "language_region": {
+      "title": "Language & Region",
+      "description": "Configure language and regional preferences",
+      "language": {
+        "label": "Language",
+        "description": "Choose your preferred language",
+        "english": "English",
+        "french": "Français"
+      },
+      "date_format": {
+        "label": "Date Format",
+        "description": "How dates should be displayed",
+        "regional": "Regional",
+        "iso": "ISO 8601",
+        "custom": "Custom"
+      },
+      "time_format": {
+        "label": "Time Format",
+        "description": "Choose between 12-hour or 24-hour clock",
+        "12h": "12-hour",
+        "24h": "24-hour"
+      },
+      "first_day": {
+        "label": "First Day of Week",
+        "description": "Start week on Sunday or Monday",
+        "sunday": "Sunday",
+        "monday": "Monday"
+      }
+    },
+    "email_behavior": {
+      "title": "Email Behavior",
+      "description": "Configure how emails are handled",
+      "mark_read": {
+        "label": "Mark as Read",
+        "description": "When to mark emails as read when opened",
+        "instant": "Instantly",
+        "delay_3s": "After 3 seconds",
+        "delay_5s": "After 5 seconds",
+        "never": "Never"
+      },
+      "delete_action": {
+        "label": "Delete Action",
+        "description": "What happens when you delete an email",
+        "trash": "Move to Trash",
+        "permanent": "Delete Permanently"
+      },
+      "show_preview": {
+        "label": "Show Preview Text",
+        "description": "Display email preview in the list"
+      },
+      "emails_per_page": {
+        "label": "Emails Per Page",
+        "description": "Number of emails to load at once",
+        "25": "25 emails",
+        "50": "50 emails",
+        "100": "100 emails"
+      },
+      "external_content": {
+        "label": "External Content",
+        "description": "How to handle images and external content",
+        "ask": "Always ask",
+        "block": "Always block",
+        "allow": "Always allow"
+      }
+    },
+    "composer": {
+      "title": "Composer",
+      "description": "Configure email composition settings",
+      "autosave": {
+        "label": "Auto-save Interval",
+        "description": "How often to save drafts automatically",
+        "30s": "Every 30 seconds",
+        "1m": "Every minute",
+        "2m": "Every 2 minutes",
+        "5m": "Every 5 minutes"
+      },
+      "send_confirmation": {
+        "label": "Send Confirmation",
+        "description": "Ask for confirmation before sending emails"
+      },
+      "default_reply": {
+        "label": "Default Reply Mode",
+        "description": "Default action when clicking reply",
+        "reply": "Reply",
+        "reply_all": "Reply All"
+      }
+    },
+    "privacy": {
+      "title": "Privacy & Security",
+      "description": "Manage your privacy and security settings",
+      "external_images": {
+        "label": "Block External Images",
+        "description": "Prevent tracking through external images"
+      },
+      "session_timeout": {
+        "label": "Session Timeout",
+        "description": "Automatically log out after inactivity",
+        "never": "Never",
+        "30m": "30 minutes",
+        "1h": "1 hour",
+        "4h": "4 hours"
+      },
+      "clear_cache": {
+        "label": "Clear Cache",
+        "description": "Remove cached data and temporary files",
+        "button": "Clear Cache",
+        "confirm": "Are you sure you want to clear the cache?",
+        "success": "Cache cleared successfully"
+      }
+    },
+    "account": {
+      "title": "Account",
+      "description": "View your account information",
+      "email": {
+        "label": "Email Address",
+        "value": "{{email}}"
+      },
+      "server": {
+        "label": "JMAP Server",
+        "value": "{{server}}"
+      },
+      "storage": {
+        "label": "Storage Usage",
+        "used": "{{used}} of {{total}} used",
+        "percentage": "{{percent}}% used"
+      },
+      "last_sync": {
+        "label": "Last Sync",
+        "value": "{{time}}"
+      }
+    },
+    "advanced": {
+      "title": "Advanced",
+      "description": "Advanced options and developer settings",
+      "debug_mode": {
+        "label": "Debug Mode",
+        "description": "Enable detailed logging for troubleshooting"
+      },
+      "keyboard_shortcuts": {
+        "label": "Keyboard Shortcuts",
+        "description": "View available keyboard shortcuts",
+        "button": "View Shortcuts"
+      },
+      "reset_settings": {
+        "label": "Reset Settings",
+        "description": "Restore all settings to default values",
+        "button": "Reset to Defaults"
+      },
+      "export_settings": {
+        "label": "Export Settings",
+        "description": "Download your settings as JSON",
+        "button": "Export"
+      },
+      "import_settings": {
+        "label": "Import Settings",
+        "description": "Upload settings from JSON file",
+        "button": "Import"
+      }
+    }
   }
 }

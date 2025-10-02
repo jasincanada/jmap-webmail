@@ -118,7 +118,13 @@
 - [x] Add smooth email loading transitions with cross-fade effect
 - [x] Implement functional quick reply with auto-expand and direct send
 - [ ] Implement error boundaries
-- [ ] Create settings page
+- [x] Create settings page
+- [x] Integrate mark-as-read delay setting in email viewer
+- [ ] Integrate delete action setting (trash vs permanent)
+- [ ] Integrate show preview toggle in email list
+- [ ] Integrate external content policy with image loading
+- [ ] Integrate debug mode with console logging
+- [ ] Integrate animations toggle throughout components
 - [ ] Add keyboard shortcuts (j/k navigation, etc.)
 - [ ] Implement drag-and-drop for emails
 - [ ] Add context menus
@@ -205,4 +211,7 @@
 - [x] Fixed light mode not applying properly (replaced hardcoded colors with CSS variables)
 - [x] Fixed all hardcoded colors in email viewer for proper theme support
 - [x] Fixed sidebar footer menu extending page height when scrolling (overflow containment)
+- [x] Fixed dark mode folder selection not visible (improved accent color contrast)
+- [x] Fixed inbox not selected by default on login (auto-select primary account inbox)
+- [x] Fixed email store not cleared on logout (proper state reset)
 

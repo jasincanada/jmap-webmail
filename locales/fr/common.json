@@ -199,5 +199,210 @@
     "title": "Langue",
     "english": "English",
     "french": "Français"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "back_to_mail": "Retour aux emails",
+    "save_success": "Paramètres enregistrés avec succès",
+    "import_success": "Paramètres importés avec succès",
+    "import_error": "Échec de l'importation des paramètres",
+    "reset_confirm": "Êtes-vous sûr de vouloir réinitialiser tous les paramètres ?",
+    "tabs": {
+      "appearance": "Apparence",
+      "language": "Langue et région",
+      "email": "Comportement email",
+      "composer": "Compositeur",
+      "privacy": "Confidentialité et sécurité",
+      "account": "Compte",
+      "advanced": "Avancé"
+    },
+    "appearance": {
+      "title": "Apparence",
+      "description": "Personnalisez l'apparence de votre webmail",
+      "theme": {
+        "label": "Thème",
+        "description": "Choisissez votre schéma de couleurs préféré",
+        "light": "Clair",
+        "dark": "Sombre",
+        "system": "Système"
+      },
+      "font_size": {
+        "label": "Taille de police",
+        "description": "Ajustez la taille du texte pour une meilleure lisibilité",
+        "small": "Petite",
+        "medium": "Moyenne",
+        "large": "Grande"
+      },
+      "list_density": {
+        "label": "Densité de la liste",
+        "description": "Contrôlez l'espacement dans les listes d'emails",
+        "compact": "Compacte",
+        "regular": "Normale",
+        "comfortable": "Confortable"
+      },
+      "animations": {
+        "label": "Activer les animations",
+        "description": "Afficher les transitions et effets fluides"
+      }
+    },
+    "language_region": {
+      "title": "Langue et région",
+      "description": "Configurez vos préférences linguistiques et régionales",
+      "language": {
+        "label": "Langue",
+        "description": "Choisissez votre langue préférée",
+        "english": "English",
+        "french": "Français"
+      },
+      "date_format": {
+        "label": "Format de date",
+        "description": "Comment les dates doivent être affichées",
+        "regional": "Régional",
+        "iso": "ISO 8601",
+        "custom": "Personnalisé"
+      },
+      "time_format": {
+        "label": "Format d'heure",
+        "description": "Choisissez entre 12 heures ou 24 heures",
+        "12h": "12 heures",
+        "24h": "24 heures"
+      },
+      "first_day": {
+        "label": "Premier jour de la semaine",
+        "description": "Commencer la semaine le dimanche ou le lundi",
+        "sunday": "Dimanche",
+        "monday": "Lundi"
+      }
+    },
+    "email_behavior": {
+      "title": "Comportement email",
+      "description": "Configurez la gestion des emails",
+      "mark_read": {
+        "label": "Marquer comme lu",
+        "description": "Quand marquer les emails comme lus à l'ouverture",
+        "instant": "Instantanément",
+        "delay_3s": "Après 3 secondes",
+        "delay_5s": "Après 5 secondes",
+        "never": "Jamais"
+      },
+      "delete_action": {
+        "label": "Action de suppression",
+        "description": "Que se passe-t-il quand vous supprimez un email",
+        "trash": "Déplacer vers la corbeille",
+        "permanent": "Supprimer définitivement"
+      },
+      "show_preview": {
+        "label": "Afficher l'aperçu",
+        "description": "Afficher l'aperçu de l'email dans la liste"
+      },
+      "emails_per_page": {
+        "label": "Emails par page",
+        "description": "Nombre d'emails à charger à la fois",
+        "25": "25 emails",
+        "50": "50 emails",
+        "100": "100 emails"
+      },
+      "external_content": {
+        "label": "Contenu externe",
+        "description": "Comment gérer les images et le contenu externe",
+        "ask": "Toujours demander",
+        "block": "Toujours bloquer",
+        "allow": "Toujours autoriser"
+      }
+    },
+    "composer": {
+      "title": "Compositeur",
+      "description": "Configurez les paramètres de composition d'email",
+      "autosave": {
+        "label": "Intervalle de sauvegarde automatique",
+        "description": "Fréquence de sauvegarde automatique des brouillons",
+        "30s": "Toutes les 30 secondes",
+        "1m": "Toutes les minutes",
+        "2m": "Toutes les 2 minutes",
+        "5m": "Toutes les 5 minutes"
+      },
+      "send_confirmation": {
+        "label": "Confirmation d'envoi",
+        "description": "Demander une confirmation avant d'envoyer les emails"
+      },
+      "default_reply": {
+        "label": "Mode de réponse par défaut",
+        "description": "Action par défaut lors du clic sur répondre",
+        "reply": "Répondre",
+        "reply_all": "Répondre à tous"
+      }
+    },
+    "privacy": {
+      "title": "Confidentialité et sécurité",
+      "description": "Gérez vos paramètres de confidentialité et sécurité",
+      "external_images": {
+        "label": "Bloquer les images externes",
+        "description": "Empêcher le suivi par les images externes"
+      },
+      "session_timeout": {
+        "label": "Délai d'expiration de session",
+        "description": "Déconnexion automatique après inactivité",
+        "never": "Jamais",
+        "30m": "30 minutes",
+        "1h": "1 heure",
+        "4h": "4 heures"
+      },
+      "clear_cache": {
+        "label": "Vider le cache",
+        "description": "Supprimer les données en cache et fichiers temporaires",
+        "button": "Vider le cache",
+        "confirm": "Êtes-vous sûr de vouloir vider le cache ?",
+        "success": "Cache vidé avec succès"
+      }
+    },
+    "account": {
+      "title": "Compte",
+      "description": "Consultez les informations de votre compte",
+      "email": {
+        "label": "Adresse email",
+        "value": "{{email}}"
+      },
+      "server": {
+        "label": "Serveur JMAP",
+        "value": "{{server}}"
+      },
+      "storage": {
+        "label": "Utilisation du stockage",
+        "used": "{{used}} sur {{total}} utilisés",
+        "percentage": "{{percent}}% utilisé"
+      },
+      "last_sync": {
+        "label": "Dernière synchronisation",
+        "value": "{{time}}"
+      }
+    },
+    "advanced": {
+      "title": "Avancé",
+      "description": "Options avancées et paramètres développeur",
+      "debug_mode": {
+        "label": "Mode débogage",
+        "description": "Activer la journalisation détaillée pour le dépannage"
+      },
+      "keyboard_shortcuts": {
+        "label": "Raccourcis clavier",
+        "description": "Voir les raccourcis clavier disponibles",
+        "button": "Voir les raccourcis"
+      },
+      "reset_settings": {
+        "label": "Réinitialiser les paramètres",
+        "description": "Restaurer tous les paramètres par défaut",
+        "button": "Réinitialiser"
+      },
+      "export_settings": {
+        "label": "Exporter les paramètres",
+        "description": "Télécharger vos paramètres au format JSON",
+        "button": "Exporter"
+      },
+      "import_settings": {
+        "label": "Importer les paramètres",
+        "description": "Charger les paramètres depuis un fichier JSON",
+        "button": "Importer"
+      }
+    }
   }
 }
