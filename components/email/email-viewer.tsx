@@ -709,9 +709,9 @@ export function EmailViewer({
                                 <span className="font-medium text-muted-foreground">Reply-To:</span>
                                 <div className="flex flex-wrap gap-2 mt-1">
                                   {email.replyTo.map((recipient, i) => (
-                                    <span key={i} className="inline-flex items-center px-2 py-1 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded text-xs">
-                                      {recipient.name && <span className="font-medium mr-1 text-blue-700 dark:text-blue-300">{recipient.name}</span>}
-                                      <span className="text-blue-600 dark:text-blue-400">{recipient.email}</span>
+                                    <span key={i} className="inline-flex items-center px-2 py-1 bg-accent/50 border border-accent rounded text-xs">
+                                      {recipient.name && <span className="font-medium mr-1 text-accent-foreground">{recipient.name}</span>}
+                                      <span className="text-accent-foreground/90">{recipient.email}</span>
                                     </span>
                                   ))}
                                 </div>
@@ -723,10 +723,10 @@ export function EmailViewer({
                           {email.sentAt && email.receivedAt &&
                            Math.abs(new Date(email.sentAt).getTime() - new Date(email.receivedAt).getTime()) > 60000 && (
                             <div className="flex items-start gap-2">
-                              <Clock className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 mt-0.5" />
+                              <Clock className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
                               <div className="flex-1">
-                                <span className="font-medium text-gray-600 dark:text-gray-400">Delivery time:</span>
-                                <div className="text-gray-700 dark:text-gray-300">
+                                <span className="font-medium text-muted-foreground">Delivery time:</span>
+                                <div className="text-foreground">
                                   {(() => {
                                     const diff = Math.abs(new Date(email.receivedAt).getTime() - new Date(email.sentAt).getTime());
                                     const minutes = Math.floor(diff / 60000);
@@ -744,10 +744,10 @@ export function EmailViewer({
                           {/* Part of conversation */}
                           {email.references && email.references.length > 0 && (
                             <div className="flex items-start gap-2">
-                              <List className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 mt-0.5" />
+                              <List className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
                               <div className="flex-1 min-w-0">
-                                <span className="font-medium text-gray-600 dark:text-gray-400">Part of conversation:</span>
-                                <div className="text-gray-700 dark:text-gray-300 text-xs mt-0.5">
+                                <span className="font-medium text-muted-foreground">Part of conversation:</span>
+                                <div className="text-foreground text-xs mt-0.5">
                                   {email.references.length} previous message{email.references.length > 1 ? 's' : ''} in this thread
                                 </div>
                               </div>
@@ -762,7 +762,7 @@ export function EmailViewer({
 
               <button
                 onClick={() => setShowFullHeaders(!showFullHeaders)}
-                className="mt-3 text-xs text-muted-foreground hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-1 transition-colors"
+                className="mt-3 text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
               >
                 {showFullHeaders ? (
                   <>
@@ -783,14 +783,14 @@ export function EmailViewer({
       </div>
 
       {/* Email Content Area */}
-      <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
+      <div className="flex-1 overflow-auto bg-muted/30">
         {/* Ultra Minimalist External Content Banner */}
         {hasBlockedContent && !allowExternalContent && (
-          <div className="border-b border-gray-200 dark:border-gray-700">
+          <div className="border-b border-border">
             <div className="max-w-4xl mx-auto px-6 py-2">
               <button
                 onClick={() => setAllowExternalContent(true)}
-                className="mx-auto flex items-center gap-1.5 text-sm text-muted-foreground hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                className="mx-auto flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Image className="w-3.5 h-3.5" />
                 Show images
@@ -861,7 +861,7 @@ export function EmailViewer({
                       return (
                         <button
                           key={i}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors group"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted hover:bg-accent rounded-md transition-colors group"
                           title={`Download ${attachment.name} (${formatFileSize(attachment.size)})`}
                           onClick={() => {
                             if (attachment.blobId && onDownloadAttachment) {
@@ -869,8 +869,8 @@ export function EmailViewer({
                             }
                           }}
                         >
-                          <FileIcon className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                          <FileIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                          <span className="text-sm text-foreground">
                             {attachment.name || "Unnamed"}
                           </span>
                           <span className="text-xs text-muted-foreground">
@@ -931,7 +931,7 @@ export function EmailViewer({
                 <input
                   type="text"
                   placeholder="Reply..."
-                  className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 rounded-lg hover:border-gray-300 dark:hover:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all"
+                  className="w-full px-3 py-2 text-sm border border-border bg-background text-foreground rounded-lg hover:border-accent focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all"
                   onFocus={(e) => {
                     e.target.placeholder = "Type your reply...";
                     e.target.parentElement?.parentElement?.classList.add('focused');
