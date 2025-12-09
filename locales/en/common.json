@@ -20,6 +20,8 @@
     "sign_out": "Sign out",
     "settings": "Settings",
     "loading_mailboxes": "Loading mailboxes...",
+    "push_connected": "Real-time updates active",
+    "push_disconnected": "Real-time updates inactive",
     "theme": {
       "light": "Light mode",
       "dark": "Dark mode",
@@ -178,7 +180,10 @@
     "source_copied": "Source copied to clipboard",
     "error_sending": "Failed to send email",
     "error_deleting": "Failed to delete email",
-    "error_loading": "Failed to load emails"
+    "error_loading": "Failed to load emails",
+    "new_email": "New email",
+    "new_email_from": "From {sender}",
+    "click_to_view": "Click to view"
   },
   "date": {
     "today": "Today",
@@ -404,5 +409,22 @@
         "button": "Import"
       }
     }
+  },
+  "errors": {
+    "page_error_title": "Something went wrong",
+    "page_error_description": "We encountered an unexpected error. Please try again or return to the home page.",
+    "sidebar_error": "Unable to load mailboxes",
+    "email_list_error": "Unable to load emails",
+    "viewer_error_title": "Unable to display email",
+    "viewer_error_description": "There was a problem rendering this email. It may contain unsupported content.",
+    "composer_error": "Unable to load composer",
+    "settings_error_title": "Settings unavailable",
+    "settings_error_description": "Unable to load settings. Your preferences may not be saved.",
+    "try_again": "Try again",
+    "reload": "Reload",
+    "reload_emails": "Reload emails",
+    "reload_settings": "Reload settings",
+    "retry": "Retry",
+    "go_home": "Go to inbox"
   }
 }

@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { useParams, useRouter, usePathname } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import {
   Inbox,
   Send,
@@ -19,13 +18,8 @@ import {
   LogOut,
   ChevronRight,
   ChevronDown,
-  ChevronLeft,
   Folder,
   FolderOpen,
-  Sun,
-  Moon,
-  Monitor,
-  Globe,
   Settings,
   ChevronUp,
   Users,
@@ -42,6 +36,7 @@ interface SidebarProps {
   onLogout?: () => void;
   onSearch?: (query: string) => void;
   quota?: { used: number; total: number } | null;
+  isPushConnected?: boolean;
   className?: string;
 }
 
@@ -200,6 +195,7 @@ export function Sidebar({
   onLogout,
   onSearch,
   quota,
+  isPushConnected = false,
   className,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -209,7 +205,6 @@ export function Sidebar({
   const t = useTranslations('sidebar');
   const params = useParams();
   const router = useRouter();
-  const pathname = usePathname();
 
   // Load expanded folders from localStorage on mount
   useEffect(() => {
@@ -427,6 +422,27 @@ export function Sidebar({
               <span className="flex items-center gap-2">
                 <Menu className="w-4 h-4" />
                 Menu
+                {/* Push Connection Status Indicator */}
+                <span
+                  className="relative group"
+                  title={isPushConnected ? t("push_connected") : t("push_disconnected")}
+                >
+                  <span
+                    className={cn(
+                      "inline-block w-1.5 h-1.5 rounded-full transition-all duration-300",
+                      isPushConnected ? "bg-green-500" : "bg-muted-foreground/40"
+                    )}
+                  />
+                  {/* Tooltip on hover */}
+                  <span className={cn(
+                    "absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1",
+                    "bg-popover text-popover-foreground text-xs rounded shadow-lg",
+                    "whitespace-nowrap opacity-0 group-hover:opacity-100",
+                    "pointer-events-none transition-opacity duration-200 z-50"
+                  )}>
+                    {isPushConnected ? t("push_connected") : t("push_disconnected")}
+                  </span>
+                </span>
               </span>
               <ChevronUp className={cn(
                 "w-4 h-4 transition-transform duration-200",

@@ -1,6 +1,6 @@
 "use client";
 
-import { formatDate, truncateText } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { Email } from "@/lib/jmap/types";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";

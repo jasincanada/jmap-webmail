@@ -87,11 +87,11 @@
 - [ ] Add email threading support
 
 ### Real-time Updates
-- [ ] Set up EventSource for JMAP push notifications (getEventSourceUrl() exists but unused)
-- [ ] Implement state synchronization
-- [ ] Handle email arrival notifications
-- [ ] Update unread counts in real-time
-- [ ] Handle mailbox changes
+- [x] Set up EventSource for JMAP push notifications
+- [x] Implement state synchronization
+- [x] Handle email arrival notifications
+- [x] Update unread counts in real-time
+- [x] Handle mailbox changes
 
 ### UI Enhancements
 - [x] Improve mailbox subfolder UI/UX with hierarchical display
@@ -117,7 +117,7 @@
 - [x] Add loading states and skeletons
 - [x] Add smooth email loading transitions with cross-fade effect
 - [x] Implement functional quick reply with auto-expand and direct send
-- [ ] Implement error boundaries
+- [x] Implement error boundaries
 - [x] Create settings page
 - [x] Integrate mark-as-read delay setting in email viewer
 - [x] Integrate delete action setting (trash vs permanent)
@@ -231,7 +231,7 @@ All settings are now properly wired to their functionality:
 ### Feature Completeness
 - **Authentication**: ✅ Complete (secure design, no password storage)
 - **Email Operations**: ✅ Complete except threading
-- **Real-time Updates**: ❌ Not started (infrastructure exists)
+- **Real-time Updates**: ✅ Complete (EventSource push, toast notifications, status indicator)
 - **UI Enhancements**: ✅ Settings fully integrated
 - **Contacts/Address Book**: ❌ Not started
 - **Security**: ⚠️ Client-side done, server headers needed

@@ -27,7 +27,6 @@ export function EmailList({
   const { client } = useAuthStore();
   const {
     selectedEmailIds,
-    toggleEmailSelection,
     selectAllEmails,
     clearSelection,
     batchMarkAsRead,
@@ -35,7 +34,6 @@ export function EmailList({
     loadMoreEmails,
     hasMoreEmails,
     isLoadingMore,
-    isLoading: storeIsLoading
   } = useEmailStore();
 
   const [isProcessing, setIsProcessing] = useState(false);

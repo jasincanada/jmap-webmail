@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,7 @@ export interface Toast {
   title: string;
   message?: string;
   duration?: number;
+  onClick?: () => void;
 }
 
 interface ToastProps {
@@ -49,8 +50,15 @@ export function ToastItem({ toast, onClose }: ToastProps) {
     <div
       className={cn(
         "flex items-start gap-3 p-4 rounded-lg border shadow-lg bg-background animate-slide-in",
-        styles[toast.type]
+        styles[toast.type],
+        toast.onClick && "cursor-pointer hover:opacity-90 transition-opacity"
       )}
+      onClick={() => {
+        if (toast.onClick) {
+          toast.onClick();
+          onClose(toast.id);
+        }
+      }}
     >
       <Icon className="w-5 h-5 flex-shrink-0 mt-0.5" />
       <div className="flex-1">
@@ -60,7 +68,10 @@ export function ToastItem({ toast, onClose }: ToastProps) {
         )}
       </div>
       <button
-        onClick={() => onClose(toast.id)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose(toast.id);
+        }}
         className="text-muted-foreground hover:text-foreground transition-colors"
       >
         <X className="w-4 h-4" />

@@ -5,15 +5,8 @@ import DOMPurify from "dompurify";
 import { Email } from "@/lib/jmap/types";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
-import { formatDate, formatFileSize, cn } from "@/lib/utils";
-import {
-  parseAuthenticationResults,
-  parseSpamScore,
-  parseReceivedHeaders,
-  getSecurityStatus,
-  extractListHeaders,
-  formatBytes
-} from "@/lib/email-headers";
+import { formatFileSize, cn } from "@/lib/utils";
+import { getSecurityStatus } from "@/lib/email-headers";
 import {
   Reply,
   ReplyAll,
@@ -29,8 +22,6 @@ import {
   Mail,
   Clock,
   Loader2,
-  AlertCircle,
-  ExternalLink,
   Printer,
   FileText,
   FileImage,
@@ -47,7 +38,6 @@ import {
   Minus,
   ShieldCheck,
   ShieldAlert,
-  ShieldOff,
   Network,
   Hash,
   List,
@@ -156,6 +146,7 @@ export function EmailViewer({
     if (email && !email.keywords?.$seen && onMarkAsRead) {
       onMarkAsRead(email.id, true);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- email?.id changes when email changes, which is the intended trigger
   }, [email?.id, email?.keywords?.$seen, onMarkAsRead]);
 
   // Reset external content permission and quick reply when email changes

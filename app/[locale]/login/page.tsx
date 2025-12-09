@@ -41,7 +41,7 @@ export default function LoginPage() {
       try {
         const usernames = JSON.parse(saved);
         setSavedUsernames(usernames);
-      } catch (e) {
+      } catch {
         console.error("Failed to parse saved usernames");
       }
     }
@@ -55,7 +55,7 @@ export default function LoginPage() {
     if (saved) {
       try {
         usernames = JSON.parse(saved);
-      } catch (e) {
+      } catch {
         console.error("Failed to parse saved usernames");
       }
     }

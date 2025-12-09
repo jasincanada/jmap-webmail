@@ -62,7 +62,6 @@ const ROLE_PRIORITY: Record<string, number> = {
 // Deduplicate mailboxes (e.g., "Sent" vs "Sent Mail")
 function deduplicateMailboxes(mailboxes: Mailbox[]): Mailbox[] {
   const roleMap = new Map<string, Mailbox>();
-  const nameMap = new Map<string, Mailbox>();
   const result: Mailbox[] = [];
 
   // First pass: collect mailboxes with roles

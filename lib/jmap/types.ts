@@ -162,3 +162,40 @@ export interface DeliveryStatus {
   delivered: "queued" | "yes" | "no" | "unknown";
   displayed: "unknown" | "yes";
 }
+
+// JMAP Push Notification Types (RFC 8620 Section 7)
+
+export interface StateChange {
+  '@type': 'StateChange';
+  changed: {
+    [accountId: string]: {
+      Email?: string;
+      Mailbox?: string;
+      Thread?: string;
+      EmailDelivery?: string;
+      EmailSubmission?: string;
+      Identity?: string;
+    };
+  };
+}
+
+export interface PushSubscription {
+  id: string;
+  deviceClientId: string;
+  url: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  } | null;
+  expires: string | null;
+  types: string[] | null;
+}
+
+// For tracking last known states
+export interface AccountStates {
+  [accountId: string]: {
+    Email?: string;
+    Mailbox?: string;
+    Thread?: string;
+  };
+}

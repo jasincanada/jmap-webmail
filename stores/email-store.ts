@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Email, Mailbox } from "@/lib/jmap/types";
+import { Email, Mailbox, StateChange } from "@/lib/jmap/types";
 import { JMAPClient } from "@/lib/jmap/client";
 import { useSettingsStore } from "@/stores/settings-store";
 
@@ -18,6 +18,9 @@ interface EmailStore {
   selectedEmailIds: Set<string>; // Track selected emails for batch operations
   hasMoreEmails: boolean; // Track if more emails are available to load
   totalEmails: number; // Total number of emails in the current mailbox/query
+  isPushConnected: boolean; // Track if push notifications are connected
+  lastPushUpdate: number | null; // Timestamp of last push update
+  newEmailNotification: Email | null; // New email notification for toast
 
   setEmails: (emails: Email[]) => void;
   setMailboxes: (mailboxes: Mailbox[]) => void;
@@ -50,6 +53,13 @@ interface EmailStore {
   batchDelete: (client: JMAPClient) => Promise<void>;
   batchMoveToMailbox: (client: JMAPClient, mailboxId: string) => Promise<void>;
 
+  // Push notification handlers
+  setPushConnected: (connected: boolean) => void;
+  handleStateChange: (change: StateChange, client: JMAPClient) => Promise<void>;
+  refreshCurrentMailbox: (client: JMAPClient) => Promise<void>;
+  handleNewEmailNotification: (email: Email) => void;
+  clearNewEmailNotification: () => void;
+
   // Mock data for demo
   loadMockData: () => void;
 }
@@ -69,6 +79,9 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   selectedEmailIds: new Set(),
   hasMoreEmails: false,
   totalEmails: 0,
+  isPushConnected: false,
+  lastPushUpdate: null,
+  newEmailNotification: null,
 
   setEmails: (emails) => set({ emails }),
   setMailboxes: (mailboxes) => set({ mailboxes }),
@@ -227,7 +240,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
     try {
       const quota = await client.getQuota();
       set({ quota });
-    } catch (error) {
+    } catch {
       // Don't set error state as quota is optional
     }
   },
@@ -695,6 +708,91 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         isLoading: false
       });
     }
+  },
+
+  // Push notification handlers
+  setPushConnected: (connected) => {
+    set({ isPushConnected: connected });
+  },
+
+  handleStateChange: async (change, client) => {
+    try {
+      // Update last push update timestamp
+      set({ lastPushUpdate: Date.now() });
+
+      // Get the current account ID from the client (assuming primary account)
+      const accountId = client.getAccountId();
+
+      // Check if there are changes for this account
+      const accountChanges = change.changed[accountId];
+      if (!accountChanges) return;
+
+      // Handle Email state changes - refresh current mailbox
+      if (accountChanges.Email) {
+        await get().refreshCurrentMailbox(client);
+      }
+
+      // Handle Mailbox state changes - refresh mailbox list
+      if (accountChanges.Mailbox) {
+        await get().fetchMailboxes(client);
+      }
+
+      // Could also handle Thread, EmailSubmission, Identity changes in the future
+    } catch (error) {
+      console.error('Failed to handle state change:', error);
+      set({
+        error: error instanceof Error ? error.message : "Failed to handle push notification"
+      });
+    }
+  },
+
+  refreshCurrentMailbox: async (client) => {
+    const { selectedMailbox } = get();
+
+    // Only refresh if a mailbox is currently selected
+    if (!selectedMailbox) return;
+
+    try {
+      // Fetch emails for the current mailbox without clearing the list first
+      // This provides a smoother update experience
+      const mailboxes = get().mailboxes;
+      const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
+      const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
+      const jmapMailboxId = mailbox?.originalId || selectedMailbox;
+
+      // Get emails per page from settings
+      const emailsPerPage = useSettingsStore.getState().emailsPerPage;
+
+      const result = await client.getEmails(jmapMailboxId, accountId, emailsPerPage, 0);
+
+      // Check if there are new emails by comparing the first email ID
+      const currentFirstEmailId = get().emails[0]?.id;
+      const newFirstEmailId = result.emails[0]?.id;
+
+      // If the first email changed, we have a new email - trigger notification
+      if (currentFirstEmailId !== newFirstEmailId && result.emails[0]) {
+        get().handleNewEmailNotification(result.emails[0]);
+      }
+
+      set({
+        emails: result.emails,
+        hasMoreEmails: result.hasMore,
+        totalEmails: result.total
+      });
+    } catch (error) {
+      console.error('Failed to refresh current mailbox:', error);
+      // Don't set error state for background refreshes to avoid disrupting the UI
+    }
+  },
+
+  handleNewEmailNotification: (email) => {
+    // Set the new email notification state
+    // This can be consumed by a toast component
+    set({ newEmailNotification: email });
+  },
+
+  clearNewEmailNotification: () => {
+    set({ newEmailNotification: null });
   },
 
   loadMockData: () => {

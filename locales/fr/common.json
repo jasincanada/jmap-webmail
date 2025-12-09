@@ -20,6 +20,8 @@
     "sign_out": "Se déconnecter",
     "settings": "Paramètres",
     "loading_mailboxes": "Chargement des boîtes mail...",
+    "push_connected": "Mises à jour en temps réel actives",
+    "push_disconnected": "Mises à jour en temps réel inactives",
     "theme": {
       "light": "Mode clair",
       "dark": "Mode sombre",
@@ -178,7 +180,10 @@
     "source_copied": "Source copiée dans le presse-papiers",
     "error_sending": "Échec de l'envoi de l'email",
     "error_deleting": "Échec de la suppression de l'email",
-    "error_loading": "Échec du chargement des emails"
+    "error_loading": "Échec du chargement des emails",
+    "new_email": "Nouvel email",
+    "new_email_from": "De {sender}",
+    "click_to_view": "Cliquer pour voir"
   },
   "date": {
     "today": "Aujourd'hui",
@@ -404,5 +409,22 @@
         "button": "Importer"
       }
     }
+  },
+  "errors": {
+    "page_error_title": "Une erreur s'est produite",
+    "page_error_description": "Nous avons rencontré une erreur inattendue. Veuillez réessayer ou retourner à la page d'accueil.",
+    "sidebar_error": "Impossible de charger les boîtes mail",
+    "email_list_error": "Impossible de charger les emails",
+    "viewer_error_title": "Impossible d'afficher l'email",
+    "viewer_error_description": "Un problème est survenu lors de l'affichage de cet email. Il peut contenir du contenu non pris en charge.",
+    "composer_error": "Impossible de charger le compositeur",
+    "settings_error_title": "Paramètres indisponibles",
+    "settings_error_description": "Impossible de charger les paramètres. Vos préférences peuvent ne pas être sauvegardées.",
+    "try_again": "Réessayer",
+    "reload": "Recharger",
+    "reload_emails": "Recharger les emails",
+    "reload_settings": "Recharger les paramètres",
+    "retry": "Réessayer",
+    "go_home": "Aller à la boîte de réception"
   }
 }

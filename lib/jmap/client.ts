@@ -1,4 +1,4 @@
-import type { Email, Mailbox } from "./types";
+import type { Email, Mailbox, StateChange, AccountStates } from "./types";
 
 export class JMAPClient {
   private serverUrl: string;
@@ -13,6 +13,9 @@ export class JMAPClient {
   private lastPingTime: number = 0;
   private pingInterval: NodeJS.Timeout | null = null;
   private accounts: Record<string, any> = {}; // All accounts (primary + shared)
+  private eventSource: EventSource | null = null;
+  private stateChangeCallback: ((change: StateChange) => void) | null = null;
+  private lastStates: AccountStates = {};
 
   constructor(serverUrl: string, username: string, password: string) {
     this.serverUrl = serverUrl.replace(/\/$/, '');
@@ -132,6 +135,7 @@ export class JMAPClient {
 
   disconnect(): void {
     this.stopKeepAlive();
+    this.closePushNotifications();
     this.apiUrl = "";
     this.accountId = "";
     this.session = null;
@@ -167,7 +171,7 @@ export class JMAPClient {
     let data;
     try {
       data = JSON.parse(responseText);
-    } catch (e) {
+    } catch {
       console.error('Failed to parse response:', responseText);
       throw new Error('Invalid JSON response from server');
     }
@@ -197,7 +201,7 @@ export class JMAPClient {
       }
 
       return null;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -1004,7 +1008,7 @@ export class JMAPClient {
     try {
       result = JSON.parse(responseText);
       console.log('Parsed upload response:', JSON.stringify(result, null, 2));
-    } catch (e) {
+    } catch {
       console.error('Failed to parse upload response as JSON:', responseText);
       throw new Error('Invalid JSON response from upload');
     }
@@ -1082,10 +1086,22 @@ export class JMAPClient {
 
   getEventSourceUrl(): string | null {
     const session = this.session;
-    if (!session?.capabilities?.["urn:ietf:params:jmap:core"]?.eventSourceUrl) {
+    if (!session) {
       return null;
     }
-    return session.capabilities["urn:ietf:params:jmap:core"].eventSourceUrl;
+    // RFC 8620: eventSourceUrl is at session root level
+    if (session.eventSourceUrl) {
+      return session.eventSourceUrl;
+    }
+    // Some servers may put it in capabilities
+    if (session.capabilities?.["urn:ietf:params:jmap:core"]?.eventSourceUrl) {
+      return session.capabilities["urn:ietf:params:jmap:core"].eventSourceUrl;
+    }
+    return null;
+  }
+
+  getAccountId(): string {
+    return this.accountId;
   }
 
   supportsEmailSubmission(): boolean {
@@ -1103,35 +1119,164 @@ export class JMAPClient {
   async downloadBlob(blobId: string, name?: string, type?: string): Promise<void> {
     const url = this.getBlobDownloadUrl(blobId, name, type);
 
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': this.authHeader,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to download attachment: ${response.status}`);
+    }
+
+    // Get the blob from the response
+    const blob = await response.blob();
+
+    // Create a temporary URL for the blob
+    const blobUrl = URL.createObjectURL(blob);
+
+    // Create a temporary anchor element and trigger download
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = name || 'download';
+    document.body.appendChild(a);
+    a.click();
+
+    // Clean up
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  }
+
+  // Real-time Updates via Polling (EventSource has auth limitations with Basic Auth)
+  private pollingInterval: NodeJS.Timeout | null = null;
+  private pollingStates: { [key: string]: string } = {};
+
+  setupPushNotifications(): boolean {
+    // Use polling instead of EventSource due to Basic Auth limitations
+    // EventSource can't send Authorization headers, and URL-embedded credentials
+    // get decoded by browsers, breaking auth for usernames/passwords with special chars
+
+    // Initial state fetch
+    this.fetchCurrentStates();
+
+    // Set up polling interval
+    this.pollingInterval = setInterval(() => {
+      this.checkForStateChanges();
+    }, 15000); // Poll every 15 seconds
+
+    return true;
+  }
+
+  private async fetchCurrentStates(): Promise<void> {
     try {
-      const response = await fetch(url, {
+      // Get current states from server using JMAP query
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': this.authHeader,
         },
+        body: JSON.stringify({
+          using: ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail'],
+          methodCalls: [
+            ['Mailbox/get', { accountId: this.accountId, ids: null, properties: ['id'] }, 'a'],
+            ['Email/get', { accountId: this.accountId, ids: [], properties: ['id'] }, 'b'],
+          ],
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to download attachment: ${response.status}`);
+      if (response.ok) {
+        const data = await response.json();
+        // Extract states from response
+        for (const [method, result] of data.methodResponses) {
+          if (method === 'Mailbox/get' && result.state) {
+            this.pollingStates['Mailbox'] = result.state;
+          }
+          if (method === 'Email/get' && result.state) {
+            this.pollingStates['Email'] = result.state;
+          }
+        }
       }
-
-      // Get the blob from the response
-      const blob = await response.blob();
-
-      // Create a temporary URL for the blob
-      const blobUrl = URL.createObjectURL(blob);
-
-      // Create a temporary anchor element and trigger download
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = name || 'download';
-      document.body.appendChild(a);
-      a.click();
-
-      // Clean up
-      document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
     } catch (error) {
-      throw error;
+      // Silently fail - polling will retry
     }
+  }
+
+  private async checkForStateChanges(): Promise<void> {
+    try {
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': this.authHeader,
+        },
+        body: JSON.stringify({
+          using: ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail'],
+          methodCalls: [
+            ['Mailbox/get', { accountId: this.accountId, ids: null, properties: ['id'] }, 'a'],
+            ['Email/get', { accountId: this.accountId, ids: [], properties: ['id'] }, 'b'],
+          ],
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const changes: { [key: string]: string } = {};
+        let hasChanges = false;
+
+        for (const [method, result] of data.methodResponses) {
+          if (method === 'Mailbox/get' && result.state) {
+            if (this.pollingStates['Mailbox'] && this.pollingStates['Mailbox'] !== result.state) {
+              changes['Mailbox'] = result.state;
+              hasChanges = true;
+            }
+            this.pollingStates['Mailbox'] = result.state;
+          }
+          if (method === 'Email/get' && result.state) {
+            if (this.pollingStates['Email'] && this.pollingStates['Email'] !== result.state) {
+              changes['Email'] = result.state;
+              hasChanges = true;
+            }
+            this.pollingStates['Email'] = result.state;
+          }
+        }
+
+        if (hasChanges && this.stateChangeCallback) {
+          this.stateChangeCallback({
+            '@type': 'StateChange',
+            changed: {
+              [this.accountId]: changes,
+            },
+          });
+        }
+      }
+    } catch (error) {
+      // Silently fail - polling will retry
+    }
+  }
+
+  closePushNotifications(): void {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
+    }
+    this.stateChangeCallback = null;
+    this.pollingStates = {};
+  }
+
+  onStateChange(callback: (change: StateChange) => void): void {
+    this.stateChangeCallback = callback;
+  }
+
+  getLastStates(): AccountStates {
+    return { ...this.lastStates };
+  }
+
+  setLastStates(states: AccountStates): void {
+    this.lastStates = { ...states };
   }
 }

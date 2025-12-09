@@ -2,7 +2,6 @@
 
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { locales } from '@/i18n/request';
 

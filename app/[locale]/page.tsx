@@ -11,6 +11,13 @@ import { useEmailStore } from "@/stores/email-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSettingsStore } from "@/stores/settings-store";
 import { debug } from "@/lib/debug";
+import {
+  ErrorBoundary,
+  SidebarErrorFallback,
+  EmailListErrorFallback,
+  EmailViewerErrorFallback,
+  ComposerErrorFallback,
+} from "@/components/error";
 
 export default function Home() {
   const router = useRouter();
@@ -27,6 +34,8 @@ export default function Home() {
     selectedEmail,
     selectedMailbox,
     quota,
+    isPushConnected,
+    newEmailNotification,
     selectEmail,
     selectMailbox,
     fetchMailboxes,
@@ -41,7 +50,33 @@ export default function Home() {
     isLoading,
     isLoadingEmail,
     setLoadingEmail,
+    setPushConnected,
+    handleStateChange,
+    clearNewEmailNotification,
+    fetchEmailContent,
   } = useEmailStore();
+
+  // Play notification sound for new emails
+  const playNotificationSound = () => {
+    try {
+      // Use Web Audio API for a simple notification beep
+      const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.value = 800; // Hz
+      oscillator.type = 'sine';
+      gainNode.gain.value = 0.1; // Low volume
+
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.15); // Short beep
+    } catch (e) {
+      debug.log('Could not play notification sound:', e);
+    }
+  };
 
   // Update page title based on context
   useEffect(() => {
@@ -110,13 +145,39 @@ export default function Home() {
           } else {
             await fetchEmails(client);
           }
+
+          // Setup push notifications after successful data load
+          try {
+            // Register state change callback
+            client.onStateChange((change) => handleStateChange(change, client));
+
+            // Start receiving push notifications
+            const pushEnabled = client.setupPushNotifications();
+
+            if (pushEnabled) {
+              setPushConnected(true);
+              debug.log('[Push] Push notifications successfully enabled');
+            } else {
+              debug.log('[Push] Push notifications not available on this server');
+            }
+          } catch (error) {
+            // Push notifications are optional - don't break the app if they fail
+            debug.log('[Push] Failed to setup push notifications:', error);
+          }
         } catch (error) {
           console.error('Error loading email data:', error);
         }
       };
       loadData();
     }
-  }, [isAuthenticated, client, mailboxes.length, fetchMailboxes, fetchEmails, fetchQuota]);
+
+    // Cleanup push notifications on unmount
+    return () => {
+      if (client) {
+        client.closePushNotifications();
+      }
+    };
+  }, [isAuthenticated, client, mailboxes.length, fetchMailboxes, fetchEmails, fetchQuota, handleStateChange, setPushConnected]);
 
   // Handle mark-as-read with delay based on settings
   useEffect(() => {
@@ -163,6 +224,15 @@ export default function Home() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEmail?.id]);
+
+  // Handle new email notifications - play sound
+  useEffect(() => {
+    if (newEmailNotification) {
+      playNotificationSound();
+      debug.log('New email received:', newEmailNotification.subject);
+      clearNewEmailNotification();
+    }
+  }, [newEmailNotification, clearNewEmailNotification]);
 
   const handleEmailSend = async (data: {
     to: string[];
@@ -341,96 +411,111 @@ export default function Home() {
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
-      <Sidebar
-        mailboxes={mailboxes}
-        selectedMailbox={selectedMailbox}
-        onMailboxSelect={handleMailboxSelect}
-        onCompose={() => {
-          setComposerMode('compose');
-          setShowComposer(true);
-        }}
-        onLogout={handleLogout}
-        onSearch={handleSearch}
-        quota={quota}
-      />
+      <ErrorBoundary fallback={SidebarErrorFallback}>
+        <Sidebar
+          mailboxes={mailboxes}
+          selectedMailbox={selectedMailbox}
+          onMailboxSelect={handleMailboxSelect}
+          onCompose={() => {
+            setComposerMode('compose');
+            setShowComposer(true);
+          }}
+          onLogout={handleLogout}
+          onSearch={handleSearch}
+          quota={quota}
+          isPushConnected={isPushConnected}
+        />
+      </ErrorBoundary>
 
       {/* Email List */}
       <div className="w-96 bg-background border-r border-border flex-shrink-0 shadow-sm">
-        <EmailList
-          emails={emails}
-          selectedEmailId={selectedEmail?.id}
-          isLoading={isLoading}
-          onEmailSelect={async (email) => {
-            if (!client || !email) return;
+        <ErrorBoundary fallback={EmailListErrorFallback}>
+          <EmailList
+            emails={emails}
+            selectedEmailId={selectedEmail?.id}
+            isLoading={isLoading}
+            onEmailSelect={async (email) => {
+              if (!client || !email) return;
 
-            // Set loading state immediately (keep current email visible)
-            setLoadingEmail(true);
+              // Set loading state immediately (keep current email visible)
+              setLoadingEmail(true);
 
-            // Fetch the full content
-            try {
-              // Find selected mailbox to determine accountId (for shared folders)
-              const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
-              // Only pass accountId for shared mailboxes
-              const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
+              // Fetch the full content
+              try {
+                // Find selected mailbox to determine accountId (for shared folders)
+                const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
+                // Only pass accountId for shared mailboxes
+                const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
 
-              const fullEmail = await client.getEmail(email.id, accountId);
-              if (fullEmail) {
-                selectEmail(fullEmail);
-                // Mark-as-read logic is now handled by useEffect
+                const fullEmail = await client.getEmail(email.id, accountId);
+                if (fullEmail) {
+                  selectEmail(fullEmail);
+                  // Mark-as-read logic is now handled by useEffect
+                }
+              } catch (error) {
+                console.error('Failed to fetch email content:', error);
+              } finally {
+                setLoadingEmail(false);
               }
-            } catch (error) {
-              console.error('Failed to fetch email content:', error);
-            } finally {
-              setLoadingEmail(false);
-            }
-          }}
-          className="h-full"
-        />
+            }}
+            className="h-full"
+          />
+        </ErrorBoundary>
       </div>
 
       {/* Email Viewer */}
-      <EmailViewer
-        email={selectedEmail}
-        isLoading={isLoadingEmail}
-        onReply={handleReply}
-        onReplyAll={handleReplyAll}
-        onForward={handleForward}
-        onDelete={handleDelete}
-        onArchive={handleArchive}
-        onToggleStar={handleToggleStar}
-        onSetColorTag={handleSetColorTag}
-        onMarkAsRead={async (emailId, read) => {
-          if (client) {
-            await markAsRead(client, emailId, read);
-          }
-        }}
-        onDownloadAttachment={handleDownloadAttachment}
-        onQuickReply={handleQuickReply}
-        currentUserEmail={client?.["username"]}
-        currentUserName={client?.["username"]?.split("@")[0]}
-      />
+      <ErrorBoundary fallback={EmailViewerErrorFallback}>
+        <EmailViewer
+          email={selectedEmail}
+          isLoading={isLoadingEmail}
+          onReply={handleReply}
+          onReplyAll={handleReplyAll}
+          onForward={handleForward}
+          onDelete={handleDelete}
+          onArchive={handleArchive}
+          onToggleStar={handleToggleStar}
+          onSetColorTag={handleSetColorTag}
+          onMarkAsRead={async (emailId, read) => {
+            if (client) {
+              await markAsRead(client, emailId, read);
+            }
+          }}
+          onDownloadAttachment={handleDownloadAttachment}
+          onQuickReply={handleQuickReply}
+          currentUserEmail={client?.["username"]}
+          currentUserName={client?.["username"]?.split("@")[0]}
+        />
+      </ErrorBoundary>
 
       {/* Email Composer Modal */}
       {showComposer && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="w-full max-w-3xl h-[600px] mx-4">
-            <EmailComposer
-              mode={composerMode}
-              replyTo={selectedEmail ? {
-                from: selectedEmail.from,
-                to: selectedEmail.to,
-                cc: selectedEmail.cc,
-                subject: selectedEmail.subject,
-                body: selectedEmail.bodyValues?.[selectedEmail.textBody?.[0]?.partId || '']?.value || selectedEmail.preview || '',
-                receivedAt: selectedEmail.receivedAt
-              } : undefined}
-              onSend={handleEmailSend}
-              onClose={() => {
+            <ErrorBoundary
+              fallback={ComposerErrorFallback}
+              onReset={() => {
                 setShowComposer(false);
                 setComposerMode('compose');
               }}
-              onDiscardDraft={handleDiscardDraft}
-            />
+            >
+              <EmailComposer
+                mode={composerMode}
+                replyTo={selectedEmail ? {
+                  from: selectedEmail.from,
+                  to: selectedEmail.to,
+                  cc: selectedEmail.cc,
+                  subject: selectedEmail.subject,
+                  body: selectedEmail.bodyValues?.[selectedEmail.textBody?.[0]?.partId || '']?.value || selectedEmail.preview || '',
+                  receivedAt: selectedEmail.receivedAt
+                } : undefined}
+                onSend={handleEmailSend}
+                onClose={() => {
+                  setShowComposer(false);
+                  setComposerMode('compose');
+                }}
+                onDiscardDraft={handleDiscardDraft}
+              />
+            </ErrorBoundary>
           </div>
         </div>
       )}

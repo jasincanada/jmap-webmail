@@ -232,6 +232,7 @@ export function EmailComposer({
         clearTimeout(saveTimeoutRef.current);
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- saveDraft reads current state when called, not when effect is set up
   }, [to, cc, bcc, subject, body, attachments]);
 
   const handleSend = async () => {
