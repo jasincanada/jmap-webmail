@@ -18,7 +18,6 @@ interface EmailStore {
   selectedEmailIds: Set<string>; // Track selected emails for batch operations
   hasMoreEmails: boolean; // Track if more emails are available to load
   totalEmails: number; // Total number of emails in the current mailbox/query
-  dataLoaded: boolean; // Track if initial data has been loaded (persists across navigation)
 
   setEmails: (emails: Email[]) => void;
   setMailboxes: (mailboxes: Mailbox[]) => void;
@@ -32,7 +31,6 @@ interface EmailStore {
   toggleEmailSelection: (emailId: string) => void;
   selectAllEmails: () => void;
   clearSelection: () => void;
-  setDataLoaded: (loaded: boolean) => void;
 
   // JMAP operations
   fetchMailboxes: (client: JMAPClient) => Promise<void>;
@@ -71,7 +69,6 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   selectedEmailIds: new Set(),
   hasMoreEmails: false,
   totalEmails: 0,
-  dataLoaded: false,
 
   setEmails: (emails) => set({ emails }),
   setMailboxes: (mailboxes) => set({ mailboxes }),
@@ -103,8 +100,6 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   clearSelection: () => {
     set({ selectedEmailIds: new Set() });
   },
-
-  setDataLoaded: (loaded) => set({ dataLoaded: loaded }),
 
   // JMAP operations
   fetchMailboxes: async (client) => {

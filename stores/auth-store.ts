@@ -103,7 +103,6 @@ export const useAuthStore = create<AuthState>()(
           error: null,
           searchQuery: "",
           quota: null,
-          dataLoaded: false,
         });
       },
 

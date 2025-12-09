@@ -41,8 +41,6 @@ export default function Home() {
     isLoading,
     isLoadingEmail,
     setLoadingEmail,
-    dataLoaded,
-    setDataLoaded,
   } = useEmailStore();
 
   // Update page title based on context
@@ -84,17 +82,16 @@ export default function Home() {
     });
   }, [checkAuth]);
 
-  // Redirect to login if not authenticated and reset data loaded flag
+  // Redirect to login if not authenticated
   useEffect(() => {
     if (initialCheckDone && !isAuthenticated && !authLoading) {
-      setDataLoaded(false); // Reset so data is reloaded on next login
       router.push(`/${params.locale}/login`);
     }
   }, [initialCheckDone, isAuthenticated, authLoading, router, params.locale]);
 
-  // Load mailboxes and emails when authenticated
+  // Load mailboxes and emails when authenticated (only if not already loaded)
   useEffect(() => {
-    if (isAuthenticated && client && !dataLoaded) {
+    if (isAuthenticated && client && mailboxes.length === 0) {
       const loadData = async () => {
         try {
           // First fetch mailboxes and quota (inbox will be auto-selected in fetchMailboxes)
@@ -113,15 +110,13 @@ export default function Home() {
           } else {
             await fetchEmails(client);
           }
-
-          setDataLoaded(true);
         } catch (error) {
           console.error('Error loading email data:', error);
         }
       };
       loadData();
     }
-  }, [isAuthenticated, client, dataLoaded, fetchMailboxes, fetchEmails, fetchQuota]);
+  }, [isAuthenticated, client, mailboxes.length, fetchMailboxes, fetchEmails, fetchQuota]);
 
   // Handle mark-as-read with delay based on settings
   useEffect(() => {
