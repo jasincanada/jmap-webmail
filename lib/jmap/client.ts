@@ -637,6 +637,20 @@ export class JMAPClient {
     ]);
   }
 
+  async moveToTrash(emailId: string, trashMailboxId: string, accountId?: string): Promise<void> {
+    const targetAccountId = accountId || this.accountId;
+    await this.request([
+      ["Email/set", {
+        accountId: targetAccountId,
+        update: {
+          [emailId]: {
+            mailboxIds: { [trashMailboxId]: true },
+          },
+        },
+      }, "0"],
+    ]);
+  }
+
   async batchDeleteEmails(emailIds: string[]): Promise<void> {
     if (emailIds.length === 0) return;
 

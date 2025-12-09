@@ -57,6 +57,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useSettingsStore } from "@/stores/settings-store";
 
 interface EmailViewerProps {
   email: Email | null;
@@ -140,6 +141,7 @@ export function EmailViewer({
 }: EmailViewerProps) {
   const t = useTranslations('email_viewer');
   const tNotifications = useTranslations('notifications');
+  const externalContentPolicy = useSettingsStore((state) => state.externalContentPolicy);
   const [showFullHeaders, setShowFullHeaders] = useState(false);
   const [allowExternalContent, setAllowExternalContent] = useState(false);
   const [hasBlockedContent, setHasBlockedContent] = useState(false);
@@ -157,13 +159,15 @@ export function EmailViewer({
   }, [email?.id, email?.keywords?.$seen, onMarkAsRead]);
 
   // Reset external content permission and quick reply when email changes
+  // Initialize allowExternalContent based on externalContentPolicy setting
   useEffect(() => {
-    setAllowExternalContent(false);
+    // 'allow' = always allow, 'block' = always block, 'ask' = user decides per email
+    setAllowExternalContent(externalContentPolicy === 'allow');
     setHasBlockedContent(false);
     setQuickReplyText("");
     setIsQuickReplyFocused(false);
     setShowSourceModal(false);
-  }, [email?.id]);
+  }, [email?.id, externalContentPolicy]);
 
   // Generate email source for viewing
   const generateEmailSource = (email: Email): string => {
@@ -356,8 +360,12 @@ export function EmailViewer({
           FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur'],
         };
 
-        // If external content is not allowed, block images and external resources
-        if (!allowExternalContent) {
+        // Block external content based on policy:
+        // 'allow' = never block, 'block' = always block, 'ask' = block until user allows
+        const shouldBlockExternal = externalContentPolicy === 'block' ||
+          (externalContentPolicy === 'ask' && !allowExternalContent);
+
+        if (shouldBlockExternal) {
           sanitizeConfig.FORBID_TAGS.push('link');
           sanitizeConfig.FORBID_ATTR.push('background');
 
@@ -449,26 +457,26 @@ export function EmailViewer({
       html: '<p style="color: #999;">No content available</p>',
       isHtml: false
     };
-  }, [email, allowExternalContent, hasBlockedContent]);
+  }, [email, allowExternalContent, hasBlockedContent, externalContentPolicy]);
 
   // Show loading skeleton while email is being fetched
-  if (isLoading) {
+  if (isLoading && !email) {
     return (
-      <div className="flex-1 flex flex-col h-full bg-background overflow-hidden">
-        {/* Loading Header Skeleton */}
+      <div className="flex-1 flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-200">
+        {/* Loading Header Skeleton - gentler animation */}
         <div className="bg-background border-b border-border">
           <div className="px-6 py-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0 space-y-3">
-                <div className="h-8 bg-muted rounded-md w-3/4 animate-pulse"></div>
+                <div className="h-8 bg-muted/60 rounded-md w-3/4"></div>
                 <div className="flex items-center gap-3">
-                  <div className="h-4 bg-muted rounded w-32 animate-pulse"></div>
-                  <div className="h-4 bg-muted rounded w-24 animate-pulse"></div>
+                  <div className="h-4 bg-muted/60 rounded w-32"></div>
+                  <div className="h-4 bg-muted/60 rounded w-24"></div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-8 w-20 bg-muted rounded animate-pulse"></div>
-                <div className="h-8 w-8 bg-muted rounded animate-pulse"></div>
+                <div className="h-8 w-20 bg-muted/60 rounded"></div>
+                <div className="h-8 w-8 bg-muted/60 rounded"></div>
               </div>
             </div>
           </div>
@@ -476,24 +484,24 @@ export function EmailViewer({
           {/* Loading Sender Info Skeleton */}
           <div className="px-6 pb-4">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-muted rounded-full animate-pulse"></div>
+              <div className="w-12 h-12 bg-muted/60 rounded-full"></div>
               <div className="flex-1 space-y-2">
-                <div className="h-4 bg-muted rounded w-48 animate-pulse"></div>
-                <div className="h-3 bg-muted rounded w-64 animate-pulse"></div>
+                <div className="h-4 bg-muted/60 rounded w-48"></div>
+                <div className="h-3 bg-muted/60 rounded w-64"></div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Loading Content Skeleton */}
-        <div className="flex-1 overflow-auto bg-muted/30">
+        <div className="flex-1 overflow-auto bg-muted/20">
           <div className="max-w-4xl mx-auto p-6">
             <div className="bg-background rounded-lg shadow-sm border border-border overflow-hidden p-6 space-y-3">
-              <div className="h-4 bg-muted rounded w-full animate-pulse"></div>
-              <div className="h-4 bg-muted rounded w-5/6 animate-pulse"></div>
-              <div className="h-4 bg-muted rounded w-4/6 animate-pulse"></div>
-              <div className="h-4 bg-muted rounded w-full animate-pulse"></div>
-              <div className="h-4 bg-muted rounded w-3/4 animate-pulse"></div>
+              <div className="h-4 bg-muted/60 rounded w-full"></div>
+              <div className="h-4 bg-muted/60 rounded w-5/6"></div>
+              <div className="h-4 bg-muted/60 rounded w-4/6"></div>
+              <div className="h-4 bg-muted/60 rounded w-full"></div>
+              <div className="h-4 bg-muted/60 rounded w-3/4"></div>
             </div>
           </div>
         </div>
@@ -1092,8 +1100,8 @@ export function EmailViewer({
 
       {/* Email Content Area */}
       <div className="flex-1 overflow-auto bg-muted/30">
-        {/* Ultra Minimalist External Content Banner */}
-        {hasBlockedContent && !allowExternalContent && (
+        {/* Ultra Minimalist External Content Banner - only show in 'ask' mode */}
+        {hasBlockedContent && !allowExternalContent && externalContentPolicy === 'ask' && (
           <div className="border-b border-border">
             <div className="max-w-4xl mx-auto px-6 py-2">
               <button

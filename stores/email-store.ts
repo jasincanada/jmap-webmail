@@ -18,6 +18,7 @@ interface EmailStore {
   selectedEmailIds: Set<string>; // Track selected emails for batch operations
   hasMoreEmails: boolean; // Track if more emails are available to load
   totalEmails: number; // Total number of emails in the current mailbox/query
+  dataLoaded: boolean; // Track if initial data has been loaded (persists across navigation)
 
   setEmails: (emails: Email[]) => void;
   setMailboxes: (mailboxes: Mailbox[]) => void;
@@ -31,6 +32,7 @@ interface EmailStore {
   toggleEmailSelection: (emailId: string) => void;
   selectAllEmails: () => void;
   clearSelection: () => void;
+  setDataLoaded: (loaded: boolean) => void;
 
   // JMAP operations
   fetchMailboxes: (client: JMAPClient) => Promise<void>;
@@ -69,6 +71,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   selectedEmailIds: new Set(),
   hasMoreEmails: false,
   totalEmails: 0,
+  dataLoaded: false,
 
   setEmails: (emails) => set({ emails }),
   setMailboxes: (mailboxes) => set({ mailboxes }),
@@ -101,6 +104,8 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
     set({ selectedEmailIds: new Set() });
   },
 
+  setDataLoaded: (loaded) => set({ dataLoaded: loaded }),
+
   // JMAP operations
   fetchMailboxes: async (client) => {
     set({ isLoading: true, error: null });
@@ -129,7 +134,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   },
 
   fetchEmails: async (client, mailboxId) => {
-    set({ isLoading: true, error: null, emails: [], hasMoreEmails: false, totalEmails: 0 }); // Clear emails immediately for better loading UX
+    set({ isLoading: true, error: null }); // Keep previous emails visible during transition
     try {
       const targetMailboxId = mailboxId || get().selectedMailbox;
 
@@ -256,6 +261,74 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
       const isUnread = !email.keywords?.$seen;
 
+      // Get delete action preference from settings
+      const deleteAction = useSettingsStore.getState().deleteAction;
+
+      // Determine accountId for shared folders
+      const selectedMailboxId = get().selectedMailbox;
+      const mailboxes = get().mailboxes;
+      const currentMailbox = mailboxes.find(mb => mb.id === selectedMailboxId);
+      const accountId = currentMailbox?.isShared ? currentMailbox.accountId : undefined;
+
+      // If deleteAction is 'trash', try to move to trash mailbox
+      if (deleteAction === 'trash') {
+        // Find trash mailbox for the correct account
+        const trashMailbox = mailboxes.find(mb => {
+          if (accountId) {
+            // For shared folders, match by accountId
+            return mb.role === 'trash' && mb.accountId === accountId;
+          }
+          // For primary account, find trash that's not from a shared folder
+          return mb.role === 'trash' && !mb.isShared;
+        });
+
+        if (trashMailbox) {
+          // Use originalId for shared mailboxes if available
+          const trashId = trashMailbox.originalId || trashMailbox.id;
+          await client.moveToTrash(emailId, trashId, accountId);
+
+          // Remove from local state (email moved to trash, not in current view)
+          set((state) => {
+            let updatedMailboxes = state.mailboxes;
+
+            // Update counters for source mailbox (email leaving)
+            if (email.mailboxIds) {
+              updatedMailboxes = state.mailboxes.map(mailbox => {
+                if (email.mailboxIds[mailbox.id]) {
+                  return {
+                    ...mailbox,
+                    totalEmails: Math.max(0, mailbox.totalEmails - 1),
+                    unreadEmails: isUnread ? Math.max(0, mailbox.unreadEmails - 1) : mailbox.unreadEmails,
+                    totalThreads: Math.max(0, mailbox.totalThreads - 1),
+                    unreadThreads: isUnread ? Math.max(0, mailbox.unreadThreads - 1) : mailbox.unreadThreads
+                  };
+                }
+                // Update trash mailbox counters (email arriving)
+                if (mailbox.id === trashMailbox.id) {
+                  return {
+                    ...mailbox,
+                    totalEmails: mailbox.totalEmails + 1,
+                    unreadEmails: isUnread ? mailbox.unreadEmails + 1 : mailbox.unreadEmails,
+                    totalThreads: mailbox.totalThreads + 1,
+                    unreadThreads: isUnread ? mailbox.unreadThreads + 1 : mailbox.unreadThreads
+                  };
+                }
+                return mailbox;
+              });
+            }
+
+            return {
+              emails: state.emails.filter(e => e.id !== emailId),
+              selectedEmail: state.selectedEmail?.id === emailId ? null : state.selectedEmail,
+              mailboxes: updatedMailboxes
+            };
+          });
+          return;
+        }
+        // If no trash mailbox found, fall through to permanent delete
+      }
+
+      // Permanent delete
       await client.deleteEmail(emailId);
 
       // Remove from local state and update mailbox counters if needed

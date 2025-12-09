@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
 import { Paperclip, Star, Circle, CheckSquare, Square } from "lucide-react";
 import { useEmailStore } from "@/stores/email-store";
+import { useSettingsStore } from "@/stores/settings-store";
 
 interface EmailListItemProps {
   email: Email;
@@ -37,6 +38,7 @@ const getEmailColor = (keywords: Record<string, boolean> | undefined) => {
 
 export function EmailListItem({ email, selected, onClick }: EmailListItemProps) {
   const { selectedEmailIds, toggleEmailSelection } = useEmailStore();
+  const showPreview = useSettingsStore((state) => state.showPreview);
   const isChecked = selectedEmailIds.has(email.id);
   const isUnread = !email.keywords?.$seen;
   const isStarred = email.keywords?.$flagged;
@@ -152,15 +154,17 @@ export function EmailListItem({ email, selected, onClick }: EmailListItemProps) 
             {email.subject || "(no subject)"}
           </div>
 
-          {/* Third Line: Preview */}
-          <p className={cn(
-            "text-sm leading-relaxed line-clamp-2",
-            isUnread
-              ? "text-muted-foreground"
-              : "text-muted-foreground/80"
-          )}>
-            {email.preview || "No preview available"}
-          </p>
+          {/* Third Line: Preview (controlled by showPreview setting) */}
+          {showPreview && (
+            <p className={cn(
+              "text-sm leading-relaxed line-clamp-2",
+              isUnread
+                ? "text-muted-foreground"
+                : "text-muted-foreground/80"
+            )}>
+              {email.preview || "No preview available"}
+            </p>
+          )}
         </div>
       </div>
     </div>

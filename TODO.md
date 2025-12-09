@@ -48,9 +48,9 @@
 - [x] Redesign login page with modern minimalist UI
 - [x] Disable browser autocomplete for username field
 - [x] Implement custom username autocomplete with localStorage
-- [x] Add session management
+- [x] Add session management (note: no persistent sessions by design - password not stored)
 - [x] Implement logout functionality
-- [x] Add remember me functionality
+- [x] Add remember me functionality (username history only - no password storage for security)
 - [x] Handle authentication errors
 
 ### JMAP Server Connection
@@ -87,7 +87,7 @@
 - [ ] Add email threading support
 
 ### Real-time Updates
-- [ ] Set up EventSource for JMAP push notifications
+- [ ] Set up EventSource for JMAP push notifications (getEventSourceUrl() exists but unused)
 - [ ] Implement state synchronization
 - [ ] Handle email arrival notifications
 - [ ] Update unread counts in real-time
@@ -120,15 +120,15 @@
 - [ ] Implement error boundaries
 - [x] Create settings page
 - [x] Integrate mark-as-read delay setting in email viewer
-- [ ] Integrate delete action setting (trash vs permanent)
-- [ ] Integrate show preview toggle in email list
-- [ ] Integrate external content policy with image loading
-- [ ] Integrate debug mode with console logging
-- [ ] Integrate animations toggle throughout components
+- [x] Integrate delete action setting (trash vs permanent)
+- [x] Integrate show preview toggle in email list
+- [x] Integrate external content policy with image loading
+- [x] Integrate debug mode with console logging
+- [x] Integrate animations toggle throughout components (uses CSS variable --transition-duration)
 - [ ] Add keyboard shortcuts (j/k navigation, etc.)
 - [ ] Implement drag-and-drop for emails
 - [ ] Add context menus
-- [ ] Create mobile-responsive design
+- [ ] Create mobile-responsive design (currently desktop-only, no responsive breakpoints)
 - [x] Implement pagination/infinite scroll for email list
 
 ### Address Book & Contacts
@@ -185,12 +185,12 @@
 ### Security
 - [x] Block external images/content by default (privacy protection)
 - [x] Add user control for loading external content
-- [x] Sanitize HTML email content with DOMPurify
-- [ ] Implement CSP headers
-- [ ] Add additional XSS protection layers
+- [x] Sanitize HTML email content with DOMPurify (comprehensive config with forbidden tags/attributes)
+- [ ] Implement CSP headers (not configured in next.config)
+- [ ] Add additional XSS protection layers (X-XSS-Protection, X-Content-Type-Options, X-Frame-Options)
 - [ ] Implement rate limiting
 - [ ] Add CORS configuration
-- [ ] Implement secure cookie handling
+- [ ] Implement secure cookie handling (note: uses Basic Auth, no session tokens)
 
 ## 🐛 Known Issues
 - [ ] Fix Next.js workspace root warning
@@ -214,4 +214,25 @@
 - [x] Fixed dark mode folder selection not visible (improved accent color contrast)
 - [x] Fixed inbox not selected by default on login (auto-select primary account inbox)
 - [x] Fixed email store not cleared on logout (proper state reset)
+
+## 📊 Code Audit Summary (Last verified: 2025-12-09)
+
+### Settings Integration Status
+All settings are now properly wired to their functionality:
+| Setting | Store Location | UI Control | Actual Integration |
+|---------|---------------|------------|-------------------|
+| deleteAction | settings-store.ts:26 | email-settings.tsx | ✅ Moves to trash or permanently deletes |
+| showPreview | settings-store.ts:27 | email-settings.tsx | ✅ Conditionally renders preview in email list |
+| externalContentPolicy | settings-store.ts:29 | email-settings.tsx | ✅ Controls external content blocking (ask/block/allow) |
+| debugMode | settings-store.ts:40 | advanced-settings.tsx | ✅ Conditional logging via lib/debug.ts |
+| animationsEnabled | settings-store.ts:17 | appearance-settings.tsx | ✅ Works via CSS variable |
+| markAsReadDelay | settings-store.ts:25 | email-settings.tsx | ✅ Fully integrated |
+
+### Feature Completeness
+- **Authentication**: ✅ Complete (secure design, no password storage)
+- **Email Operations**: ✅ Complete except threading
+- **Real-time Updates**: ❌ Not started (infrastructure exists)
+- **UI Enhancements**: ✅ Settings fully integrated
+- **Contacts/Address Book**: ❌ Not started
+- **Security**: ⚠️ Client-side done, server headers needed
 

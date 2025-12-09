@@ -10,6 +10,7 @@ import { EmailComposer } from "@/components/email/email-composer";
 import { useEmailStore } from "@/stores/email-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSettingsStore } from "@/stores/settings-store";
+import { debug } from "@/lib/debug";
 
 export default function Home() {
   const router = useRouter();
@@ -17,7 +18,6 @@ export default function Home() {
   const t = useTranslations('common');
   const [showComposer, setShowComposer] = useState(false);
   const [composerMode, setComposerMode] = useState<'compose' | 'reply' | 'replyAll' | 'forward'>('compose');
-  const [dataLoaded, setDataLoaded] = useState(false);
   const [initialCheckDone, setInitialCheckDone] = useState(false);
   const markAsReadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { isAuthenticated, client, logout, checkAuth, isLoading: authLoading } = useAuthStore();
@@ -41,6 +41,8 @@ export default function Home() {
     isLoading,
     isLoadingEmail,
     setLoadingEmail,
+    dataLoaded,
+    setDataLoaded,
   } = useEmailStore();
 
   // Update page title based on context
@@ -125,7 +127,7 @@ export default function Home() {
   useEffect(() => {
     // Clear any existing timeout when email changes
     if (markAsReadTimeoutRef.current) {
-      console.log('[Mark as Read] Clearing previous timeout');
+      debug.log('[Mark as Read] Clearing previous timeout');
       clearTimeout(markAsReadTimeoutRef.current);
       markAsReadTimeoutRef.current = null;
     }
@@ -137,20 +139,20 @@ export default function Home() {
 
     // Get current setting value
     const markAsReadDelay = useSettingsStore.getState().markAsReadDelay;
-    console.log('[Mark as Read] Delay setting:', markAsReadDelay, 'ms for email:', selectedEmail.id);
+    debug.log('[Mark as Read] Delay setting:', markAsReadDelay, 'ms for email:', selectedEmail.id);
 
     if (markAsReadDelay === -1) {
       // Never mark as read automatically
-      console.log('[Mark as Read] Never mode - email will stay unread');
+      debug.log('[Mark as Read] Never mode - email will stay unread');
     } else if (markAsReadDelay === 0) {
       // Mark as read instantly
-      console.log('[Mark as Read] Instant mode - marking as read now');
+      debug.log('[Mark as Read] Instant mode - marking as read now');
       markAsRead(client, selectedEmail.id, true);
     } else {
       // Mark as read after delay
-      console.log('[Mark as Read] Delayed mode - will mark as read in', markAsReadDelay, 'ms');
+      debug.log('[Mark as Read] Delayed mode - will mark as read in', markAsReadDelay, 'ms');
       markAsReadTimeoutRef.current = setTimeout(() => {
-        console.log('[Mark as Read] Timeout fired - marking as read now');
+        debug.log('[Mark as Read] Timeout fired - marking as read now');
         markAsRead(client, selectedEmail.id, true);
         markAsReadTimeoutRef.current = null;
       }, markAsReadDelay);
@@ -159,7 +161,7 @@ export default function Home() {
     // Cleanup on unmount or when dependencies change
     return () => {
       if (markAsReadTimeoutRef.current) {
-        console.log('[Mark as Read] Cleanup - clearing timeout');
+        debug.log('[Mark as Read] Cleanup - clearing timeout');
         clearTimeout(markAsReadTimeoutRef.current);
         markAsReadTimeoutRef.current = null;
       }

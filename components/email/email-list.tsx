@@ -40,20 +40,20 @@ export function EmailList({
 
   const [isProcessing, setIsProcessing] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
-  // Loading skeleton component
+  // Loading skeleton component - gentler, no pulsing
   const LoadingSkeleton = () => (
-    <div className="animate-pulse">
+    <div className="animate-in fade-in duration-200">
       {[...Array(8)].map((_, i) => (
         <div key={i} className="border-b border-border px-4 py-4">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-muted rounded-full" />
+            <div className="w-10 h-10 bg-muted/50 rounded-full" />
             <div className="flex-1">
               <div className="flex items-center justify-between mb-2">
-                <div className="h-4 bg-muted rounded w-32" />
-                <div className="h-3 bg-muted rounded w-16" />
+                <div className="h-4 bg-muted/50 rounded w-32" />
+                <div className="h-3 bg-muted/50 rounded w-16" />
               </div>
-              <div className="h-4 bg-muted rounded w-3/4 mb-2" />
-              <div className="h-3 bg-muted rounded w-full" />
+              <div className="h-4 bg-muted/50 rounded w-3/4 mb-2" />
+              <div className="h-3 bg-muted/50 rounded w-full" />
             </div>
           </div>
         </div>
@@ -212,17 +212,28 @@ export function EmailList({
       </div>
 
       {/* Email List */}
-      <div className="flex-1 overflow-y-auto bg-background">
-        {isLoading ? (
+      <div className="flex-1 overflow-y-auto bg-background relative">
+        {/* Loading overlay - shows on top of existing emails */}
+        {isLoading && emails.length > 0 && (
+          <div className="absolute inset-0 bg-background/50 z-10 flex items-center justify-center animate-in fade-in duration-150">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-background/90 px-4 py-2 rounded-full shadow-sm border border-border">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Loading...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Show skeleton only on initial load (no emails yet) */}
+        {isLoading && emails.length === 0 ? (
           <LoadingSkeleton />
-        ) : emails.length === 0 ? (
+        ) : emails.length === 0 && !isLoading ? (
           <div className="flex flex-col items-center justify-center h-full py-12">
             <Inbox className="w-16 h-16 mb-4 text-muted-foreground/50" />
             <p className="text-base font-medium text-foreground">No emails in this mailbox</p>
             <p className="text-sm mt-1 text-muted-foreground">New messages will appear here</p>
           </div>
         ) : (
-          <>
+          <div className={cn("transition-opacity duration-200", isLoading && "opacity-50")}>
             {emails.map((email) => (
               <EmailListItem
                 key={email.id}
@@ -246,7 +257,7 @@ export function EmailList({
                 </div>
               )}
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>
