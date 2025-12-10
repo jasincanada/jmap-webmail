@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { cn, buildMailboxTree, MailboxNode, formatFileSize } from "@/lib/utils";
 import { Mailbox } from "@/lib/jmap/types";
+import { useDragDropContext } from "@/contexts/drag-drop-context";
+import { useMailboxDrop } from "@/hooks/use-mailbox-drop";
 
 interface SidebarProps {
   mailboxes: Mailbox[];
@@ -95,15 +97,25 @@ function MailboxTreeItem({
   const indentPixels = node.depth * 16; // 16px per depth level
   const isVirtualNode = node.id.startsWith('shared-'); // Virtual nodes for shared folder organization
 
+  // Drag and drop functionality
+  const { isDragging: globalDragging } = useDragDropContext();
+  const { dropHandlers, isValidDropTarget, isInvalidDropTarget } = useMailboxDrop({
+    mailbox: node,
+  });
+
   return (
     <>
       <div
+        {...(globalDragging ? dropHandlers : {})}
         className={cn(
           "group w-full flex items-center px-2 py-1 text-sm transition-all duration-200",
           selectedMailbox === node.id
             ? "bg-accent text-accent-foreground"
             : "hover:bg-muted text-foreground",
-          node.depth === 0 && "font-medium" // Root folders are slightly bolder
+          node.depth === 0 && "font-medium", // Root folders are slightly bolder
+          // Drop target visual feedback
+          isValidDropTarget && "bg-primary/20 ring-2 ring-primary ring-inset",
+          isInvalidDropTarget && "bg-destructive/10 ring-2 ring-destructive/30 ring-inset opacity-50"
         )}
       >
         {/* Expand/Collapse Chevron */}
@@ -323,6 +335,7 @@ export function Sidebar({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
+              data-search-input
             />
           </form>
         </div>

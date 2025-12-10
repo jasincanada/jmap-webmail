@@ -64,6 +64,7 @@ interface EmailViewerProps {
   onQuickReply?: (body: string) => Promise<void>;
   currentUserEmail?: string;
   currentUserName?: string;
+  className?: string;
 }
 
 // Helper function to get file icon based on mime type or extension
@@ -128,6 +129,7 @@ export function EmailViewer({
   onQuickReply,
   currentUserEmail,
   currentUserName,
+  className,
 }: EmailViewerProps) {
   const t = useTranslations('email_viewer');
   const tNotifications = useTranslations('notifications');
@@ -342,7 +344,7 @@ export function EmailViewer({
         // Create a custom DOMPurify hook to handle external content
         let blockedExternalContent = false;
 
-        const sanitizeConfig: any = {
+        const sanitizeConfig = {
           ADD_TAGS: ['style'],
           ADD_ATTR: ['target', 'style', 'class', 'width', 'height', 'align', 'valign', 'bgcolor', 'color'],
           ALLOW_DATA_ATTR: false,
@@ -361,7 +363,8 @@ export function EmailViewer({
           sanitizeConfig.FORBID_ATTR.push('background');
 
           // Hook to modify src attributes
-          DOMPurify.addHook('afterSanitizeAttributes', (node: any) => {
+          DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+            const htmlNode = node as HTMLElement;
             // Block external images
             if (node.tagName === 'IMG') {
               const src = node.getAttribute('src');
@@ -370,18 +373,18 @@ export function EmailViewer({
                 // Use a subtle transparent placeholder
                 node.setAttribute('src', 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB2aWV3Qm94PSIwIDAgMSAxIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSJ0cmFuc3BhcmVudCIvPgo8L3N2Zz4=');
                 node.setAttribute('alt', '');
-                node.style.display = 'none'; // Hide blocked images completely for cleaner look
+                htmlNode.style.display = 'none'; // Hide blocked images completely for cleaner look
                 blockedExternalContent = true;
               }
             }
 
             // Block external stylesheets and resources in style attributes
-            if (node.style) {
-              const style = node.style.cssText;
+            if (htmlNode.style) {
+              const style = htmlNode.style.cssText;
               if (style && style.includes('url(')) {
                 const urlMatch = style.match(/url\(['"]?(https?:\/\/[^'")\s]+)['"]?\)/gi);
                 if (urlMatch) {
-                  node.style.cssText = style.replace(/url\(['"]?https?:\/\/[^'")\s]+['"]?\)/gi, 'url()');
+                  htmlNode.style.cssText = style.replace(/url\(['"]?https?:\/\/[^'")\s]+['"]?\)/gi, 'url()');
                   blockedExternalContent = true;
                 }
               }
@@ -453,29 +456,29 @@ export function EmailViewer({
   // Show loading skeleton while email is being fetched
   if (isLoading && !email) {
     return (
-      <div className="flex-1 flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-200">
+      <div className={cn("flex-1 flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-200", className)}>
         {/* Loading Header Skeleton - gentler animation */}
         <div className="bg-background border-b border-border">
-          <div className="px-6 py-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0 space-y-3">
-                <div className="h-8 bg-muted/60 rounded-md w-3/4"></div>
-                <div className="flex items-center gap-3">
-                  <div className="h-4 bg-muted/60 rounded w-32"></div>
-                  <div className="h-4 bg-muted/60 rounded w-24"></div>
+          <div className="px-4 md:px-6 py-3 md:py-4">
+            <div className="flex items-start justify-between gap-2 md:gap-4">
+              <div className="flex-1 min-w-0 space-y-2 md:space-y-3">
+                <div className="h-6 md:h-8 bg-muted/60 rounded-md w-3/4"></div>
+                <div className="flex items-center gap-2 md:gap-3">
+                  <div className="h-3 md:h-4 bg-muted/60 rounded w-24 md:w-32"></div>
+                  <div className="h-3 md:h-4 bg-muted/60 rounded w-16 md:w-24"></div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-20 bg-muted/60 rounded"></div>
-                <div className="h-8 w-8 bg-muted/60 rounded"></div>
+              <div className="flex items-center gap-1 md:gap-2">
+                <div className="h-8 w-8 md:w-20 bg-muted/60 rounded"></div>
+                <div className="h-8 w-8 bg-muted/60 rounded hidden md:block"></div>
               </div>
             </div>
           </div>
 
           {/* Loading Sender Info Skeleton */}
-          <div className="px-6 pb-4">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-muted/60 rounded-full"></div>
+          <div className="px-4 md:px-6 pb-3 md:pb-4">
+            <div className="flex items-start gap-3 md:gap-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-muted/60 rounded-full"></div>
               <div className="flex-1 space-y-2">
                 <div className="h-4 bg-muted/60 rounded w-48"></div>
                 <div className="h-3 bg-muted/60 rounded w-64"></div>
@@ -502,7 +505,7 @@ export function EmailViewer({
 
   if (!email) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-muted/30 to-muted/50">
+      <div className={cn("flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-muted/30 to-muted/50", className)}>
         <div className="text-center p-8">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-background shadow-lg flex items-center justify-center">
             <Mail className="w-10 h-10 text-muted-foreground" />
@@ -521,7 +524,7 @@ export function EmailViewer({
   return (
     <div
       key={email.id}
-      className="flex-1 flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-300 relative"
+      className={cn("flex-1 flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-300 relative", className)}
     >
       {/* Loading overlay when fetching new email */}
       {isLoading && (
@@ -535,15 +538,15 @@ export function EmailViewer({
       {/* Modern Header Section */}
       <div className="bg-background border-b border-border">
         {/* Subject Bar */}
-        <div className="px-6 py-4">
-          <div className="flex items-start justify-between gap-4">
+        <div className="px-4 md:px-6 py-3 md:py-4">
+          <div className="flex items-start justify-between gap-2 md:gap-4">
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold text-foreground tracking-tight truncate pr-2">
+              <h1 className="text-lg md:text-2xl font-bold text-foreground tracking-tight truncate pr-2">
                 {email.subject || "(no subject)"}
               </h1>
-              <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <Clock className="w-4 h-4" />
+              <div className="flex items-center gap-2 md:gap-3 mt-1.5 md:mt-2 text-xs md:text-sm text-muted-foreground flex-wrap md:flex-nowrap">
+                <span className="flex items-center gap-1 md:gap-1.5 whitespace-nowrap">
+                  <Clock className="w-3.5 h-3.5 md:w-4 md:h-4" />
                   {new Date(email.receivedAt).toLocaleString('en-US', {
                     weekday: 'short',
                     year: 'numeric',
@@ -554,13 +557,13 @@ export function EmailViewer({
                   })}
                 </span>
                 {email.hasAttachment && (
-                  <span className="flex items-center gap-1.5">
-                    <Paperclip className="w-4 h-4" />
-                    Attachments
+                  <span className="flex items-center gap-1 md:gap-1.5 whitespace-nowrap">
+                    <Paperclip className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    <span className="hidden md:inline">Attachments</span>
                   </span>
                 )}
                 {isImportant && (
-                  <span className="px-2 py-0.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium">
+                  <span className="px-1.5 md:px-2 py-0.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium whitespace-nowrap">
                     Important
                   </span>
                 )}
@@ -571,7 +574,7 @@ export function EmailViewer({
             <div className="flex items-center gap-0.5 flex-shrink-0">
               {/* Loading indicator */}
               {isLoading && (
-                <div className="mr-2 flex items-center gap-1.5 text-muted-foreground">
+                <div className="mr-2 flex items-center gap-1.5 text-muted-foreground hidden md:flex">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-xs">Loading...</span>
                 </div>
@@ -580,15 +583,15 @@ export function EmailViewer({
               <Button
                 onClick={onReply}
                 size="sm"
-                className="mr-1"
+                className="mr-1 h-8 md:h-9"
                 title="Reply"
               >
                 <Reply className="w-4 h-4" />
-                <span className="ml-1.5">Reply</span>
+                <span className="ml-1.5 hidden md:inline">Reply</span>
               </Button>
 
-              {/* Reply Options Dropdown */}
-              <div className="relative group mr-3">
+              {/* Reply Options Dropdown - hidden on mobile */}
+              <div className="relative group mr-3 hidden md:block">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -615,13 +618,13 @@ export function EmailViewer({
                 </div>
               </div>
 
-              <div className="w-px h-5 bg-border" />
+              <div className="w-px h-5 bg-border hidden md:block" />
 
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={onArchive}
-                className="h-8 w-8 hover:bg-muted"
+                className="h-8 w-8 hover:bg-muted hidden md:flex"
                 title="Archive"
               >
                 <Archive className="w-4 h-4 text-muted-foreground" />
@@ -639,7 +642,7 @@ export function EmailViewer({
                 variant="ghost"
                 size="icon"
                 onClick={onToggleStar}
-                className="h-8 w-8 hover:bg-muted"
+                className="h-8 w-8 hover:bg-muted hidden md:flex"
                 title={isStarred ? "Unstar" : "Star"}
               >
                 <Star className={cn(
@@ -648,10 +651,10 @@ export function EmailViewer({
                 )} />
               </Button>
 
-              <div className="w-px h-5 bg-border mx-1" />
+              <div className="w-px h-5 bg-border mx-1 hidden md:block" />
 
-              {/* Compact Dynamic Color Picker */}
-              <div className="relative group">
+              {/* Compact Dynamic Color Picker - hidden on mobile */}
+              <div className="relative group hidden md:block">
                 <button
                   className="h-8 w-8 rounded hover:bg-muted flex items-center justify-center"
                   title="Set color"
@@ -740,13 +743,13 @@ export function EmailViewer({
         </div>
 
         {/* Sender Info */}
-        <div className="px-6 pb-4">
-          <div className="flex items-start gap-4">
+        <div className="px-4 md:px-6 pb-3 md:pb-4">
+          <div className="flex items-start gap-3 md:gap-4">
             <Avatar
               name={sender?.name}
               email={sender?.email}
               size="lg"
-              className="shadow-sm"
+              className="shadow-sm w-10 h-10 md:w-12 md:h-12"
             />
 
             <div className="flex-1 min-w-0">

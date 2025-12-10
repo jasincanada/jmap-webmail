@@ -7,7 +7,7 @@ import type { FallbackProps } from "./error-boundary";
 /**
  * Full-page error fallback for route-level errors.
  */
-export function PageErrorFallback({ error, resetError, t }: FallbackProps) {
+export function PageErrorFallback({ error: _error, resetError, t }: FallbackProps) {
   return (
     <div className="flex h-screen items-center justify-center bg-background">
       <div className="text-center max-w-md px-4">

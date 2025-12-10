@@ -54,7 +54,7 @@
 - [x] Handle authentication errors
 
 ### JMAP Server Connection
-- [x] Connect to real JMAP server (mail.ma2t.com)
+- [x] Connect to real JMAP server
 - [x] Implement session establishment
 - [x] Handle connection errors and retries
 - [x] Fetch and display storage quota
@@ -125,10 +125,10 @@
 - [x] Integrate external content policy with image loading
 - [x] Integrate debug mode with console logging
 - [x] Integrate animations toggle throughout components (uses CSS variable --transition-duration)
-- [ ] Add keyboard shortcuts (j/k navigation, etc.)
-- [ ] Implement drag-and-drop for emails
-- [ ] Add context menus
-- [ ] Create mobile-responsive design (currently desktop-only, no responsive breakpoints)
+- [x] Add keyboard shortcuts (j/k navigation, etc.)
+- [x] Implement drag-and-drop for emails (native HTML5 DnD API)
+- [x] Add context menus (right-click on emails with all actions)
+- [x] Create mobile-responsive design (hamburger menu, single/multi-pane adaptive layout)
 - [x] Implement pagination/infinite scroll for email list
 
 ### Address Book & Contacts
@@ -215,7 +215,7 @@
 - [x] Fixed inbox not selected by default on login (auto-select primary account inbox)
 - [x] Fixed email store not cleared on logout (proper state reset)
 
-## 📊 Code Audit Summary (Last verified: 2025-12-09)
+## 📊 Code Audit Summary (Last verified: 2025-12-10)
 
 ### Settings Integration Status
 All settings are now properly wired to their functionality:
@@ -228,11 +228,30 @@ All settings are now properly wired to their functionality:
 | animationsEnabled | settings-store.ts:17 | appearance-settings.tsx | ✅ Works via CSS variable |
 | markAsReadDelay | settings-store.ts:25 | email-settings.tsx | ✅ Fully integrated |
 
+### New UI Features (2025-12-10)
+- **Drag-and-Drop**: Native HTML5 DnD API - drag emails to mailbox folders in sidebar
+  - Files: contexts/drag-drop-context.tsx, hooks/use-email-drag.ts, hooks/use-mailbox-drop.ts
+  - Multi-select support, permission validation, visual feedback
+- **Context Menus**: Right-click on email list items
+  - Files: components/ui/context-menu.tsx, components/email/email-context-menu.tsx, hooks/use-context-menu.ts
+  - Reply, Forward, Move to, Color tags, Delete - supports batch operations
+- **Mobile Responsive**: Adaptive single/multi-pane layout
+  - Files: stores/ui-store.ts, hooks/use-media-query.ts, components/layout/mobile-header.tsx
+  - Hamburger menu navigation, view switching, safe area support
+
+### Keyboard Shortcuts (2025-12-10)
+- **Hook**: hooks/use-keyboard-shortcuts.ts
+- **Modal**: components/keyboard-shortcuts-modal.tsx
+- **Navigation**: j/k or arrows (next/prev email), Enter/o (open), Esc (close)
+- **Actions**: r (reply), R/a (reply all), f (forward), s (star), e (archive), #/Del (delete), u (unread)
+- **Global**: c (compose), / (search), ? (help), Shift+G (refresh), Ctrl+A (select all)
+- Disabled when typing in inputs or when composer is open
+
 ### Feature Completeness
 - **Authentication**: ✅ Complete (secure design, no password storage)
 - **Email Operations**: ✅ Complete except threading
 - **Real-time Updates**: ✅ Complete (EventSource push, toast notifications, status indicator)
-- **UI Enhancements**: ✅ Settings fully integrated
+- **UI Enhancements**: ✅ Settings fully integrated, drag-drop, context menus, mobile responsive, keyboard shortcuts
 - **Contacts/Address Book**: ❌ Not started
 - **Security**: ⚠️ Client-side done, server headers needed
 

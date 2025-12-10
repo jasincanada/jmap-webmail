@@ -1,16 +1,22 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Sidebar } from "@/components/layout/sidebar";
 import { EmailList } from "@/components/email/email-list";
 import { EmailViewer } from "@/components/email/email-viewer";
 import { EmailComposer } from "@/components/email/email-composer";
+import { MobileHeader, MobileViewerHeader } from "@/components/layout/mobile-header";
+import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
 import { useEmailStore } from "@/stores/email-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSettingsStore } from "@/stores/settings-store";
+import { useUIStore } from "@/stores/ui-store";
+import { useDeviceDetection } from "@/hooks/use-media-query";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { debug } from "@/lib/debug";
+import { cn } from "@/lib/utils";
 import {
   ErrorBoundary,
   SidebarErrorFallback,
@@ -18,16 +24,22 @@ import {
   EmailViewerErrorFallback,
   ComposerErrorFallback,
 } from "@/components/error";
+import { DragDropProvider } from "@/contexts/drag-drop-context";
 
 export default function Home() {
   const router = useRouter();
   const params = useParams();
-  const t = useTranslations('common');
+  const t = useTranslations();
   const [showComposer, setShowComposer] = useState(false);
   const [composerMode, setComposerMode] = useState<'compose' | 'reply' | 'replyAll' | 'forward'>('compose');
   const [initialCheckDone, setInitialCheckDone] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const markAsReadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { isAuthenticated, client, logout, checkAuth, isLoading: authLoading } = useAuthStore();
+
+  // Mobile responsive hooks
+  const { isMobile } = useDeviceDetection();
+  const { activeView, sidebarOpen, setSidebarOpen, setActiveView } = useUIStore();
   const {
     emails,
     mailboxes,
@@ -38,6 +50,8 @@ export default function Home() {
     newEmailNotification,
     selectEmail,
     selectMailbox,
+    selectAllEmails,
+    clearSelection,
     fetchMailboxes,
     fetchEmails,
     fetchQuota,
@@ -53,7 +67,6 @@ export default function Home() {
     setPushConnected,
     handleStateChange,
     clearNewEmailNotification,
-    fetchEmailContent,
   } = useEmailStore();
 
   // Play notification sound for new emails
@@ -77,6 +90,97 @@ export default function Home() {
       debug.log('Could not play notification sound:', e);
     }
   };
+
+  // Keyboard shortcuts handlers
+  const keyboardHandlers = useMemo(() => ({
+    onNextEmail: () => {
+      if (emails.length === 0) return;
+      const currentIndex = selectedEmail ? emails.findIndex(e => e.id === selectedEmail.id) : -1;
+      const nextIndex = currentIndex < emails.length - 1 ? currentIndex + 1 : currentIndex;
+      if (nextIndex >= 0 && nextIndex < emails.length) {
+        handleEmailSelect(emails[nextIndex]);
+      }
+    },
+    onPreviousEmail: () => {
+      if (emails.length === 0) return;
+      const currentIndex = selectedEmail ? emails.findIndex(e => e.id === selectedEmail.id) : emails.length;
+      const prevIndex = currentIndex > 0 ? currentIndex - 1 : 0;
+      if (prevIndex >= 0 && prevIndex < emails.length) {
+        handleEmailSelect(emails[prevIndex]);
+      }
+    },
+    onOpenEmail: () => {
+      // Email is already opened when selected
+    },
+    onCloseEmail: () => {
+      selectEmail(null);
+      if (isMobile) {
+        setActiveView("list");
+      }
+    },
+    onReply: () => {
+      if (selectedEmail) handleReply();
+    },
+    onReplyAll: () => {
+      if (selectedEmail) handleReplyAll();
+    },
+    onForward: () => {
+      if (selectedEmail) handleForward();
+    },
+    onToggleStar: () => {
+      if (selectedEmail) handleToggleStar();
+    },
+    onArchive: () => {
+      if (selectedEmail) handleArchive();
+    },
+    onDelete: () => {
+      if (selectedEmail) handleDelete();
+    },
+    onMarkAsUnread: async () => {
+      if (selectedEmail && client) {
+        await markAsRead(client, selectedEmail.id, false);
+      }
+    },
+    onMarkAsRead: async () => {
+      if (selectedEmail && client) {
+        await markAsRead(client, selectedEmail.id, true);
+      }
+    },
+    onCompose: () => {
+      setComposerMode('compose');
+      setShowComposer(true);
+    },
+    onFocusSearch: () => {
+      const searchInput = document.querySelector('[data-search-input]') as HTMLInputElement;
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.select();
+      }
+    },
+    onShowHelp: () => {
+      setShowShortcutsModal(true);
+    },
+    onRefresh: async () => {
+      if (client && selectedMailbox) {
+        await fetchEmails(client, selectedMailbox);
+      }
+    },
+    onSelectAll: () => {
+      selectAllEmails();
+    },
+    onDeselectAll: () => {
+      clearSelection();
+    },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [emails, selectedEmail, client, selectedMailbox, isMobile]);
+
+  // Initialize keyboard shortcuts
+  useKeyboardShortcuts({
+    enabled: isAuthenticated && !showComposer,
+    emails,
+    selectedEmailId: selectedEmail?.id,
+    handlers: keyboardHandlers,
+  });
 
   // Update page title based on context
   useEffect(() => {
@@ -351,6 +455,13 @@ export default function Home() {
   const handleMailboxSelect = async (mailboxId: string) => {
     selectMailbox(mailboxId);
     selectEmail(null); // Clear selected email when switching mailboxes
+
+    // On mobile, close sidebar and go to list view
+    if (isMobile) {
+      setSidebarOpen(false);
+      setActiveView("list");
+    }
+
     if (client) {
       await fetchEmails(client, mailboxId);
     }
@@ -402,123 +513,252 @@ export default function Home() {
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-foreground mx-auto"></div>
-          <p className="mt-4 text-sm text-muted-foreground">{t("loading")}</p>
+          <p className="mt-4 text-sm text-muted-foreground">{t("common.loading")}</p>
         </div>
       </div>
     );
   }
 
+  // Get current mailbox name for mobile header
+  const currentMailboxName = mailboxes.find(m => m.id === selectedMailbox)?.name || "Inbox";
+
+  // Handle email selection with mobile view switching
+  const handleEmailSelect = async (email: { id: string }) => {
+    if (!client || !email) return;
+
+    // Set loading state immediately (keep current email visible)
+    setLoadingEmail(true);
+
+    // On mobile, switch to viewer
+    if (isMobile) {
+      setActiveView("viewer");
+    }
+
+    // Fetch the full content
+    try {
+      // Find selected mailbox to determine accountId (for shared folders)
+      const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
+      // Only pass accountId for shared mailboxes
+      const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
+
+      const fullEmail = await client.getEmail(email.id, accountId);
+      if (fullEmail) {
+        selectEmail(fullEmail);
+        // Mark-as-read logic is now handled by useEffect
+      }
+    } catch (error) {
+      console.error('Failed to fetch email content:', error);
+    } finally {
+      setLoadingEmail(false);
+    }
+  };
+
+  // Handle back navigation from viewer on mobile
+  const handleMobileBack = () => {
+    selectEmail(null);
+    setActiveView("list");
+  };
+
   return (
-    <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <ErrorBoundary fallback={SidebarErrorFallback}>
-        <Sidebar
-          mailboxes={mailboxes}
-          selectedMailbox={selectedMailbox}
-          onMailboxSelect={handleMailboxSelect}
-          onCompose={() => {
-            setComposerMode('compose');
-            setShowComposer(true);
-          }}
-          onLogout={handleLogout}
-          onSearch={handleSearch}
-          quota={quota}
-          isPushConnected={isPushConnected}
-        />
-      </ErrorBoundary>
-
-      {/* Email List */}
-      <div className="w-96 bg-background border-r border-border flex-shrink-0 shadow-sm">
-        <ErrorBoundary fallback={EmailListErrorFallback}>
-          <EmailList
-            emails={emails}
-            selectedEmailId={selectedEmail?.id}
-            isLoading={isLoading}
-            onEmailSelect={async (email) => {
-              if (!client || !email) return;
-
-              // Set loading state immediately (keep current email visible)
-              setLoadingEmail(true);
-
-              // Fetch the full content
-              try {
-                // Find selected mailbox to determine accountId (for shared folders)
-                const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
-                // Only pass accountId for shared mailboxes
-                const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
-
-                const fullEmail = await client.getEmail(email.id, accountId);
-                if (fullEmail) {
-                  selectEmail(fullEmail);
-                  // Mark-as-read logic is now handled by useEffect
-                }
-              } catch (error) {
-                console.error('Failed to fetch email content:', error);
-              } finally {
-                setLoadingEmail(false);
-              }
-            }}
-            className="h-full"
+    <DragDropProvider>
+      <div className="flex h-screen bg-background overflow-hidden">
+        {/* Mobile Sidebar Overlay Backdrop */}
+        {isMobile && sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
           />
-        </ErrorBoundary>
-      </div>
+        )}
 
-      {/* Email Viewer */}
-      <ErrorBoundary fallback={EmailViewerErrorFallback}>
-        <EmailViewer
-          email={selectedEmail}
-          isLoading={isLoadingEmail}
-          onReply={handleReply}
-          onReplyAll={handleReplyAll}
-          onForward={handleForward}
-          onDelete={handleDelete}
-          onArchive={handleArchive}
-          onToggleStar={handleToggleStar}
-          onSetColorTag={handleSetColorTag}
-          onMarkAsRead={async (emailId, read) => {
-            if (client) {
-              await markAsRead(client, emailId, read);
-            }
-          }}
-          onDownloadAttachment={handleDownloadAttachment}
-          onQuickReply={handleQuickReply}
-          currentUserEmail={client?.["username"]}
-          currentUserName={client?.["username"]?.split("@")[0]}
-        />
-      </ErrorBoundary>
-
-      {/* Email Composer Modal */}
-      {showComposer && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="w-full max-w-3xl h-[600px] mx-4">
-            <ErrorBoundary
-              fallback={ComposerErrorFallback}
-              onReset={() => {
-                setShowComposer(false);
+        {/* Sidebar - overlay on mobile, fixed on desktop */}
+        <div
+          className={cn(
+            "flex-shrink-0 h-full z-50",
+            // Mobile: fixed overlay
+            "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:w-72",
+            "max-md:transform max-md:transition-transform max-md:duration-300 max-md:ease-in-out",
+            isMobile && !sidebarOpen && "max-md:-translate-x-full",
+            // Desktop: normal flow
+            "md:relative md:translate-x-0"
+          )}
+        >
+          <ErrorBoundary fallback={SidebarErrorFallback}>
+            <Sidebar
+              mailboxes={mailboxes}
+              selectedMailbox={selectedMailbox}
+              onMailboxSelect={handleMailboxSelect}
+              onCompose={() => {
                 setComposerMode('compose');
+                setShowComposer(true);
+                if (isMobile) setSidebarOpen(false);
               }}
-            >
-              <EmailComposer
-                mode={composerMode}
-                replyTo={selectedEmail ? {
-                  from: selectedEmail.from,
-                  to: selectedEmail.to,
-                  cc: selectedEmail.cc,
-                  subject: selectedEmail.subject,
-                  body: selectedEmail.bodyValues?.[selectedEmail.textBody?.[0]?.partId || '']?.value || selectedEmail.preview || '',
-                  receivedAt: selectedEmail.receivedAt
-                } : undefined}
-                onSend={handleEmailSend}
-                onClose={() => {
-                  setShowComposer(false);
-                  setComposerMode('compose');
+              onLogout={handleLogout}
+              onSearch={handleSearch}
+              quota={quota}
+              isPushConnected={isPushConnected}
+            />
+          </ErrorBoundary>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex flex-1 min-w-0 h-full">
+          {/* Email List - full width on mobile, fixed width on desktop */}
+          <div
+            className={cn(
+              "flex flex-col h-full bg-background border-r border-border",
+              // Mobile: full width, hidden when viewing email
+              "max-md:flex-1 max-md:border-r-0",
+              isMobile && activeView !== "list" && "max-md:hidden",
+              // Desktop: fixed width
+              "md:w-80 lg:w-96 md:flex-shrink-0 md:shadow-sm"
+            )}
+          >
+            {/* Mobile Header for List View */}
+            <MobileHeader
+              title={currentMailboxName}
+              onCompose={() => {
+                setComposerMode('compose');
+                setShowComposer(true);
+              }}
+            />
+
+            <ErrorBoundary fallback={EmailListErrorFallback}>
+              <EmailList
+                emails={emails}
+                selectedEmailId={selectedEmail?.id}
+                isLoading={isLoading}
+                onEmailSelect={handleEmailSelect}
+                // Context menu handlers
+                onReply={(email) => {
+                  selectEmail(email);
+                  handleReply();
                 }}
-                onDiscardDraft={handleDiscardDraft}
+                onReplyAll={(email) => {
+                  selectEmail(email);
+                  handleReplyAll();
+                }}
+                onForward={(email) => {
+                  selectEmail(email);
+                  handleForward();
+                }}
+                onMarkAsRead={async (email, read) => {
+                  if (client) {
+                    await markAsRead(client, email.id, read);
+                  }
+                }}
+                onToggleStar={async (email) => {
+                  if (client) {
+                    await toggleStar(client, email.id);
+                  }
+                }}
+                onDelete={async (email) => {
+                  selectEmail(email);
+                  await handleDelete();
+                }}
+                onArchive={async (email) => {
+                  selectEmail(email);
+                  await handleArchive();
+                }}
+                onSetColorTag={(emailId, color) => {
+                  handleSetColorTag(emailId, color);
+                }}
+                onMoveToMailbox={async (emailId, mailboxId) => {
+                  if (client) {
+                    await moveToMailbox(client, emailId, mailboxId);
+                  }
+                }}
+                className="flex-1"
+              />
+            </ErrorBoundary>
+          </div>
+
+          {/* Email Viewer - full screen on mobile, flex on desktop */}
+          <div
+            className={cn(
+              "flex flex-col h-full bg-background",
+              // Mobile: full screen overlay when active
+              "max-md:fixed max-md:inset-0 max-md:z-30",
+              isMobile && activeView !== "viewer" && "max-md:hidden",
+              // Desktop: flex grow
+              "md:flex-1 md:relative"
+            )}
+          >
+            {/* Mobile Header for Viewer */}
+            {isMobile && activeView === "viewer" && (
+              <MobileViewerHeader
+                subject={selectedEmail?.subject}
+                onBack={handleMobileBack}
+              />
+            )}
+
+            <ErrorBoundary fallback={EmailViewerErrorFallback}>
+              <EmailViewer
+                email={selectedEmail}
+                isLoading={isLoadingEmail}
+                onReply={handleReply}
+                onReplyAll={handleReplyAll}
+                onForward={handleForward}
+                onDelete={handleDelete}
+                onArchive={handleArchive}
+                onToggleStar={handleToggleStar}
+                onSetColorTag={handleSetColorTag}
+                onMarkAsRead={async (emailId, read) => {
+                  if (client) {
+                    await markAsRead(client, emailId, read);
+                  }
+                }}
+                onDownloadAttachment={handleDownloadAttachment}
+                onQuickReply={handleQuickReply}
+                currentUserEmail={client?.["username"]}
+                currentUserName={client?.["username"]?.split("@")[0]}
+                className={isMobile ? "flex-1" : undefined}
               />
             </ErrorBoundary>
           </div>
         </div>
-      )}
-    </div>
+
+        {/* Email Composer Modal */}
+        {showComposer && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 md:p-0">
+            <div className={cn(
+              "w-full h-full md:h-auto md:max-w-3xl md:max-h-[600px]",
+              "max-md:flex max-md:flex-col"
+            )}>
+              <ErrorBoundary
+                fallback={ComposerErrorFallback}
+                onReset={() => {
+                  setShowComposer(false);
+                  setComposerMode('compose');
+                }}
+              >
+                <EmailComposer
+                  mode={composerMode}
+                  replyTo={selectedEmail ? {
+                    from: selectedEmail.from,
+                    to: selectedEmail.to,
+                    cc: selectedEmail.cc,
+                    subject: selectedEmail.subject,
+                    body: selectedEmail.bodyValues?.[selectedEmail.textBody?.[0]?.partId || '']?.value || selectedEmail.preview || '',
+                    receivedAt: selectedEmail.receivedAt
+                  } : undefined}
+                  onSend={handleEmailSend}
+                  onClose={() => {
+                    setShowComposer(false);
+                    setComposerMode('compose');
+                  }}
+                  onDiscardDraft={handleDiscardDraft}
+                />
+              </ErrorBoundary>
+            </div>
+          </div>
+        )}
+
+        {/* Keyboard Shortcuts Modal */}
+        <KeyboardShortcutsModal
+          isOpen={showShortcutsModal}
+          onClose={() => setShowShortcutsModal(false)}
+        />
+      </div>
+    </DragDropProvider>
   );
 }

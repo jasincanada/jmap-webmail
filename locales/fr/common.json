@@ -1,6 +1,6 @@
 {
   "login": {
-    "title": "root.cloud Webmail",
+    "title": "JMAP Webmail",
     "username_label": "Email",
     "username_placeholder": "utilisateur@exemple.com",
     "password_label": "Mot de passe",
@@ -426,5 +426,52 @@
     "reload_settings": "Recharger les paramètres",
     "retry": "Réessayer",
     "go_home": "Aller à la boîte de réception"
+  },
+  "context_menu": {
+    "reply": "Répondre",
+    "reply_all": "Répondre à tous",
+    "forward": "Transférer",
+    "mark_read": "Marquer comme lu",
+    "mark_unread": "Marquer comme non lu",
+    "star": "Marquer comme favori",
+    "unstar": "Retirer des favoris",
+    "move_to": "Déplacer vers...",
+    "archive": "Archiver",
+    "delete": "Supprimer",
+    "color_tag": "Étiquette de couleur",
+    "remove_color": "Supprimer la couleur",
+    "items_selected": "{{count}} emails sélectionnés"
+  },
+  "shortcuts": {
+    "title": "Raccourcis clavier",
+    "tip": "Appuyez sur ? à tout moment pour afficher cette aide",
+    "sections": {
+      "navigation": "Navigation",
+      "actions": "Actions email",
+      "global": "Global"
+    },
+    "navigation": {
+      "next_email": "Email suivant",
+      "previous_email": "Email précédent",
+      "open_email": "Ouvrir l'email",
+      "close_email": "Fermer / Désélectionner"
+    },
+    "actions": {
+      "reply": "Répondre",
+      "reply_all": "Répondre à tous",
+      "forward": "Transférer",
+      "star": "Basculer favori",
+      "archive": "Archiver",
+      "delete": "Supprimer",
+      "mark_unread": "Marquer comme non lu",
+      "mark_read": "Marquer comme lu"
+    },
+    "global": {
+      "compose": "Composer un email",
+      "search": "Rechercher",
+      "help": "Afficher les raccourcis",
+      "refresh": "Actualiser les emails",
+      "select_all": "Tout sélectionner"
+    }
   }
 }

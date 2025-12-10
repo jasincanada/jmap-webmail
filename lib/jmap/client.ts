@@ -1,5 +1,61 @@
 import type { Email, Mailbox, StateChange, AccountStates } from "./types";
 
+// JMAP protocol types - these are intentionally flexible due to server variations
+interface JMAPSession {
+  apiUrl: string;
+  downloadUrl: string;
+  uploadUrl?: string;
+  eventSourceUrl?: string;
+  primaryAccounts?: Record<string, string>;
+  accounts?: Record<string, JMAPAccount>;
+  capabilities?: Record<string, unknown>;
+}
+
+interface JMAPAccount {
+  name?: string;
+  isPersonal?: boolean;
+  isReadOnly?: boolean;
+  accountCapabilities?: Record<string, unknown>;
+}
+
+interface JMAPQuota {
+  resourceType?: string;
+  scope?: string;
+  used?: number;
+  hardLimit?: number;
+  limit?: number;
+}
+
+interface JMAPMailbox {
+  id: string;
+  name: string;
+  parentId?: string | null;
+  role?: string | null;
+  totalEmails?: number;
+  unreadEmails?: number;
+  totalThreads?: number;
+  unreadThreads?: number;
+  sortOrder?: number;
+  isSubscribed?: boolean;
+  myRights?: Record<string, boolean>;
+}
+
+interface JMAPEmailHeader {
+  name: string;
+  value: string;
+}
+
+// Generic JMAP method call type
+type JMAPMethodCall = [string, Record<string, unknown>, string];
+
+// JMAP response types - using flexible types due to protocol variations
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type JMAPResponseResult = Record<string, any>;
+
+interface JMAPResponse {
+  methodResponses: Array<[string, JMAPResponseResult, string]>;
+}
+
 export class JMAPClient {
   private serverUrl: string;
   private username: string;
@@ -8,11 +64,11 @@ export class JMAPClient {
   private apiUrl: string = "";
   private accountId: string = "";
   private downloadUrl: string = "";
-  private capabilities: Record<string, any> = {};
-  private session: any = null;
+  private capabilities: Record<string, unknown> = {};
+  private session: JMAPSession | null = null;
   private lastPingTime: number = 0;
   private pingInterval: NodeJS.Timeout | null = null;
-  private accounts: Record<string, any> = {}; // All accounts (primary + shared)
+  private accounts: Record<string, JMAPAccount> = {}; // All accounts (primary + shared)
   private eventSource: EventSource | null = null;
   private stateChangeCallback: ((change: StateChange) => void) | null = null;
   private lastStates: AccountStates = {};
@@ -142,7 +198,7 @@ export class JMAPClient {
     this.capabilities = {};
   }
 
-  private async request(methodCalls: any[]): Promise<any> {
+  private async request(methodCalls: JMAPMethodCall[]): Promise<JMAPResponse> {
     if (!this.apiUrl) {
       throw new Error('Not connected. Call connect() first.');
     }
@@ -188,9 +244,9 @@ export class JMAPClient {
       ]);
 
       if (response.methodResponses?.[0]?.[0] === "Quota/get") {
-        const quotas = response.methodResponses[0][1].list || [];
+        const quotas = (response.methodResponses[0][1].list || []) as JMAPQuota[];
         // Find the mail quota if it exists
-        const mailQuota = quotas.find((q: any) => q.resourceType === "mail" || q.scope === "mail");
+        const mailQuota = quotas.find((q) => q.resourceType === "mail" || q.scope === "mail");
 
         if (mailQuota) {
           return {
@@ -215,10 +271,10 @@ export class JMAPClient {
       ]);
 
       if (response.methodResponses?.[0]?.[0] === "Mailbox/get") {
-        const rawMailboxes = response.methodResponses[0][1].list || [];
+        const rawMailboxes = (response.methodResponses[0][1].list || []) as JMAPMailbox[];
 
         // Map and ensure all required fields are present
-        const mailboxes = rawMailboxes.map((mb: any) => {
+        const mailboxes = rawMailboxes.map((mb) => {
           return {
             id: mb.id,
             originalId: undefined, // Primary account uses original IDs
@@ -310,10 +366,10 @@ export class JMAPClient {
           ]);
 
           if (response.methodResponses?.[0]?.[0] === "Mailbox/get") {
-            const rawMailboxes = response.methodResponses[0][1].list || [];
+            const rawMailboxes = (response.methodResponses[0][1].list || []) as JMAPMailbox[];
 
             // Map mailboxes with account info
-            const mailboxes = rawMailboxes.map((mb: any) => {
+            const mailboxes = rawMailboxes.map((mb) => {
               return {
                 id: isPrimary ? mb.id : `${accountId}:${mb.id}`, // Namespace shared mailbox IDs
                 originalId: mb.id, // Keep original ID for JMAP queries
@@ -366,7 +422,7 @@ export class JMAPClient {
       const targetAccountId = accountId || this.accountId;
 
       // Build filter - only add inMailbox if we have a mailboxId
-      const filter: any = {};
+      const filter: { inMailbox?: string } = {};
       if (mailboxId && mailboxId !== '') {
         filter.inMailbox = mailboxId;
       }
@@ -420,7 +476,7 @@ export class JMAPClient {
         // If fetching from a shared account, namespace the mailboxIds to match our store
         const isSharedAccount = accountId && accountId !== this.accountId;
         if (isSharedAccount) {
-          emails.forEach((email: any) => {
+          emails.forEach((email: Email) => {
             if (email.mailboxIds) {
               const namespacedMailboxIds: Record<string, boolean> = {};
               Object.keys(email.mailboxIds).forEach(mbId => {
@@ -506,7 +562,7 @@ export class JMAPClient {
             let headersRecord: Record<string, string | string[]>;
             if (Array.isArray(email.headers)) {
               headersRecord = {};
-              email.headers.forEach((header: any) => {
+              (email.headers as JMAPEmailHeader[]).forEach((header) => {
                 if (header && header.name && header.value) {
                   // If header already exists, convert to array or append
                   if (headersRecord[header.name]) {
@@ -591,7 +647,7 @@ export class JMAPClient {
   async batchMarkAsRead(emailIds: string[], read: boolean = true): Promise<void> {
     if (emailIds.length === 0) return;
 
-    const updates: Record<string, any> = {};
+    const updates: Record<string, { "keywords/$seen": boolean }> = {};
     emailIds.forEach(id => {
       updates[id] = {
         "keywords/$seen": read,
@@ -669,7 +725,7 @@ export class JMAPClient {
   async batchMoveEmails(emailIds: string[], toMailboxId: string): Promise<void> {
     if (emailIds.length === 0) return;
 
-    const updates: Record<string, any> = {};
+    const updates: Record<string, { mailboxIds: Record<string, boolean> }> = {};
     emailIds.forEach(id => {
       updates[id] = {
         mailboxIds: { [toMailboxId]: true },
@@ -763,7 +819,19 @@ export class JMAPClient {
     const emailId = `draft-${Date.now()}`;
 
     // Build email object with attachments if provided
-    const emailData: any = {
+    interface EmailDraft {
+      from: { email: string }[];
+      to: { email: string }[];
+      cc?: { email: string }[];
+      bcc?: { email: string }[];
+      subject: string;
+      keywords: Record<string, boolean>;
+      mailboxIds: Record<string, boolean>;
+      bodyValues: Record<string, { value: string }>;
+      textBody: { partId: string }[];
+      attachments?: { blobId: string; type: string; name: string; disposition: string }[];
+    }
+    const emailData: EmailDraft = {
       from: [{ email: this.username }],
       to: to.map(email => ({ email })),
       cc: cc?.map(email => ({ email })),
@@ -795,7 +863,7 @@ export class JMAPClient {
 
     // If updating an existing draft, destroy it first then create new one
     // This is simpler than trying to update individual fields
-    const methodCalls: any[] = [];
+    const methodCalls: JMAPMethodCall[] = [];
 
     if (draftId) {
       // Delete old draft
@@ -835,9 +903,9 @@ export class JMAPClient {
       // Check for errors
       if (result.notCreated || result.notUpdated) {
         const errors = result.notCreated || result.notUpdated;
-        const firstError = Object.values(errors)[0] as any;
+        const firstError = Object.values(errors)[0] as { description?: string; type?: string };
         console.error('Draft save error:', firstError);
-        throw new Error(firstError.description || firstError.type || 'Failed to save draft');
+        throw new Error(firstError?.description || firstError?.type || 'Failed to save draft');
       }
 
       if (result.created?.[emailId]) {
@@ -878,16 +946,16 @@ export class JMAPClient {
     let identityId = this.accountId; // fallback
 
     if (identityResponse.methodResponses?.[0]?.[0] === "Identity/get") {
-      const identities = identityResponse.methodResponses[0][1].list || [];
+      const identities = (identityResponse.methodResponses[0][1].list || []) as { id: string; email: string }[];
 
       if (identities.length > 0) {
         // Use the first identity (or find one matching the username)
-        const matchingIdentity = identities.find((id: any) => id.email === this.username);
+        const matchingIdentity = identities.find((id) => id.email === this.username);
         identityId = matchingIdentity?.id || identities[0].id;
       }
     }
 
-    const methodCalls: any[] = [];
+    const methodCalls: JMAPMethodCall[] = [];
 
     // If we have a draftId, update it and remove draft keyword, move to Sent
     // Otherwise, create a new email in Sent
@@ -960,9 +1028,9 @@ export class JMAPClient {
         // Check for notCreated/notUpdated
         if (result.notCreated || result.notUpdated) {
           const errors = result.notCreated || result.notUpdated;
-          const firstError = Object.values(errors)[0] as any;
+          const firstError = Object.values(errors)[0] as { description?: string; type?: string };
           console.error('Email send error:', firstError);
-          throw new Error(firstError.description || firstError.type || 'Failed to send email');
+          throw new Error(firstError?.description || firstError?.type || 'Failed to send email');
         }
       }
     }
@@ -1066,7 +1134,7 @@ export class JMAPClient {
   }
 
   // Capability checking methods
-  getCapabilities(): Record<string, any> {
+  getCapabilities(): Record<string, unknown> {
     return this.capabilities;
   }
 
@@ -1075,12 +1143,12 @@ export class JMAPClient {
   }
 
   getMaxSizeUpload(): number {
-    const coreCapability = this.capabilities["urn:ietf:params:jmap:core"];
+    const coreCapability = this.capabilities["urn:ietf:params:jmap:core"] as { maxSizeUpload?: number } | undefined;
     return coreCapability?.maxSizeUpload || 0;
   }
 
   getMaxCallsInRequest(): number {
-    const coreCapability = this.capabilities["urn:ietf:params:jmap:core"];
+    const coreCapability = this.capabilities["urn:ietf:params:jmap:core"] as { maxCallsInRequest?: number } | undefined;
     return coreCapability?.maxCallsInRequest || 50;
   }
 
@@ -1094,8 +1162,9 @@ export class JMAPClient {
       return session.eventSourceUrl;
     }
     // Some servers may put it in capabilities
-    if (session.capabilities?.["urn:ietf:params:jmap:core"]?.eventSourceUrl) {
-      return session.capabilities["urn:ietf:params:jmap:core"].eventSourceUrl;
+    const coreCapability = session.capabilities?.["urn:ietf:params:jmap:core"] as { eventSourceUrl?: string } | undefined;
+    if (coreCapability?.eventSourceUrl) {
+      return coreCapability.eventSourceUrl;
     }
     return null;
   }
@@ -1197,7 +1266,7 @@ export class JMAPClient {
           }
         }
       }
-    } catch (error) {
+    } catch {
       // Silently fail - polling will retry
     }
   }
@@ -1250,7 +1319,7 @@ export class JMAPClient {
           });
         }
       }
-    } catch (error) {
+    } catch {
       // Silently fail - polling will retry
     }
   }

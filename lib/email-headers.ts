@@ -6,11 +6,16 @@ import { AuthenticationResults } from './jmap/types';
 export function parseAuthenticationResults(header: string): AuthenticationResults {
   const results: AuthenticationResults = {};
 
+  type SpfResult = 'pass' | 'fail' | 'softfail' | 'neutral' | 'none' | 'temperror' | 'permerror';
+  type DkimResult = 'pass' | 'fail' | 'policy' | 'neutral' | 'temperror' | 'permerror';
+  type DmarcResult = 'pass' | 'fail' | 'none';
+  type DmarcPolicy = 'reject' | 'quarantine' | 'none';
+
   // Parse SPF
   const spfMatch = header.match(/spf=(\w+)(?:\s+\([^)]*\))?\s+(?:smtp\.(?:mailfrom|helo)=([^\s;]+))?/);
   if (spfMatch) {
     results.spf = {
-      result: spfMatch[1] as any,
+      result: spfMatch[1] as SpfResult,
       domain: spfMatch[2]
     };
   }
@@ -19,7 +24,7 @@ export function parseAuthenticationResults(header: string): AuthenticationResult
   const dkimMatch = header.match(/dkim=(\w+)(?:\s+header\.d=([^\s]+))?(?:\s+header\.s=([^\s]+))?/);
   if (dkimMatch) {
     results.dkim = {
-      result: dkimMatch[1] as any,
+      result: dkimMatch[1] as DkimResult,
       domain: dkimMatch[2],
       selector: dkimMatch[3]
     };
@@ -29,9 +34,9 @@ export function parseAuthenticationResults(header: string): AuthenticationResult
   const dmarcMatch = header.match(/dmarc=(\w+)(?:\s+header\.from=([^\s]+))?(?:\s+policy\.dmarc=(\w+))?/);
   if (dmarcMatch) {
     results.dmarc = {
-      result: dmarcMatch[1] as any,
+      result: dmarcMatch[1] as DmarcResult,
       domain: dmarcMatch[2],
-      policy: dmarcMatch[3] as any
+      policy: dmarcMatch[3] as DmarcPolicy | undefined
     };
   }
 
@@ -39,7 +44,7 @@ export function parseAuthenticationResults(header: string): AuthenticationResult
   const iprevMatch = header.match(/iprev=(\w+)(?:\s+policy\.iprev=([\d.]+))?/);
   if (iprevMatch) {
     results.iprev = {
-      result: iprevMatch[1] as any,
+      result: iprevMatch[1] as 'pass' | 'fail',
       ip: iprevMatch[2]
     };
   }
@@ -76,14 +81,16 @@ export function parseSpamScore(header: string): { score: number; status: string 
 /**
  * Parse Received headers to extract mail routing path
  */
-export function parseReceivedHeaders(headers: string[]): Array<{
+interface ReceivedHeaderInfo {
   from: string;
   by: string;
   timestamp?: string;
   protocol?: string;
   id?: string;
-}> {
-  const path: any[] = [];
+}
+
+export function parseReceivedHeaders(headers: string[]): ReceivedHeaderInfo[] {
+  const path: ReceivedHeaderInfo[] = [];
 
   for (const header of headers) {
     const fromMatch = header.match(/from\s+([^\s]+)(?:\s+\([^)]+\))?/);
@@ -182,13 +189,15 @@ export function parseSpamLLM(header: string): { verdict: string; explanation: st
 /**
  * Extract list headers (List-Unsubscribe, List-Id, etc.)
  */
-export function extractListHeaders(headers: Record<string, string | string[]>): {
+interface ListHeaders {
   listId?: string;
   listUnsubscribe?: string;
   listHelp?: string;
   listPost?: string;
-} {
-  const result: any = {};
+}
+
+export function extractListHeaders(headers: Record<string, string | string[]>): ListHeaders {
+  const result: ListHeaders = {};
 
   if (headers['List-Id']) {
     result.listId = Array.isArray(headers['List-Id'])

@@ -31,7 +31,7 @@ export default async function LocaleLayout({
   const { locale } = await params;
 
   // Validate that the incoming `locale` parameter is valid
-  if (!locales.includes(locale as any)) notFound();
+  if (!(locales as readonly string[]).includes(locale)) notFound();
 
   // Load messages for the current locale
   let messages;

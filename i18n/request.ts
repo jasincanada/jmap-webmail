@@ -9,7 +9,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
   let locale = await requestLocale || defaultLocale;
 
   // Validate that the incoming `locale` parameter is valid
-  if (!locales.includes(locale as any)) {
+  if (!(locales as readonly string[]).includes(locale)) {
     locale = defaultLocale;
   }
 

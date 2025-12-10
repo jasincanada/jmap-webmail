@@ -1,6 +1,6 @@
 {
   "login": {
-    "title": "root.cloud Webmail",
+    "title": "JMAP Webmail",
     "username_label": "Email",
     "username_placeholder": "user@example.com",
     "password_label": "Password",
@@ -426,5 +426,52 @@
     "reload_settings": "Reload settings",
     "retry": "Retry",
     "go_home": "Go to inbox"
+  },
+  "context_menu": {
+    "reply": "Reply",
+    "reply_all": "Reply All",
+    "forward": "Forward",
+    "mark_read": "Mark as Read",
+    "mark_unread": "Mark as Unread",
+    "star": "Star",
+    "unstar": "Unstar",
+    "move_to": "Move to...",
+    "archive": "Archive",
+    "delete": "Delete",
+    "color_tag": "Color Tag",
+    "remove_color": "Remove Color",
+    "items_selected": "{{count}} emails selected"
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "tip": "Press ? anytime to show this help",
+    "sections": {
+      "navigation": "Navigation",
+      "actions": "Email Actions",
+      "global": "Global"
+    },
+    "navigation": {
+      "next_email": "Next email",
+      "previous_email": "Previous email",
+      "open_email": "Open email",
+      "close_email": "Close / Deselect"
+    },
+    "actions": {
+      "reply": "Reply",
+      "reply_all": "Reply all",
+      "forward": "Forward",
+      "star": "Toggle star",
+      "archive": "Archive",
+      "delete": "Delete",
+      "mark_unread": "Mark as unread",
+      "mark_read": "Mark as read"
+    },
+    "global": {
+      "compose": "Compose new email",
+      "search": "Focus search",
+      "help": "Show shortcuts",
+      "refresh": "Refresh emails",
+      "select_all": "Select all"
+    }
   }
 }

@@ -14,7 +14,24 @@ export default function LoginPage() {
   const t = useTranslations("login");
   const { login, isLoading, error, clearError, isAuthenticated } = useAuthStore();
 
-  const serverUrl = process.env.NEXT_PUBLIC_JMAP_SERVER_URL || "https://mail.ma2t.com";
+  const serverUrl = process.env.NEXT_PUBLIC_JMAP_SERVER_URL;
+
+  // Show error if JMAP server URL is not configured
+  if (!serverUrl) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20">
+        <div className="w-full max-w-sm mx-auto px-4 text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-red-500/10 mb-6">
+            <AlertCircle className="w-10 h-10 text-red-500" />
+          </div>
+          <h1 className="text-xl font-medium text-foreground mb-2">Configuration Error</h1>
+          <p className="text-muted-foreground text-sm">
+            NEXT_PUBLIC_JMAP_SERVER_URL environment variable is not set.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Set page title
   useEffect(() => {

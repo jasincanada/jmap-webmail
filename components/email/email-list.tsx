@@ -2,12 +2,14 @@
 
 import { Email } from "@/lib/jmap/types";
 import { EmailListItem } from "./email-list-item";
+import { EmailContextMenu } from "./email-context-menu";
 import { cn } from "@/lib/utils";
 import { Inbox, CheckSquare, Square, Trash2, Mail, MailOpen, Loader2 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useEmailStore } from "@/stores/email-store";
 import { useAuthStore } from "@/stores/auth-store";
+import { useContextMenu } from "@/hooks/use-context-menu";
 
 interface EmailListProps {
   emails: Email[];
@@ -15,6 +17,16 @@ interface EmailListProps {
   onEmailSelect?: (email: Email) => void;
   className?: string;
   isLoading?: boolean;
+  // Context menu actions
+  onReply?: (email: Email) => void;
+  onReplyAll?: (email: Email) => void;
+  onForward?: (email: Email) => void;
+  onMarkAsRead?: (email: Email, read: boolean) => void;
+  onToggleStar?: (email: Email) => void;
+  onDelete?: (email: Email) => void;
+  onArchive?: (email: Email) => void;
+  onSetColorTag?: (emailId: string, color: string | null) => void;
+  onMoveToMailbox?: (emailId: string, mailboxId: string) => void;
 }
 
 export function EmailList({
@@ -22,7 +34,16 @@ export function EmailList({
   selectedEmailId,
   onEmailSelect,
   className,
-  isLoading = false
+  isLoading = false,
+  onReply,
+  onReplyAll,
+  onForward,
+  onMarkAsRead,
+  onToggleStar,
+  onDelete,
+  onArchive,
+  onSetColorTag,
+  onMoveToMailbox,
 }: EmailListProps) {
   const { client } = useAuthStore();
   const {
@@ -31,10 +52,16 @@ export function EmailList({
     clearSelection,
     batchMarkAsRead,
     batchDelete,
+    batchMoveToMailbox,
     loadMoreEmails,
     hasMoreEmails,
     isLoadingMore,
+    mailboxes,
+    selectedMailbox,
   } = useEmailStore();
+
+  // Context menu state
+  const { contextMenu, openContextMenu, closeContextMenu, menuRef } = useContextMenu<Email>();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -238,6 +265,7 @@ export function EmailList({
                 email={email}
                 selected={email.id === selectedEmailId}
                 onClick={() => onEmailSelect?.(email)}
+                onContextMenu={openContextMenu}
               />
             ))}
 
@@ -258,6 +286,35 @@ export function EmailList({
           </div>
         )}
       </div>
+
+      {/* Context Menu */}
+      {contextMenu.data && (
+        <EmailContextMenu
+          email={contextMenu.data}
+          position={contextMenu.position}
+          isOpen={contextMenu.isOpen}
+          onClose={closeContextMenu}
+          menuRef={menuRef}
+          mailboxes={mailboxes}
+          selectedMailbox={selectedMailbox}
+          isMultiSelect={selectedEmailIds.has(contextMenu.data.id)}
+          selectedCount={selectedEmailIds.size}
+          // Single email actions
+          onReply={() => onReply?.(contextMenu.data!)}
+          onReplyAll={() => onReplyAll?.(contextMenu.data!)}
+          onForward={() => onForward?.(contextMenu.data!)}
+          onMarkAsRead={(read) => onMarkAsRead?.(contextMenu.data!, read)}
+          onToggleStar={() => onToggleStar?.(contextMenu.data!)}
+          onDelete={() => onDelete?.(contextMenu.data!)}
+          onArchive={() => onArchive?.(contextMenu.data!)}
+          onSetColorTag={(color) => onSetColorTag?.(contextMenu.data!.id, color)}
+          onMoveToMailbox={(mailboxId) => onMoveToMailbox?.(contextMenu.data!.id, mailboxId)}
+          // Batch actions
+          onBatchMarkAsRead={(read) => client && batchMarkAsRead(client, read)}
+          onBatchDelete={() => client && batchDelete(client)}
+          onBatchMoveToMailbox={(mailboxId) => client && batchMoveToMailbox(client, mailboxId)}
+        />
+      )}
     </div>
   );
 }

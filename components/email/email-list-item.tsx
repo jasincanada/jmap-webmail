@@ -7,11 +7,13 @@ import { Avatar } from "@/components/ui/avatar";
 import { Paperclip, Star, Circle, CheckSquare, Square } from "lucide-react";
 import { useEmailStore } from "@/stores/email-store";
 import { useSettingsStore } from "@/stores/settings-store";
+import { useEmailDrag } from "@/hooks/use-email-drag";
 
 interface EmailListItemProps {
   email: Email;
   selected?: boolean;
   onClick?: () => void;
+  onContextMenu?: (e: React.MouseEvent, email: Email) => void;
 }
 
 // Color tag mapping - using lighter backgrounds for better readability
@@ -36,8 +38,8 @@ const getEmailColor = (keywords: Record<string, boolean> | undefined) => {
   return null;
 };
 
-export function EmailListItem({ email, selected, onClick }: EmailListItemProps) {
-  const { selectedEmailIds, toggleEmailSelection } = useEmailStore();
+export function EmailListItem({ email, selected, onClick, onContextMenu }: EmailListItemProps) {
+  const { selectedEmailIds, toggleEmailSelection, selectedMailbox } = useEmailStore();
   const showPreview = useSettingsStore((state) => state.showPreview);
   const isChecked = selectedEmailIds.has(email.id);
   const isUnread = !email.keywords?.$seen;
@@ -46,13 +48,24 @@ export function EmailListItem({ email, selected, onClick }: EmailListItemProps) 
   const sender = email.from?.[0];
   const colorTag = getEmailColor(email.keywords);
 
+  // Drag and drop functionality
+  const { dragHandlers, isDragging } = useEmailDrag({
+    email,
+    sourceMailboxId: selectedMailbox,
+  });
+
   const handleCheckboxClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleEmailSelection(email.id);
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    onContextMenu?.(e, email);
+  };
+
   return (
     <div
+      {...dragHandlers}
       className={cn(
         "relative group cursor-pointer transition-all duration-200 border-b border-border",
         // Apply color tag as background, with selected and unread states
@@ -66,9 +79,12 @@ export function EmailListItem({ email, selected, onClick }: EmailListItemProps) 
         colorTag && "hover:brightness-95 dark:hover:brightness-110",
         isUnread && !colorTag && "bg-accent/30",
         // Add visual feedback for checked state
-        isChecked && "ring-2 ring-primary/20 bg-accent/40"
+        isChecked && "ring-2 ring-primary/20 bg-accent/40",
+        // Drag state visual feedback
+        isDragging && "opacity-50 scale-[0.98] ring-2 ring-primary/30"
       )}
       onClick={onClick}
+      onContextMenu={handleContextMenu}
       style={{ minHeight: 'var(--list-item-height)' }}
     >
       <div className="flex items-start gap-3 px-4" style={{
