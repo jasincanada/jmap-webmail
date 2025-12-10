@@ -15,6 +15,7 @@ export default function LoginPage() {
   const { login, isLoading, error, clearError, isAuthenticated } = useAuthStore();
 
   const serverUrl = process.env.NEXT_PUBLIC_JMAP_SERVER_URL;
+  const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Webmail';
 
   // All hooks must be called unconditionally at the top
   const [formData, setFormData] = useState({
@@ -33,9 +34,9 @@ export default function LoginPage() {
   // Set page title
   useEffect(() => {
     if (serverUrl) {
-      document.title = `${t('title')} - Webmail`;
+      document.title = appName;
     }
-  }, [t, serverUrl]);
+  }, [appName, serverUrl]);
 
   // Load saved usernames from localStorage on mount
   useEffect(() => {
@@ -213,7 +214,7 @@ export default function LoginPage() {
             <Mail className="w-10 h-10 text-primary" />
           </div>
           <h1 className="text-3xl font-light text-foreground tracking-tight">
-            {t("title")}
+            {appName}
           </h1>
         </div>
 

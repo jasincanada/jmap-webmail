@@ -1,6 +1,6 @@
 {
   "login": {
-    "title": "JMAP Webmail",
+    "title": "Webmail",
     "username_label": "Email",
     "username_placeholder": "user@example.com",
     "password_label": "Password",
