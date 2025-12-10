@@ -7,7 +7,9 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { EmailList } from "@/components/email/email-list";
 import { EmailViewer } from "@/components/email/email-viewer";
 import { EmailComposer } from "@/components/email/email-composer";
+import { ThreadConversationView } from "@/components/email/thread-conversation-view";
 import { MobileHeader, MobileViewerHeader } from "@/components/layout/mobile-header";
+import { ThreadGroup, Email } from "@/lib/jmap/types";
 import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
 import { useEmailStore } from "@/stores/email-store";
 import { useAuthStore } from "@/stores/auth-store";
@@ -34,6 +36,10 @@ export default function Home() {
   const [composerMode, setComposerMode] = useState<'compose' | 'reply' | 'replyAll' | 'forward'>('compose');
   const [initialCheckDone, setInitialCheckDone] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+  // Mobile conversation view state
+  const [conversationThread, setConversationThread] = useState<ThreadGroup | null>(null);
+  const [conversationEmails, setConversationEmails] = useState<Email[]>([]);
+  const [isLoadingConversation, setIsLoadingConversation] = useState(false);
   const markAsReadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { isAuthenticated, client, logout, checkAuth, isLoading: authLoading } = useAuthStore();
 
@@ -555,8 +561,53 @@ export default function Home() {
 
   // Handle back navigation from viewer on mobile
   const handleMobileBack = () => {
+    // If in conversation view, clear it
+    if (conversationThread) {
+      setConversationThread(null);
+      setConversationEmails([]);
+    }
     selectEmail(null);
     setActiveView("list");
+  };
+
+  // Handle opening conversation view on mobile
+  const handleOpenConversation = async (thread: ThreadGroup) => {
+    if (!client) return;
+
+    setConversationThread(thread);
+    setIsLoadingConversation(true);
+    setActiveView("viewer");
+
+    try {
+      // Fetch complete thread emails
+      const emails = await client.getThreadEmails(thread.threadId);
+      setConversationEmails(emails);
+    } catch (error) {
+      console.error('Failed to fetch thread emails:', error);
+      // Fall back to thread.emails
+      setConversationEmails(thread.emails);
+    } finally {
+      setIsLoadingConversation(false);
+    }
+  };
+
+  // Handle reply from conversation view
+  const handleConversationReply = (email: Email) => {
+    selectEmail(email);
+    setComposerMode('reply');
+    setShowComposer(true);
+  };
+
+  const handleConversationReplyAll = (email: Email) => {
+    selectEmail(email);
+    setComposerMode('replyAll');
+    setShowComposer(true);
+  };
+
+  const handleConversationForward = (email: Email) => {
+    selectEmail(email);
+    setComposerMode('forward');
+    setShowComposer(true);
   };
 
   return (
@@ -628,6 +679,7 @@ export default function Home() {
                 selectedEmailId={selectedEmail?.id}
                 isLoading={isLoading}
                 onEmailSelect={handleEmailSelect}
+                onOpenConversation={handleOpenConversation}
                 // Context menu handlers
                 onReply={(email) => {
                   selectEmail(email);
@@ -683,37 +735,58 @@ export default function Home() {
               "md:flex-1 md:relative"
             )}
           >
-            {/* Mobile Header for Viewer */}
-            {isMobile && activeView === "viewer" && (
-              <MobileViewerHeader
-                subject={selectedEmail?.subject}
+            {/* Mobile Conversation View - shown when thread is selected on mobile */}
+            {isMobile && conversationThread ? (
+              <ThreadConversationView
+                thread={conversationThread}
+                emails={conversationEmails}
+                isLoading={isLoadingConversation}
                 onBack={handleMobileBack}
-              />
-            )}
-
-            <ErrorBoundary fallback={EmailViewerErrorFallback}>
-              <EmailViewer
-                email={selectedEmail}
-                isLoading={isLoadingEmail}
-                onReply={handleReply}
-                onReplyAll={handleReplyAll}
-                onForward={handleForward}
-                onDelete={handleDelete}
-                onArchive={handleArchive}
-                onToggleStar={handleToggleStar}
-                onSetColorTag={handleSetColorTag}
+                onReply={handleConversationReply}
+                onReplyAll={handleConversationReplyAll}
+                onForward={handleConversationForward}
+                onDownloadAttachment={handleDownloadAttachment}
                 onMarkAsRead={async (emailId, read) => {
                   if (client) {
                     await markAsRead(client, emailId, read);
                   }
                 }}
-                onDownloadAttachment={handleDownloadAttachment}
-                onQuickReply={handleQuickReply}
-                currentUserEmail={client?.["username"]}
-                currentUserName={client?.["username"]?.split("@")[0]}
-                className={isMobile ? "flex-1" : undefined}
               />
-            </ErrorBoundary>
+            ) : (
+              <>
+                {/* Mobile Header for Viewer */}
+                {isMobile && activeView === "viewer" && (
+                  <MobileViewerHeader
+                    subject={selectedEmail?.subject}
+                    onBack={handleMobileBack}
+                  />
+                )}
+
+                <ErrorBoundary fallback={EmailViewerErrorFallback}>
+                  <EmailViewer
+                    email={selectedEmail}
+                    isLoading={isLoadingEmail}
+                    onReply={handleReply}
+                    onReplyAll={handleReplyAll}
+                    onForward={handleForward}
+                    onDelete={handleDelete}
+                    onArchive={handleArchive}
+                    onToggleStar={handleToggleStar}
+                    onSetColorTag={handleSetColorTag}
+                    onMarkAsRead={async (emailId, read) => {
+                      if (client) {
+                        await markAsRead(client, emailId, read);
+                      }
+                    }}
+                    onDownloadAttachment={handleDownloadAttachment}
+                    onQuickReply={handleQuickReply}
+                    currentUserEmail={client?.["username"]}
+                    currentUserName={client?.["username"]?.split("@")[0]}
+                    className={isMobile ? "flex-1" : undefined}
+                  />
+                </ErrorBoundary>
+              </>
+            )}
           </div>
         </div>
 

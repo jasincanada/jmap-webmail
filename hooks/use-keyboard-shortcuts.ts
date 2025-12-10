@@ -29,6 +29,9 @@ export interface KeyboardShortcutHandlers {
   // Selection
   onSelectAll?: () => void;
   onDeselectAll?: () => void;
+
+  // Thread actions
+  onToggleThreadExpansion?: () => void;
 }
 
 export interface UseKeyboardShortcutsOptions {
@@ -199,6 +202,14 @@ export function useKeyboardShortcuts({
             h.onRefresh?.();
           }
           break;
+
+        // Thread actions
+        case "x":
+          if (selectedEmailId) {
+            event.preventDefault();
+            h.onToggleThreadExpansion?.();
+          }
+          break;
       }
     },
     [selectedEmailId]
@@ -260,5 +271,8 @@ export const KEYBOARD_SHORTCUTS = {
     { key: "?", description: "shortcuts.global.help" },
     { key: "Shift + G", description: "shortcuts.global.refresh" },
     { key: "Ctrl + A", description: "shortcuts.global.select_all" },
+  ],
+  threads: [
+    { key: "x", description: "shortcuts.threads.expand_collapse" },
   ],
 } as const;

@@ -22,6 +22,11 @@ interface EmailStore {
   lastPushUpdate: number | null; // Timestamp of last push update
   newEmailNotification: Email | null; // New email notification for toast
 
+  // Thread expansion state
+  expandedThreadIds: Set<string>; // Which threads are expanded in the list
+  threadEmailsCache: Map<string, Email[]>; // Cache of fully fetched thread emails
+  isLoadingThread: string | null; // Thread ID currently being loaded
+
   setEmails: (emails: Email[]) => void;
   setMailboxes: (mailboxes: Mailbox[]) => void;
   selectEmail: (email: Email | null) => void;
@@ -60,6 +65,12 @@ interface EmailStore {
   handleNewEmailNotification: (email: Email) => void;
   clearNewEmailNotification: () => void;
 
+  // Thread expansion actions
+  toggleThreadExpansion: (threadId: string) => void;
+  fetchThreadEmails: (client: JMAPClient, threadId: string) => Promise<Email[]>;
+  collapseAllThreads: () => void;
+  updateThreadCache: (threadId: string, emails: Email[]) => void;
+
   // Mock data for demo
   loadMockData: () => void;
 }
@@ -83,10 +94,22 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   lastPushUpdate: null,
   newEmailNotification: null,
 
+  // Thread expansion state
+  expandedThreadIds: new Set(),
+  threadEmailsCache: new Map(),
+  isLoadingThread: null,
+
   setEmails: (emails) => set({ emails }),
   setMailboxes: (mailboxes) => set({ mailboxes }),
   selectEmail: (email) => set({ selectedEmail: email }),
-  selectMailbox: (mailboxId) => set({ selectedMailbox: mailboxId, selectedEmail: null, selectedEmailIds: new Set() }),
+  selectMailbox: (mailboxId) => set({
+    selectedMailbox: mailboxId,
+    selectedEmail: null,
+    selectedEmailIds: new Set(),
+    expandedThreadIds: new Set(),
+    threadEmailsCache: new Map(),
+    isLoadingThread: null,
+  }),
   setLoading: (loading) => set({ isLoading: loading }),
   setLoadingEmail: (loading) => set({ isLoadingEmail: loading }),
   setError: (error) => set({ error }),
@@ -793,6 +816,70 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
   clearNewEmailNotification: () => {
     set({ newEmailNotification: null });
+  },
+
+  // Thread expansion actions
+  toggleThreadExpansion: (threadId) => {
+    const { expandedThreadIds } = get();
+    const newExpandedThreadIds = new Set(expandedThreadIds);
+
+    if (newExpandedThreadIds.has(threadId)) {
+      newExpandedThreadIds.delete(threadId);
+    } else {
+      newExpandedThreadIds.add(threadId);
+    }
+
+    set({ expandedThreadIds: newExpandedThreadIds });
+  },
+
+  fetchThreadEmails: async (client, threadId) => {
+    const { threadEmailsCache, selectedMailbox, mailboxes } = get();
+
+    // Check if we already have this thread cached
+    const cachedEmails = threadEmailsCache.get(threadId);
+    if (cachedEmails && cachedEmails.length > 0) {
+      return cachedEmails;
+    }
+
+    // Set loading state
+    set({ isLoadingThread: threadId });
+
+    try {
+      // Determine accountId for shared folders
+      const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
+      const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
+
+      // Fetch all emails in the thread
+      const emails = await client.getThreadEmails(threadId, accountId);
+
+      // Update cache
+      const newCache = new Map(get().threadEmailsCache);
+      newCache.set(threadId, emails);
+
+      set({
+        threadEmailsCache: newCache,
+        isLoadingThread: null
+      });
+
+      return emails;
+    } catch (error) {
+      console.error('Failed to fetch thread emails:', error);
+      set({ isLoadingThread: null });
+      return [];
+    }
+  },
+
+  collapseAllThreads: () => {
+    set({
+      expandedThreadIds: new Set(),
+      isLoadingThread: null
+    });
+  },
+
+  updateThreadCache: (threadId, emails) => {
+    const newCache = new Map(get().threadEmailsCache);
+    newCache.set(threadId, emails);
+    set({ threadEmailsCache: newCache });
   },
 
   loadMockData: () => {

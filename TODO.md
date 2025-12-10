@@ -84,7 +84,7 @@
 - [x] Add attachment upload support
 - [x] Implement batch operations (mark read/unread, delete multiple)
 - [x] Implement functional quick reply form
-- [ ] Add email threading support
+- [x] Add email threading support (Gmail-style inline expansion)
 
 ### Real-time Updates
 - [x] Set up EventSource for JMAP push notifications
@@ -245,11 +245,39 @@ All settings are now properly wired to their functionality:
 - **Navigation**: j/k or arrows (next/prev email), Enter/o (open), Esc (close)
 - **Actions**: r (reply), R/a (reply all), f (forward), s (star), e (archive), #/Del (delete), u (unread)
 - **Global**: c (compose), / (search), ? (help), Shift+G (refresh), Ctrl+A (select all)
+- **Threads**: x (expand/collapse thread)
 - Disabled when typing in inputs or when composer is open
+
+### Email Threading (2025-12-10)
+- **Style**: Gmail-style inline expansion (desktop), full-screen conversation view (mobile)
+- **Files**:
+  - lib/thread-utils.ts - Thread grouping utilities
+  - lib/jmap/types.ts - ThreadGroup interface
+  - lib/jmap/client.ts - getThread(), getThreadEmails() methods
+  - stores/email-store.ts - Thread expansion state (expandedThreadIds, threadEmailsCache)
+  - components/email/thread-list-item.tsx - Collapsed/expanded thread view (desktop), tap-to-open (mobile)
+  - components/email/thread-email-item.tsx - Compact email within thread
+  - components/email/thread-conversation-view.tsx - Full-screen mobile conversation view
+  - components/email/email-list.tsx - Groups emails by threadId
+- **Desktop Features**:
+  - Threads grouped by threadId (client-side grouping)
+  - Collapsed view shows: participants, email count badge, latest subject/date
+  - Expanded view shows: all emails in thread with indentation
+  - Lazy loading: complete thread fetched via Thread/get on expansion
+  - State preserved per-mailbox, cleared on mailbox switch
+  - Keyboard: x to expand/collapse selected thread
+- **Mobile Features**:
+  - Tap thread → full-screen conversation view (no inline expansion)
+  - Collapsible email cards, most recent auto-expanded
+  - Full HTML email content with DOMPurify sanitization
+  - External content blocking with user override
+  - Inline attachments with download support
+  - Reply/Reply All/Forward buttons on expanded cards
+  - Back navigation returns to email list
 
 ### Feature Completeness
 - **Authentication**: ✅ Complete (secure design, no password storage)
-- **Email Operations**: ✅ Complete except threading
+- **Email Operations**: ✅ Complete (including threading)
 - **Real-time Updates**: ✅ Complete (EventSource push, toast notifications, status indicator)
 - **UI Enhancements**: ✅ Settings fully integrated, drag-drop, context menus, mobile responsive, keyboard shortcuts
 - **Contacts/Address Book**: ❌ Not started

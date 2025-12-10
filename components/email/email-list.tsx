@@ -1,14 +1,15 @@
 "use client";
 
-import { Email } from "@/lib/jmap/types";
-import { EmailListItem } from "./email-list-item";
+import { Email, ThreadGroup } from "@/lib/jmap/types";
+import { ThreadListItem } from "./thread-list-item";
 import { EmailContextMenu } from "./email-context-menu";
 import { cn } from "@/lib/utils";
 import { Inbox, CheckSquare, Square, Trash2, Mail, MailOpen, Loader2 } from "lucide-react";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useEmailStore } from "@/stores/email-store";
 import { useAuthStore } from "@/stores/auth-store";
+import { groupEmailsByThread, sortThreadGroups } from "@/lib/thread-utils";
 import { useContextMenu } from "@/hooks/use-context-menu";
 
 interface EmailListProps {
@@ -17,6 +18,8 @@ interface EmailListProps {
   onEmailSelect?: (email: Email) => void;
   className?: string;
   isLoading?: boolean;
+  // Mobile conversation view handler
+  onOpenConversation?: (thread: ThreadGroup) => void;
   // Context menu actions
   onReply?: (email: Email) => void;
   onReplyAll?: (email: Email) => void;
@@ -35,6 +38,7 @@ export function EmailList({
   onEmailSelect,
   className,
   isLoading = false,
+  onOpenConversation,
   onReply,
   onReplyAll,
   onForward,
@@ -58,7 +62,18 @@ export function EmailList({
     isLoadingMore,
     mailboxes,
     selectedMailbox,
+    expandedThreadIds,
+    threadEmailsCache,
+    isLoadingThread,
+    toggleThreadExpansion,
+    fetchThreadEmails,
   } = useEmailStore();
+
+  // Group emails by thread
+  const threadGroups = useMemo(() => {
+    const groups = groupEmailsByThread(emails);
+    return sortThreadGroups(groups);
+  }, [emails]);
 
   // Context menu state
   const { contextMenu, openContextMenu, closeContextMenu, menuRef } = useContextMenu<Email>();
@@ -115,6 +130,20 @@ export function EmailList({
       loadMoreEmails(client);
     }
   }, [client, hasMoreEmails, isLoadingMore, isLoading, loadMoreEmails]);
+
+  // Handle thread expansion and fetch complete thread
+  const handleToggleThreadExpansion = useCallback(async (threadId: string) => {
+    const isExpanded = expandedThreadIds.has(threadId);
+
+    if (!isExpanded && client) {
+      // Expanding - fetch complete thread emails
+      toggleThreadExpansion(threadId);
+      await fetchThreadEmails(client, threadId);
+    } else {
+      // Collapsing - just toggle
+      toggleThreadExpansion(threadId);
+    }
+  }, [client, expandedThreadIds, toggleThreadExpansion, fetchThreadEmails]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -231,7 +260,7 @@ export function EmailList({
             )}
           </button>
           <h2 className="text-sm font-medium text-foreground">
-            {isLoading ? 'Loading...' : emails.length > 0 ? `${emails.length} conversations` : 'No conversations'}
+            {isLoading ? 'Loading...' : threadGroups.length > 0 ? `${threadGroups.length} conversations` : 'No conversations'}
           </h2>
         </div>
       </div>
@@ -259,13 +288,18 @@ export function EmailList({
           </div>
         ) : (
           <div className={cn("transition-opacity duration-200", isLoading && "opacity-50")}>
-            {emails.map((email) => (
-              <EmailListItem
-                key={email.id}
-                email={email}
-                selected={email.id === selectedEmailId}
-                onClick={() => onEmailSelect?.(email)}
+            {threadGroups.map((thread) => (
+              <ThreadListItem
+                key={thread.threadId}
+                thread={thread}
+                isExpanded={expandedThreadIds.has(thread.threadId)}
+                selectedEmailId={selectedEmailId}
+                isLoading={isLoadingThread === thread.threadId}
+                expandedEmails={threadEmailsCache.get(thread.threadId)}
+                onToggleExpand={() => handleToggleThreadExpansion(thread.threadId)}
+                onEmailSelect={(email) => onEmailSelect?.(email)}
                 onContextMenu={openContextMenu}
+                onOpenConversation={onOpenConversation}
               />
             ))}
 

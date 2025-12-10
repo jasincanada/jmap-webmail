@@ -16,6 +16,89 @@ export default function LoginPage() {
 
   const serverUrl = process.env.NEXT_PUBLIC_JMAP_SERVER_URL;
 
+  // All hooks must be called unconditionally at the top
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+  });
+
+  const [savedUsernames, setSavedUsernames] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const justSelectedSuggestion = useRef(false);
+
+  // Set page title
+  useEffect(() => {
+    if (serverUrl) {
+      document.title = `${t('title')} - Webmail`;
+    }
+  }, [t, serverUrl]);
+
+  // Load saved usernames from localStorage on mount
+  useEffect(() => {
+    if (!serverUrl) return;
+    const saved = localStorage.getItem("webmail_usernames");
+    if (saved) {
+      try {
+        const usernames = JSON.parse(saved);
+        setSavedUsernames(usernames);
+      } catch {
+        console.error("Failed to parse saved usernames");
+      }
+    }
+  }, [serverUrl]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push(`/${params.locale}`);
+    }
+  }, [isAuthenticated, router, params.locale]);
+
+  useEffect(() => {
+    clearError();
+  }, [formData, clearError]);
+
+  // Filter suggestions based on input
+  useEffect(() => {
+    if (!serverUrl) return;
+    // Skip showing suggestions if we just selected one
+    if (justSelectedSuggestion.current) {
+      justSelectedSuggestion.current = false;
+      return;
+    }
+
+    if (formData.username && savedUsernames.length > 0) {
+      const filtered = savedUsernames.filter(username =>
+        username.toLowerCase().includes(formData.username.toLowerCase())
+      );
+      setFilteredSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+    } else if (formData.username === "" && savedUsernames.length > 0) {
+      setFilteredSuggestions(savedUsernames);
+      setShowSuggestions(false); // Don't show on empty input
+    } else {
+      setShowSuggestions(false);
+    }
+    setSelectedSuggestionIndex(-1);
+  }, [formData.username, savedUsernames, serverUrl]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    if (!serverUrl) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node) &&
+          inputRef.current && !inputRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [serverUrl]);
+
   // Show error if JMAP server URL is not configured
   if (!serverUrl) {
     return (
@@ -32,37 +115,6 @@ export default function LoginPage() {
       </div>
     );
   }
-
-  // Set page title
-  useEffect(() => {
-    document.title = `${t('title')} - Webmail`;
-  }, [t]);
-
-  const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-  });
-
-  const [savedUsernames, setSavedUsernames] = useState<string[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
-  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const justSelectedSuggestion = useRef(false);
-
-  // Load saved usernames from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem("webmail_usernames");
-    if (saved) {
-      try {
-        const usernames = JSON.parse(saved);
-        setSavedUsernames(usernames);
-      } catch {
-        console.error("Failed to parse saved usernames");
-      }
-    }
-  }, []);
 
   // Save username on successful login
   const saveUsername = (username: string) => {
@@ -95,52 +147,6 @@ export default function LoginPage() {
       u.toLowerCase().includes(formData.username.toLowerCase())
     ));
   };
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.push(`/${params.locale}`);
-    }
-  }, [isAuthenticated, router, params.locale]);
-
-  useEffect(() => {
-    clearError();
-  }, [formData, clearError]);
-
-  // Filter suggestions based on input
-  useEffect(() => {
-    // Skip showing suggestions if we just selected one
-    if (justSelectedSuggestion.current) {
-      justSelectedSuggestion.current = false;
-      return;
-    }
-
-    if (formData.username && savedUsernames.length > 0) {
-      const filtered = savedUsernames.filter(username =>
-        username.toLowerCase().includes(formData.username.toLowerCase())
-      );
-      setFilteredSuggestions(filtered);
-      setShowSuggestions(filtered.length > 0);
-    } else if (formData.username === "" && savedUsernames.length > 0) {
-      setFilteredSuggestions(savedUsernames);
-      setShowSuggestions(false); // Don't show on empty input
-    } else {
-      setShowSuggestions(false);
-    }
-    setSelectedSuggestionIndex(-1);
-  }, [formData.username, savedUsernames]);
-
-  // Close suggestions when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node) &&
-          inputRef.current && !inputRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, username: e.target.value });

@@ -130,6 +130,18 @@ export interface Thread {
   emailIds: string[];
 }
 
+// Thread grouping for UI display
+export interface ThreadGroup {
+  threadId: string;
+  emails: Email[];           // Emails in this thread (sorted by receivedAt desc)
+  latestEmail: Email;        // Most recent email
+  participantNames: string[];// Unique participant names
+  hasUnread: boolean;        // Any unread emails in thread
+  hasStarred: boolean;       // Any starred emails in thread
+  hasAttachment: boolean;    // Any email has attachment
+  emailCount: number;        // Total emails in thread
+}
+
 export interface Identity {
   id: string;
   name: string;

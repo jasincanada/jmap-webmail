@@ -119,6 +119,22 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
                 ))}
               </div>
             </section>
+
+            {/* Threads Section */}
+            <section className="md:col-span-2">
+              <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wider">
+                {t("shortcuts.sections.threads")}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {KEYBOARD_SHORTCUTS.threads.map((shortcut) => (
+                  <ShortcutRow
+                    key={shortcut.key}
+                    shortcutKey={shortcut.key}
+                    description={t(shortcut.description)}
+                  />
+                ))}
+              </div>
+            </section>
           </div>
 
           {/* Footer tip */}

@@ -1,4 +1,4 @@
-import type { Email, Mailbox, StateChange, AccountStates } from "./types";
+import type { Email, Mailbox, StateChange, AccountStates, Thread } from "./types";
 
 // JMAP protocol types - these are intentionally flexible due to server variations
 interface JMAPSession {
@@ -795,6 +795,92 @@ export class JMAPClient {
       return [];
     } catch (error) {
       console.error('Search failed:', error);
+      return [];
+    }
+  }
+
+  // Thread methods for conversation view
+  async getThread(threadId: string, accountId?: string): Promise<Thread | null> {
+    try {
+      const targetAccountId = accountId || this.accountId;
+
+      const response = await this.request([
+        ["Thread/get", {
+          accountId: targetAccountId,
+          ids: [threadId],
+        }, "0"],
+      ]);
+
+      if (response.methodResponses?.[0]?.[0] === "Thread/get") {
+        const threads = response.methodResponses[0][1].list || [];
+        return threads[0] || null;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Failed to get thread:', error);
+      return null;
+    }
+  }
+
+  async getThreadEmails(threadId: string, accountId?: string): Promise<Email[]> {
+    try {
+      const targetAccountId = accountId || this.accountId;
+
+      // First get the thread to find all email IDs
+      const thread = await this.getThread(threadId, accountId);
+      if (!thread || !thread.emailIds || thread.emailIds.length === 0) {
+        return [];
+      }
+
+      // Fetch all emails in the thread
+      const response = await this.request([
+        ["Email/get", {
+          accountId: targetAccountId,
+          ids: thread.emailIds,
+          properties: [
+            "id",
+            "threadId",
+            "mailboxIds",
+            "keywords",
+            "size",
+            "receivedAt",
+            "from",
+            "to",
+            "cc",
+            "subject",
+            "preview",
+            "hasAttachment",
+          ],
+        }, "0"],
+      ]);
+
+      if (response.methodResponses?.[0]?.[0] === "Email/get") {
+        const emails = response.methodResponses[0][1].list || [];
+
+        // If fetching from a shared account, namespace the mailboxIds
+        const isSharedAccount = accountId && accountId !== this.accountId;
+        if (isSharedAccount) {
+          emails.forEach((email: Email) => {
+            if (email.mailboxIds) {
+              const namespacedMailboxIds: Record<string, boolean> = {};
+              Object.keys(email.mailboxIds).forEach(mbId => {
+                namespacedMailboxIds[`${accountId}:${mbId}`] = email.mailboxIds[mbId];
+              });
+              email.mailboxIds = namespacedMailboxIds;
+            }
+          });
+        }
+
+        // Sort by receivedAt descending (newest first)
+        return emails.sort((a: Email, b: Email) =>
+          new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
+        );
+      }
+
+      return [];
+    } catch (error) {
+      console.error('Failed to get thread emails:', error);
       return [];
     }
   }

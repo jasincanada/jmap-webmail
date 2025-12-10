@@ -448,7 +448,8 @@
     "sections": {
       "navigation": "Navigation",
       "actions": "Email Actions",
-      "global": "Global"
+      "global": "Global",
+      "threads": "Threads"
     },
     "navigation": {
       "next_email": "Next email",
@@ -472,6 +473,22 @@
       "help": "Show shortcuts",
       "refresh": "Refresh emails",
       "select_all": "Select all"
+    },
+    "threads": {
+      "expand_collapse": "Expand/collapse thread"
     }
+  },
+  "threads": {
+    "messages_one": "{count} message",
+    "messages_other": "{count} messages",
+    "expand": "Expand conversation",
+    "collapse": "Collapse conversation",
+    "loading": "Loading conversation...",
+    "mark_read": "Mark conversation as read",
+    "mark_unread": "Mark conversation as unread",
+    "archive": "Archive conversation",
+    "delete": "Delete conversation",
+    "star": "Star conversation",
+    "unstar": "Unstar conversation"
   }
 }
