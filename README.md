@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# JMAP Webmail
+
+A modern, privacy-focused webmail client built with Next.js and the JMAP protocol.
+
+## Screenshots
+
+### Login
+![Login](screenshots/01-login.png)
+
+### Inbox
+![Inbox](screenshots/02-inbox.png)
+
+### Email Viewer
+![Email Viewer](screenshots/03-email-viewer.png)
+
+### Compose
+![Compose](screenshots/04-compose.png)
+
+### Dark Mode
+![Dark Mode](screenshots/05-dark-mode.png)
+
+### Settings
+![Settings](screenshots/06-settings.png)
+
+### Sidebar Navigation
+![Sidebar](screenshots/07-inbox-sidebar.png)
+
+## Features
+
+- **Modern UI** - Clean, minimalist three-pane layout
+- **Dark Mode** - Full dark theme support
+- **Email Threading** - Gmail-style conversation view
+- **Real-time Updates** - Push notifications for new emails
+- **Keyboard Shortcuts** - Navigate efficiently with hotkeys
+- **Drag & Drop** - Move emails between folders
+- **Color Tags** - Organize emails with color labels
+- **Attachments** - Upload and download file attachments
+- **Search** - Full-text email search
+- **i18n** - English and French language support
+- **Mobile Responsive** - Adaptive layout for all screen sizes
+
+## Tech Stack
+
+- **Framework**: Next.js 16 with Turbopack
+- **Styling**: Tailwind CSS v4
+- **State**: Zustand
+- **Protocol**: JMAP (RFC 8620)
+- **i18n**: next-intl
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) and connect to your JMAP server.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create a `.env.local` file:
 
-## Learn More
+```env
+NEXT_PUBLIC_APP_NAME=Your Webmail
+NEXT_PUBLIC_JMAP_SERVER_URL=https://your-jmap-server.com
+```
 
-To learn more about Next.js, take a look at the following resources:
+## License
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
