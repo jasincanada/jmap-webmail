@@ -214,6 +214,7 @@
 - [x] Fixed dark mode folder selection not visible (improved accent color contrast)
 - [x] Fixed inbox not selected by default on login (auto-select primary account inbox)
 - [x] Fixed email store not cleared on logout (proper state reset)
+- [x] Fixed search results limited to 50 (added pagination support to searchEmails)
 
 ## 📊 Code Audit Summary (Last verified: 2025-12-10)
 

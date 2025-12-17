@@ -22,9 +22,6 @@ A modern, privacy-focused webmail client built with Next.js and the JMAP protoco
 ### Settings
 ![Settings](screenshots/06-settings.png)
 
-### Sidebar Navigation
-![Sidebar](screenshots/07-inbox-sidebar.png)
-
 ## Features
 
 - **Modern UI** - Clean, minimalist three-pane layout
