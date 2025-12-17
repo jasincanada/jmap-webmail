@@ -673,16 +673,16 @@ class JMAPSeeder {
   async createEmail(email: SeedEmail): Promise<void> {
     const mailboxId = this.getMailboxId(email.mailboxRole);
 
-    // Build email address strings
-    const fromStr = email.from.name
+    // Build email address strings (prefixed with _ as they're used in RFC822 format below)
+    const _fromStr = email.from.name
       ? `"${email.from.name}" <${email.from.email}>`
       : email.from.email;
 
-    const toStr = email.to.map(t =>
+    const _toStr = email.to.map(t =>
       t.name ? `"${t.name}" <${t.email}>` : t.email
     ).join(', ');
 
-    const ccStr = email.cc?.map(c =>
+    const _ccStr = email.cc?.map(c =>
       c.name ? `"${c.name}" <${c.email}>` : c.email
     ).join(', ');
 
