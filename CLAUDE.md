@@ -60,19 +60,40 @@ This project has two branches with different purposes:
 Work normally on `master`, commit as usual. Push to origin (GitLab) for backup/CI.
 
 ### Releasing to Production (GitHub)
-When user says "release to prod" or similar:
+When user says "release to prod" or similar, use the release script:
 
 ```bash
-# Step 1: Prepare release (squash merge from master)
-git release
-
-# Step 2: Commit and push with release message
-git release-commit "Release message describing changes"
+./scripts/release.sh
 ```
 
-**What these aliases do:**
-- `git release` - Checkout public-release, squash merge all master changes
-- `git release-commit "msg"` - Sign commit as `Matthieu MALVACHE <matthieu@root.cloud>`, push to GitHub, return to master
+This script will:
+1. Verify you're on master branch
+2. Run lint and type check
+3. Check for Claude/AI references in code
+4. Switch to `public-release` branch
+5. Copy ONLY code files from master (not README, .gitignore, CLAUDE.md, TODO.md, scripts/)
+6. Validate no forbidden files are staged
+7. Show changes for review
+
+After the script runs, manually commit and push:
+```bash
+git add -A
+git commit -S --author="Matthieu MALVACHE <matthieu@root.cloud>" -m "feat: Your message"
+git push github public-release:main
+git checkout master
+```
+
+### Files to NEVER release to GitHub
+- `CLAUDE.md` - AI instructions
+- `TODO.md` - Internal task tracking
+- `scripts/seed-demo.ts` - Demo data seeder
+- `.claude/` directory
+- Any file containing "claude" or AI references
+
+### Files to keep separate between branches
+- `README.md` - Public version is different, don't overwrite
+- `.gitignore` - Public version doesn't have .claude entries
+- `package.json` - May differ, only update if dependencies changed
 
 ### Important Notes
 - All public commits must be signed with GPG
@@ -80,3 +101,4 @@ git release-commit "Release message describing changes"
 - Public repo: https://github.com/root-fr/jmap-webmail
 - The `public-release` branch has clean history (no dev iterations)
 - Never push `master` to GitHub, only `public-release`
+- Always run `npm run lint` before releasing
