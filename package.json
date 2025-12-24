@@ -2,6 +2,26 @@
   "name": "jmap-webmail",
   "version": "0.1.0",
   "private": true,
+  "description": "A modern JMAP webmail client built for Stalwart Mail Server",
+  "author": "Matthieu MALVACHE <matthieu@root.cloud>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/root-fr/jmap-webmail.git"
+  },
+  "homepage": "https://github.com/root-fr/jmap-webmail",
+  "bugs": {
+    "url": "https://github.com/root-fr/jmap-webmail/issues"
+  },
+  "keywords": [
+    "jmap",
+    "webmail",
+    "stalwart",
+    "email",
+    "nextjs",
+    "react",
+    "typescript"
+  ],
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",

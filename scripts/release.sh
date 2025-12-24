@@ -65,11 +65,37 @@ for path in "${CODE_FILES[@]}"; do
     fi
 done
 
-# 8. Show what changed
+# 8. Update package.json dependencies (preserve metadata, update versions)
+echo -e "${YELLOW}Updating package.json dependencies...${NC}"
+git checkout master -- package-lock.json
+
+# Use node to merge dependencies from master into public-release's package.json
+node -e "
+const fs = require('fs');
+const master = JSON.parse(fs.readFileSync('/dev/stdin', 'utf8'));
+const current = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+
+// Update dependencies and devDependencies from master
+current.dependencies = master.dependencies;
+current.devDependencies = master.devDependencies;
+
+// Remove private and dev-only scripts
+delete current.private;
+if (current.scripts) {
+  delete current.scripts['seed:demo'];
+}
+
+fs.writeFileSync('package.json', JSON.stringify(current, null, 2) + '\n');
+console.log('✓ Dependencies merged');
+" < <(git show master:package.json)
+
+git add package.json package-lock.json
+
+# 9. Show what changed
 echo -e "${YELLOW}Changes to be committed:${NC}"
 git status --short
 
-# 9. Check for forbidden files
+# 10. Check for forbidden files
 FORBIDDEN_FILES=("CLAUDE.md" "TODO.md" "scripts/seed-demo.ts" ".claude")
 for file in "${FORBIDDEN_FILES[@]}"; do
     if git status --short | grep -q "$file"; then
@@ -80,7 +106,7 @@ for file in "${FORBIDDEN_FILES[@]}"; do
     fi
 done
 
-# 10. Final check for Claude in diff
+# 11. Final check for Claude in diff
 if git diff --cached | grep -i claude; then
     echo -e "${RED}Error: Claude reference found in diff${NC}"
     git checkout public-release -- . 2>/dev/null || true
