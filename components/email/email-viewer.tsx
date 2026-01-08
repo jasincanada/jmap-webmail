@@ -524,7 +524,7 @@ export function EmailViewer({
       html: '<p style="color: var(--color-muted-foreground);">No content available</p>',
       isHtml: false
     };
-  }, [email, allowExternalContent, hasBlockedContent, externalContentPolicy, isSenderTrusted]);
+  }, [email, allowExternalContent, hasBlockedContent, externalContentPolicy, isSenderTrusted, theme]);
 
   // Detect List-Unsubscribe header for newsletter banners
   const listHeaders = useMemo(() => {
@@ -1290,9 +1290,9 @@ export function EmailViewer({
         {/* Unified Notification Banner - External Content + Unsubscribe */}
         {((hasBlockedContent && !allowExternalContent && externalContentPolicy !== 'allow') ||
           (shouldShowUnsubBanner && listHeaders?.listUnsubscribe)) && (
-          <div className="border-b border-border bg-muted/30">
+          <div className="border-b border-border bg-muted/30 isolate">
             <div className="max-w-4xl mx-auto px-6 py-1.5">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-center gap-3">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-center gap-3 isolate">
                 {/* External Content Controls */}
                 {hasBlockedContent && !allowExternalContent && externalContentPolicy !== 'allow' && (
                   <div className="flex items-center gap-3 flex-wrap">
@@ -1300,7 +1300,7 @@ export function EmailViewer({
                     {externalContentPolicy === 'ask' && (
                       <button
                         onClick={() => setAllowExternalContent(true)}
-                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px] md:min-h-0"
+                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground bg-transparent hover:bg-transparent transition-colors min-h-[44px] md:min-h-0"
                       >
                         <Image className="w-3.5 h-3.5" />
                         {t('load_external_content')}
@@ -1316,7 +1316,7 @@ export function EmailViewer({
                             setAllowExternalContent(true);
                           }
                         }}
-                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px] md:min-h-0"
+                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground bg-transparent hover:bg-transparent transition-colors min-h-[44px] md:min-h-0"
                       >
                         {t('trust_sender')}
                       </button>

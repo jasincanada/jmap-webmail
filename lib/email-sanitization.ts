@@ -3,16 +3,18 @@ import DOMPurify from 'dompurify';
 /**
  * Unified DOMPurify configuration for email content
  * Blocks all script execution vectors while preserving formatting
+ * NOTE: <style> tags are forbidden to prevent global CSS injection
+ * Inline style attributes are still allowed for element-specific styling
  */
 export const EMAIL_SANITIZE_CONFIG = {
-  ADD_TAGS: ['style'],
+  ADD_TAGS: [],
   ADD_ATTR: ['target', 'style', 'class', 'width', 'height', 'align', 'valign', 'bgcolor', 'color'],
   ALLOW_DATA_ATTR: false,
   FORCE_BODY: true,
   FORBID_TAGS: [
     'script', 'iframe', 'object', 'embed', 'form',
     'input', 'button', 'meta', 'link', 'base',
-    'svg', 'math'
+    'svg', 'math', 'style'
   ],
   FORBID_ATTR: [
     'onerror', 'onload', 'onclick', 'onmouseover',

@@ -92,7 +92,7 @@ export function UnsubscribeBanner({
         </span>
         <button
           onClick={onDismiss}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px] md:min-h-0"
+          className="text-sm text-muted-foreground hover:text-foreground bg-transparent hover:bg-transparent transition-colors min-h-[44px] md:min-h-0"
         >
           {t('email_viewer.unsubscribe_banner.dismiss')}
         </button>
@@ -110,14 +110,14 @@ export function UnsubscribeBanner({
           <button
             onClick={handleUnsubscribe}
             disabled={processing}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] md:min-h-0"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground bg-transparent hover:bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] md:min-h-0"
           >
             {processing && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             {t('email_viewer.unsubscribe_banner.confirm_button')}
           </button>
           <button
             onClick={() => setShowConfirm(false)}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px] md:min-h-0"
+            className="text-sm text-muted-foreground hover:text-foreground bg-transparent hover:bg-transparent transition-colors min-h-[44px] md:min-h-0"
           >
             {t('email_viewer.unsubscribe_banner.cancel')}
           </button>
@@ -125,7 +125,7 @@ export function UnsubscribeBanner({
       ) : (
         <button
           onClick={() => setShowConfirm(true)}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px] md:min-h-0"
+          className="text-sm text-muted-foreground hover:text-foreground bg-transparent hover:bg-transparent transition-colors min-h-[44px] md:min-h-0"
         >
           {t('email_viewer.unsubscribe_banner.button')}
         </button>
