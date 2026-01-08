@@ -178,6 +178,7 @@
 
 ### Deployment
 - [x] Create environment variable management (.env.local and .env.example)
+- [x] Add runtime configuration support (Docker-friendly, no rebuild required)
 - [ ] Add health check endpoint
 - [ ] Configure production build optimizations
 - [ ] Set up monitoring and logging

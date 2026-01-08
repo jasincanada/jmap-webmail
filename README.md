@@ -61,9 +61,22 @@ Open [http://localhost:3000](http://localhost:3000) and connect to your JMAP ser
 Create a `.env.local` file:
 
 ```env
-NEXT_PUBLIC_APP_NAME=Your Webmail
-NEXT_PUBLIC_JMAP_SERVER_URL=https://your-jmap-server.com
+APP_NAME=Your Webmail
+JMAP_SERVER_URL=https://your-jmap-server.com
 ```
+
+### Runtime vs Build-time Configuration
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `APP_NAME` | Runtime | App name displayed in the UI |
+| `JMAP_SERVER_URL` | Runtime | JMAP server URL (required) |
+| `NEXT_PUBLIC_APP_NAME` | Build-time | Legacy fallback for app name |
+| `NEXT_PUBLIC_JMAP_SERVER_URL` | Build-time | Legacy fallback for server URL |
+
+**Runtime variables** are read at request time, enabling post-build configuration (ideal for Docker).
+
+**Build-time variables** are baked into the bundle and require a rebuild to change.
 
 ## License
 

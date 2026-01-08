@@ -7,11 +7,18 @@
     "password_placeholder": "Entrez votre mot de passe",
     "sign_in": "Se connecter",
     "signing_in": "Connexion en cours...",
+    "loading": "Chargement...",
     "error": {
       "invalid_credentials": "Email ou mot de passe invalide",
       "connection_failed": "Échec de la connexion au serveur",
       "generic": "Une erreur s'est produite. Veuillez réessayer."
-    }
+    },
+    "config_error": {
+      "title": "Erreur de configuration",
+      "fetch_failed": "Impossible de charger la configuration de l'application. Veuillez réessayer plus tard.",
+      "server_not_configured": "Le serveur de messagerie n'a pas été configuré. Veuillez contacter votre administrateur."
+    },
+    "remove_from_history": "Supprimer de l'historique"
   },
   "sidebar": {
     "compose": "Composer",
