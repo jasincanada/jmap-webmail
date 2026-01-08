@@ -7,7 +7,9 @@ import { Avatar } from "@/components/ui/avatar";
 import { Paperclip, Star, Circle, CheckSquare, Square } from "lucide-react";
 import { useEmailStore } from "@/stores/email-store";
 import { useSettingsStore } from "@/stores/settings-store";
+import { useAuthStore } from "@/stores/auth-store";
 import { useEmailDrag } from "@/hooks/use-email-drag";
+import { EmailIdentityBadge } from "./email-identity-badge";
 
 interface EmailListItemProps {
   email: Email;
@@ -41,6 +43,7 @@ const getEmailColor = (keywords: Record<string, boolean> | undefined) => {
 export function EmailListItem({ email, selected, onClick, onContextMenu }: EmailListItemProps) {
   const { selectedEmailIds, toggleEmailSelection, selectedMailbox } = useEmailStore();
   const showPreview = useSettingsStore((state) => state.showPreview);
+  const { identities } = useAuthStore();
   const isChecked = selectedEmailIds.has(email.id);
   const isUnread = !email.keywords?.$seen;
   const isStarred = email.keywords?.$flagged;
@@ -145,6 +148,7 @@ export function EmailListItem({ email, selected, onClick, onContextMenu }: Email
                     Important
                   </span>
                 )}
+                <EmailIdentityBadge email={email} identities={identities} compact={true} />
                 {email.hasAttachment && (
                   <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
                 )}

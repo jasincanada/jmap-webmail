@@ -132,6 +132,25 @@
 - [x] Create mobile-responsive design (hamburger menu, single/multi-pane adaptive layout)
 - [x] Implement pagination/infinite scroll for email list
 
+### Identity Management & Sub-Addressing
+- [x] Add Identity/set methods to JMAP client (create, update, delete)
+- [x] Create identity store with Zustand (identities + sub-addressing state)
+- [x] Create sub-addressing utilities (parse, generate, suggest tags)
+- [x] Build Identity Manager Modal (list, create, edit, delete identities)
+- [x] Build Identity Form component (name, email, signatures)
+- [x] Create Identity Settings panel
+- [x] Add Identities tab to Settings page
+- [x] Add i18n keys for identity management (EN + FR)
+- [x] Build Sub-Address Helper component (tag input, suggestions, preview)
+- [x] Build Email Identity Badge component (viewer + list display)
+- [x] Integrate identity selector into email composer
+- [x] Add sub-addressing support to email composer
+- [x] Show identity badges in email viewer
+- [x] Show sub-address badges in email list
+- [ ] Test identity CRUD operations
+- [ ] Test sub-addressing workflow
+- [ ] Test error handling and edge cases
+
 ### Address Book & Contacts
 - [ ] Create contact store with Zustand
 - [ ] Implement contact CRUD operations (create, read, update, delete)
@@ -148,9 +167,9 @@
 - [ ] Implement filters and labels
 - [ ] Add calendar integration (if server supports)
 - [ ] Create email templates
-- [ ] Add signature management
+- [x] Add signature management (implemented via Identity Management - per-identity signatures)
 - [ ] Implement vacation responder settings
-- [ ] Add email aliases support
+- [x] Add email aliases support (implemented via Sub-Addressing - user+tag@domain.com)
 - [ ] Create advanced search with filters
 - [ ] Add email encryption support (PGP/GPG)
 

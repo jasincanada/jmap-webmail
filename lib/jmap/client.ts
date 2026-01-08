@@ -1,4 +1,4 @@
-import type { Email, Mailbox, StateChange, AccountStates, Thread, Identity } from "./types";
+import type { Email, Mailbox, StateChange, AccountStates, Thread, Identity, EmailAddress } from "./types";
 
 // JMAP protocol types - these are intentionally flexible due to server variations
 interface JMAPSession {
@@ -918,6 +918,124 @@ export class JMAPClient {
       console.error('Failed to get identities:', error);
       return [];
     }
+  }
+
+  async createIdentity(
+    name: string,
+    email: string,
+    replyTo?: EmailAddress[],
+    bcc?: EmailAddress[],
+    textSignature?: string,
+    htmlSignature?: string
+  ): Promise<Identity> {
+    const response = await this.request([
+      ["Identity/set", {
+        accountId: this.accountId,
+        create: {
+          "new-identity": {
+            name,
+            email,
+            replyTo,
+            bcc,
+            textSignature,
+            htmlSignature,
+          }
+        }
+      }, "0"]
+    ]);
+
+    if (response.methodResponses?.[0]?.[0] === "Identity/set") {
+      const result = response.methodResponses[0][1];
+
+      // Check for errors
+      if (result.notCreated?.["new-identity"]) {
+        const error = result.notCreated["new-identity"];
+        if (error.type === "forbidden") {
+          throw new Error("You are not authorized to send from this email address");
+        }
+        throw new Error(error.description || "Failed to create identity");
+      }
+
+      // Return created identity
+      const createdId = result.created?.["new-identity"]?.id;
+      if (createdId) {
+        // Fetch the full identity object
+        const identities = await this.getIdentities();
+        const identity = identities.find(i => i.id === createdId);
+        if (identity) return identity;
+      }
+    }
+
+    throw new Error("Failed to create identity");
+  }
+
+  async updateIdentity(
+    identityId: string,
+    updates: {
+      name?: string;
+      replyTo?: EmailAddress[];
+      bcc?: EmailAddress[];
+      textSignature?: string;
+      htmlSignature?: string;
+    }
+  ): Promise<void> {
+    const response = await this.request([
+      ["Identity/set", {
+        accountId: this.accountId,
+        update: {
+          [identityId]: updates
+        }
+      }, "0"]
+    ]);
+
+    if (response.methodResponses?.[0]?.[0] === "Identity/set") {
+      const result = response.methodResponses[0][1];
+
+      // Check for errors
+      if (result.notUpdated?.[identityId]) {
+        const error = result.notUpdated[identityId];
+        if (error.type === "notFound") {
+          throw new Error("Identity not found (may have been deleted)");
+        }
+        if (error.type === "forbidden") {
+          throw new Error("You are not authorized to modify this identity");
+        }
+        throw new Error(error.description || "Failed to update identity");
+      }
+
+      return;
+    }
+
+    throw new Error("Failed to update identity");
+  }
+
+  async deleteIdentity(identityId: string): Promise<void> {
+    const response = await this.request([
+      ["Identity/set", {
+        accountId: this.accountId,
+        destroy: [identityId]
+      }, "0"]
+    ]);
+
+    if (response.methodResponses?.[0]?.[0] === "Identity/set") {
+      const result = response.methodResponses[0][1];
+
+      // Check for errors
+      if (result.notDestroyed?.[identityId]) {
+        const error = result.notDestroyed[identityId];
+        if (error.type === "forbidden") {
+          throw new Error("This identity cannot be deleted");
+        }
+        if (error.type === "notFound") {
+          throw new Error("Identity not found (may already be deleted)");
+        }
+        throw new Error(error.description || "Failed to delete identity");
+      }
+
+      return;
+    }
+
+    throw new Error("Failed to delete identity");
   }
 
   async createDraft(

@@ -51,6 +51,8 @@ import { useTranslations } from "next-intl";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useUIStore } from "@/stores/ui-store";
 import { useDeviceDetection } from "@/hooks/use-media-query";
+import { useAuthStore } from "@/stores/auth-store";
+import { EmailIdentityBadge } from "./email-identity-badge";
 
 interface EmailViewerProps {
   email: Email | null;
@@ -146,6 +148,7 @@ export function EmailViewer({
   // Tablet list visibility
   const { isTablet } = useDeviceDetection();
   const { tabletListVisible } = useUIStore();
+  const { identities } = useAuthStore();
   const [showFullHeaders, setShowFullHeaders] = useState(false);
   const [allowExternalContent, setAllowExternalContent] = useState(false);
   const [hasBlockedContent, setHasBlockedContent] = useState(false);
@@ -795,6 +798,7 @@ export function EmailViewer({
                     &lt;{sender.email}&gt;
                   </span>
                 )}
+                <EmailIdentityBadge email={email} identities={identities} />
               </div>
 
               <div className="mt-2 space-y-1">
@@ -1148,6 +1152,7 @@ export function EmailViewer({
                     &lt;{sender.email}&gt;
                   </span>
                 )}
+                <EmailIdentityBadge email={email} identities={identities} />
               </div>
               <div className="mt-1 space-y-0.5">
                 {email.to && email.to.length > 0 && (

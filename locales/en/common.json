@@ -283,6 +283,7 @@
       "composer": "Composer",
       "privacy": "Privacy & Security",
       "account": "Account",
+      "identities": "Identities",
       "advanced": "Advanced"
     },
     "appearance": {
@@ -468,6 +469,23 @@
         "value": "{{time}}"
       }
     },
+    "identities": {
+      "title": "Sending Identities",
+      "description": "Manage email addresses you can send from",
+      "identities_count": {
+        "label": "Your Identities",
+        "description": "Email addresses configured for sending",
+        "count_zero": "No identities",
+        "count_one": "1 identity",
+        "count_other": "{{count}} identities"
+      },
+      "manage": "Manage Identities",
+      "sub_addressing": {
+        "label": "Sub-Addressing",
+        "description": "Use tags like user+tag@domain.com to organize incoming mail",
+        "learn_more": "Learn More"
+      }
+    },
     "advanced": {
       "title": "Advanced",
       "description": "Advanced options and developer settings",
@@ -577,5 +595,60 @@
     "delete": "Delete conversation",
     "star": "Star conversation",
     "unstar": "Unstar conversation"
+  },
+  "identities": {
+    "modal_title": "Manage Sending Identities",
+    "create_new": "Create New Identity",
+    "edit_identity": "Edit Identity",
+    "delete_confirm": "Delete this identity? This cannot be undone.",
+    "cannot_delete": "This identity cannot be deleted",
+    "primary_identity": "Primary",
+    "form": {
+      "name_label": "Display Name",
+      "name_placeholder": "e.g., Work Email, Personal",
+      "name_required": "Name is required",
+      "email_label": "Email Address",
+      "email_placeholder": "your.email@example.com",
+      "email_required": "Email is required",
+      "email_invalid": "Please enter a valid email address",
+      "email_immutable": "Email address cannot be changed after creation",
+      "reply_to_label": "Reply-To (optional)",
+      "reply_to_placeholder": "different@email.com",
+      "bcc_label": "Auto BCC (optional)",
+      "bcc_placeholder": "archive@email.com",
+      "text_signature_label": "Text Signature",
+      "html_signature_label": "HTML Signature",
+      "save": "Save Identity",
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "updating": "Updating..."
+    },
+    "sub_address": {
+      "button_tooltip": "Use sub-address",
+      "popover_title": "Add Sub-Address Tag",
+      "tag_input_placeholder": "Enter tag (e.g., shopping)",
+      "preview_label": "Preview:",
+      "recent_tags": "Recent Tags",
+      "suggested_tags": "Suggested",
+      "use_address": "Use This Address",
+      "invalid_tag": "Tag must be alphanumeric and dashes only",
+      "tag_too_long": "Tag must be 30 characters or less",
+      "help_text": "Emails sent to user+tag@domain.com will arrive in your inbox"
+    },
+    "badge": {
+      "sent_via": "via {{email}}",
+      "sub_address_tag": "Sent using sub-address: {{tag}}",
+      "identity_name": "Sent using identity: {{name}}"
+    }
+  },
+  "notifications": {
+    "identity_created": "Identity created successfully",
+    "identity_updated": "Identity updated successfully",
+    "identity_deleted": "Identity deleted",
+    "identity_create_failed": "Failed to create identity: {{error}}",
+    "identity_update_failed": "Failed to update identity: {{error}}",
+    "identity_delete_failed": "Failed to delete identity: {{error}}",
+    "identity_unauthorized": "You are not authorized to send from this email address",
+    "identity_not_found": "Identity not found"
   }
 }
