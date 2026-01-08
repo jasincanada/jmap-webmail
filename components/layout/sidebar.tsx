@@ -95,6 +95,7 @@ function MailboxTreeItem({
   onToggleExpand: (id: string) => void;
   isCollapsed: boolean;
 }) {
+  const t = useTranslations('sidebar');
   const hasChildren = node.children.length > 0;
   const isExpanded = expandedFolders.has(node.id);
   const Icon = getIconForMailbox(node.role, node.name, hasChildren, isExpanded, node.isShared, node.id);
@@ -133,7 +134,7 @@ function MailboxTreeItem({
               "hover:bg-muted active:bg-accent"
             )}
             style={{ marginLeft: indentPixels }}
-            title={isExpanded ? "Collapse" : "Expand"}
+            title={isExpanded ? t('collapse_tooltip') : t('expand_tooltip')}
           >
             {isExpanded ? (
               <ChevronDown className="w-3 h-3 text-muted-foreground" />

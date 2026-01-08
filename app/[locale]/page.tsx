@@ -31,6 +31,7 @@ import { DragDropProvider } from "@/contexts/drag-drop-context";
 export default function Home() {
   const router = useRouter();
   const t = useTranslations();
+  const tCommon = useTranslations('common');
   const [showComposer, setShowComposer] = useState(false);
   const [composerMode, setComposerMode] = useState<'compose' | 'reply' | 'replyAll' | 'forward'>('compose');
   const [initialCheckDone, setInitialCheckDone] = useState(false);
@@ -194,7 +195,7 @@ export default function Home() {
 
   // Update page title based on context
   useEffect(() => {
-    let title = "Webmail";
+    let title = tCommon('app_title');
 
     if (showComposer) {
       // Composing email
@@ -204,11 +205,11 @@ export default function Home() {
         replyAll: t('email_composer.reply_all'),
         forward: t('email_composer.forward'),
       }[composerMode] || t('email_composer.new_message');
-      title = `${modeText} - Webmail`;
+      title = `${modeText} - ${tCommon('app_title')}`;
     } else if (selectedEmail) {
       // Reading email
       const subject = selectedEmail.subject || t('email_viewer.no_subject');
-      title = `${subject} - Webmail`;
+      title = `${subject} - ${tCommon('app_title')}`;
     } else if (selectedMailbox && mailboxes.length > 0) {
       // Mailbox view
       const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
@@ -216,8 +217,8 @@ export default function Home() {
         const mailboxName = mailbox.name;
         const unreadCount = mailbox.unreadEmails || 0;
         title = unreadCount > 0
-          ? `${mailboxName} (${unreadCount}) - Webmail`
-          : `${mailboxName} - Webmail`;
+          ? `${mailboxName} (${unreadCount}) - ${tCommon('app_title')}`
+          : `${mailboxName} - ${tCommon('app_title')}`;
       }
     }
 

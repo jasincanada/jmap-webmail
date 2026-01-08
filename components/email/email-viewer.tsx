@@ -138,6 +138,7 @@ export function EmailViewer({
 }: EmailViewerProps) {
   const t = useTranslations('email_viewer');
   const tNotifications = useTranslations('notifications');
+  const tCommon = useTranslations('common');
   const externalContentPolicy = useSettingsStore((state) => state.externalContentPolicy);
   const addTrustedSender = useSettingsStore((state) => state.addTrustedSender);
   const isSenderTrusted = useSettingsStore((state) => state.isSenderTrusted);
@@ -527,8 +528,8 @@ export function EmailViewer({
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-background shadow-lg flex items-center justify-center">
             <Mail className="w-10 h-10 text-muted-foreground" />
           </div>
-          <h3 className="text-xl font-semibold text-foreground mb-2">No conversation selected</h3>
-          <p className="text-muted-foreground">Choose a conversation from the list to read it here</p>
+          <h3 className="text-xl font-semibold text-foreground mb-2">{t('no_conversation_selected')}</h3>
+          <p className="text-muted-foreground">{t('no_conversation_description')}</p>
         </div>
       </div>
     );
@@ -548,7 +549,7 @@ export function EmailViewer({
         <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-50 flex items-center justify-center animate-in fade-in duration-200">
           <div className="bg-background rounded-lg shadow-lg border border-border p-4 flex items-center gap-3">
             <Loader2 className="w-5 h-5 animate-spin text-primary" />
-            <span className="text-sm font-medium text-foreground">Loading email...</span>
+            <span className="text-sm font-medium text-foreground">{t('loading_email')}</span>
           </div>
         </div>
       )}
@@ -607,7 +608,7 @@ export function EmailViewer({
               {isLoading && (
                 <div className="mr-2 flex items-center gap-1.5 text-muted-foreground hidden lg:flex">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-xs">Loading...</span>
+                  <span className="text-xs">{t('loading')}</span>
                 </div>
               )}
               {/* Primary Reply Button */}
@@ -627,7 +628,7 @@ export function EmailViewer({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 hover:bg-muted"
-                  title="More reply options"
+                  title={t('more_reply_options')}
                 >
                   <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </Button>
@@ -688,7 +689,7 @@ export function EmailViewer({
               <div className="relative group hidden lg:block">
                 <button
                   className="h-8 w-8 rounded hover:bg-muted flex items-center justify-center"
-                  title="Set color"
+                  title={t('set_color')}
                 >
                   <Circle className={cn(
                     "w-4 h-4",
@@ -733,7 +734,7 @@ export function EmailViewer({
                           }
                         }}
                         className="w-6 h-6 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 hover:bg-muted flex items-center justify-center"
-                        title="Remove color"
+                        title={t('remove_color')}
                       >
                         <X className="w-3 h-3 text-muted-foreground" />
                       </button>
@@ -748,7 +749,7 @@ export function EmailViewer({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 hover:bg-muted"
-                  title="More actions"
+                  title={t('more_actions')}
                 >
                   <MoreVertical className="w-4 h-4 text-muted-foreground" />
                 </Button>
@@ -787,7 +788,7 @@ export function EmailViewer({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-semibold text-foreground">
-                  {sender?.name || sender?.email || "Unknown"}
+                  {sender?.name || sender?.email || t('unknown_sender')}
                 </span>
                 {sender?.email && sender?.name && (
                   <span className="text-sm text-muted-foreground">
@@ -807,7 +808,7 @@ export function EmailViewer({
                           onClick={() => setShowFullHeaders(!showFullHeaders)}
                           className="ml-1 text-blue-600 dark:text-blue-400 hover:underline"
                         >
-                          +{email.to.length - 2} more
+                          {t('more_count', { count: email.to.length - 2 })}
                         </button>
                       )}
                     </span>
@@ -833,7 +834,7 @@ export function EmailViewer({
                       <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
                         <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
                           <ShieldCheck className="w-3.5 h-3.5" />
-                          Security & Authentication
+                          {t('security_authentication')}
                         </h3>
                       </div>
                       <div className="bg-background p-4 space-y-3">
@@ -1024,7 +1025,7 @@ export function EmailViewer({
                       <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
                         <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
                           <Network className="w-3.5 h-3.5" />
-                          Technical Details
+                          {t('technical_details')}
                         </h3>
                       </div>
                       <div className="bg-background p-4">
@@ -1034,7 +1035,7 @@ export function EmailViewer({
                             <div className="flex items-start gap-2">
                               <Hash className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
                               <div className="flex-1 min-w-0">
-                                <span className="font-medium text-muted-foreground">Message-ID:</span>
+                                <span className="font-medium text-muted-foreground">{t('message_id_label')}</span>
                                 <div className="text-foreground break-all font-mono text-xs mt-0.5">
                                   {email.messageId}
                                 </div>
@@ -1048,7 +1049,7 @@ export function EmailViewer({
                             <div className="flex items-start gap-2">
                               <Mail className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
                               <div className="flex-1">
-                                <span className="font-medium text-muted-foreground">Reply-To:</span>
+                                <span className="font-medium text-muted-foreground">{t('reply_to_label')}</span>
                                 <div className="flex flex-wrap gap-2 mt-1">
                                   {email.replyTo.map((recipient, i) => (
                                     <span key={i} className="inline-flex items-center px-2 py-1 bg-accent/50 border border-accent rounded text-xs">
@@ -1067,16 +1068,20 @@ export function EmailViewer({
                             <div className="flex items-start gap-2">
                               <Clock className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
                               <div className="flex-1">
-                                <span className="font-medium text-muted-foreground">Delivery time:</span>
+                                <span className="font-medium text-muted-foreground">{t('delivery_time_label')}</span>
                                 <div className="text-foreground">
                                   {(() => {
                                     const diff = Math.abs(new Date(email.receivedAt).getTime() - new Date(email.sentAt).getTime());
                                     const minutes = Math.floor(diff / 60000);
                                     const hours = Math.floor(minutes / 60);
                                     const days = Math.floor(hours / 24);
-                                    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ${hours % 24} hour${hours % 24 !== 1 ? 's' : ''}`;
-                                    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ${minutes % 60} minute${minutes % 60 !== 1 ? 's' : ''}`;
-                                    return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+                                    const dayUnit = days > 1 ? t('time.days') : t('time.day');
+                                    const hourUnit = (hours % 24) > 1 ? t('time.hours') : t('time.hour');
+                                    const minuteUnit = (minutes % 60) > 1 ? t('time.minutes') : t('time.minute');
+                                    const minuteUnitSingle = minutes > 1 ? t('time.minutes') : t('time.minute');
+                                    if (days > 0) return `${days} ${dayUnit} ${hours % 24} ${hourUnit}`;
+                                    if (hours > 0) return `${hours} ${hours > 1 ? t('time.hours') : t('time.hour')} ${minutes % 60} ${minuteUnit}`;
+                                    return `${minutes} ${minuteUnitSingle}`;
                                   })()}
                                 </div>
                               </div>
@@ -1088,9 +1093,9 @@ export function EmailViewer({
                             <div className="flex items-start gap-2">
                               <List className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
                               <div className="flex-1 min-w-0">
-                                <span className="font-medium text-muted-foreground">Part of conversation:</span>
+                                <span className="font-medium text-muted-foreground">{t('conversation_part_label')}</span>
                                 <div className="text-foreground text-xs mt-0.5">
-                                  {email.references.length} previous message{email.references.length > 1 ? 's' : ''} in this thread
+                                  {t(email.references.length === 1 ? 'previous_messages' : 'previous_messages_plural', { count: email.references.length })}
                                 </div>
                               </div>
                             </div>
@@ -1136,7 +1141,7 @@ export function EmailViewer({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-semibold text-foreground">
-                  {sender?.name || sender?.email || "Unknown"}
+                  {sender?.name || sender?.email || t('unknown_sender')}
                 </span>
                 {sender?.email && sender?.name && (
                   <span className="text-sm text-muted-foreground">
@@ -1334,7 +1339,7 @@ export function EmailViewer({
                     value={quickReplyText}
                     onChange={(e) => setQuickReplyText(e.target.value)}
                     onFocus={() => setIsQuickReplyFocused(true)}
-                    placeholder="Write a quick reply..."
+                    placeholder={t('quick_reply_placeholder')}
                     className={cn(
                       "w-full px-3 py-2 text-sm border border-border bg-background text-foreground rounded-lg",
                       "hover:border-accent focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all",
@@ -1348,7 +1353,7 @@ export function EmailViewer({
                   {(isQuickReplyFocused || quickReplyText) && (
                     <div className="flex items-center justify-between gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
                       <div className="text-xs text-muted-foreground">
-                        {quickReplyText.length > 0 && `${quickReplyText.length} characters`}
+                        {quickReplyText.length > 0 && t('characters_count', { count: quickReplyText.length })}
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
@@ -1360,7 +1365,7 @@ export function EmailViewer({
                           }}
                           disabled={isSendingQuickReply}
                         >
-                          Cancel
+                          {tCommon('cancel')}
                         </Button>
                         <Button
                           variant="ghost"
@@ -1370,7 +1375,7 @@ export function EmailViewer({
                           className="text-muted-foreground"
                         >
                           <MoreVertical className="w-4 h-4 mr-1" />
-                          More options
+                          {t('more_options')}
                         </Button>
                         <Button
                           size="sm"
@@ -1393,12 +1398,12 @@ export function EmailViewer({
                           {isSendingQuickReply ? (
                             <>
                               <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                              Sending...
+                              {t('sending')}
                             </>
                           ) : (
                             <>
                               <Reply className="w-4 h-4 mr-1" />
-                              Send
+                              {t('send')}
                             </>
                           )}
                         </Button>
