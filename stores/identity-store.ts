@@ -2,6 +2,10 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Identity } from '@/lib/jmap/types';
 
+// Constants for sub-addressing limits
+const MAX_RECENT_TAGS = 10;
+const MAX_DOMAIN_SUGGESTIONS = 5;
+
 interface SubAddressState {
   recentTags: string[];
   tagSuggestions: Record<string, string[]>;
@@ -82,7 +86,7 @@ export const useIdentityStore = create<IdentityStore>()(
         return {
           subAddress: {
             ...state.subAddress,
-            recentTags: recent.slice(0, 10), // Keep last 10
+            recentTags: recent.slice(0, MAX_RECENT_TAGS),
           }
         };
       }),
@@ -91,7 +95,7 @@ export const useIdentityStore = create<IdentityStore>()(
         const suggestions = { ...state.subAddress.tagSuggestions };
         const existing = suggestions[domain] || [];
         if (!existing.includes(tag)) {
-          suggestions[domain] = [...existing, tag].slice(0, 5);
+          suggestions[domain] = [...existing, tag].slice(0, MAX_DOMAIN_SUGGESTIONS);
         }
         return {
           subAddress: {

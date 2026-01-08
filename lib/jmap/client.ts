@@ -966,7 +966,7 @@ export class JMAPClient {
       }
     }
 
-    throw new Error("Failed to create identity");
+    throw new Error("Failed to create identity: Server response was unexpected. Check server logs.");
   }
 
   async updateIdentity(
@@ -1006,7 +1006,7 @@ export class JMAPClient {
       return;
     }
 
-    throw new Error("Failed to update identity");
+    throw new Error("Failed to update identity: Server response was unexpected. Check server logs.");
   }
 
   async deleteIdentity(identityId: string): Promise<void> {
@@ -1035,7 +1035,7 @@ export class JMAPClient {
       return;
     }
 
-    throw new Error("Failed to delete identity");
+    throw new Error("Failed to delete identity: Server response was unexpected. Check server logs.");
   }
 
   async createDraft(

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Tag, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -35,13 +35,15 @@ export function SubAddressHelper({
 
   const { subAddress, addRecentTag, addTagSuggestion } = useIdentityStore();
 
-  // Get suggestions based on recipient
-  const suggestions = recipientEmails
-    .map(extractDomain)
-    .filter(Boolean)
-    .flatMap((domain) => suggestTagsForDomain(domain!))
-    .filter((tag, index, self) => self.indexOf(tag) === index)
-    .slice(0, 5);
+  // Get suggestions based on recipient (memoized for performance)
+  const suggestions = useMemo(() => {
+    return recipientEmails
+      .map(extractDomain)
+      .filter(Boolean)
+      .flatMap((domain) => suggestTagsForDomain(domain!))
+      .filter((tag, index, self) => self.indexOf(tag) === index)
+      .slice(0, 5);
+  }, [recipientEmails]);
 
   // Generate preview
   const preview = tag ? generateSubAddress(baseEmail, tag) : baseEmail;

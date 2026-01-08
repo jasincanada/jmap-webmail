@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { X, Mail, Pencil, Trash2, Plus, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -70,7 +70,7 @@ export function IdentityManagerModal({ isOpen, onClose }: IdentityManagerModalPr
     }
   }, [isOpen, onClose]);
 
-  const handleCreate = async (data: IdentityFormData) => {
+  const handleCreate = useCallback(async (data: IdentityFormData) => {
     if (!client) return;
 
     try {
@@ -91,9 +91,9 @@ export function IdentityManagerModal({ isOpen, onClose }: IdentityManagerModalPr
       toast.error(tNotif('identity_create_failed', { error: message }));
       throw error;
     }
-  };
+  }, [client, addIdentity, tNotif]);
 
-  const handleUpdate = async (identity: Identity, data: IdentityFormData) => {
+  const handleUpdate = useCallback(async (identity: Identity, data: IdentityFormData) => {
     if (!client) return;
 
     try {
@@ -113,9 +113,9 @@ export function IdentityManagerModal({ isOpen, onClose }: IdentityManagerModalPr
       toast.error(tNotif('identity_update_failed', { error: message }));
       throw error;
     }
-  };
+  }, [client, updateIdentityLocal, tNotif]);
 
-  const handleDelete = async (identity: Identity) => {
+  const handleDelete = useCallback(async (identity: Identity) => {
     if (!client) return;
     if (!identity.mayDelete) {
       toast.error(t('cannot_delete'));
@@ -138,7 +138,7 @@ export function IdentityManagerModal({ isOpen, onClose }: IdentityManagerModalPr
     } finally {
       setDeletingId(null);
     }
-  };
+  }, [client, removeIdentity, t, tNotif]);
 
   if (!isOpen) return null;
 

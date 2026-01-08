@@ -3,6 +3,10 @@
  * Works server-side automatically - no JMAP API calls needed
  */
 
+// Constants for tag validation
+const MAX_TAG_LENGTH = 30;
+const TAG_REGEX = /^[a-zA-Z0-9-]{1,30}$/;
+
 export interface ParsedAddress {
   localPart: string;
   baseUser: string;
@@ -130,8 +134,7 @@ export function suggestTagsForDomain(domain: string): string[] {
  * Validate if a tag is safe to use
  */
 export function isValidTag(tag: string): boolean {
-  // Must be alphanumeric and dash only, 1-30 characters
-  return /^[a-zA-Z0-9-]{1,30}$/.test(tag);
+  return TAG_REGEX.test(tag);
 }
 
 /**
@@ -142,8 +145,8 @@ export function getTagValidationError(tag: string): string | null {
     return 'Tag cannot be empty';
   }
 
-  if (tag.length > 30) {
-    return 'Tag must be 30 characters or less';
+  if (tag.length > MAX_TAG_LENGTH) {
+    return `Tag must be ${MAX_TAG_LENGTH} characters or less`;
   }
 
   if (!/^[a-zA-Z0-9-]+$/.test(tag)) {
