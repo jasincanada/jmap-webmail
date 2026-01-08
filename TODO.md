@@ -110,6 +110,7 @@
 - [x] Parse and display email header information
 - [x] Add dark mode toggle with proper theme persistence
 - [x] Add i18n (internationalization) support with English and French
+- [x] Fix next-intl timezone configuration with auto-detection for global users
 - [x] Redesign sidebar footer with improved UI/UX for settings
 - [x] Fix theme switching and light mode application
 - [x] Fix language switcher functionality

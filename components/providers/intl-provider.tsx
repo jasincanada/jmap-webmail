@@ -22,6 +22,19 @@ export function IntlProvider({ locale: initialLocale, children }: IntlProviderPr
   const currentLocale = useLocaleStore((state) => state.locale);
   const setLocale = useLocaleStore((state) => state.setLocale);
   const [activeLocale, setActiveLocale] = useState(currentLocale || initialLocale);
+  const [timeZone, setTimeZone] = useState<string>('UTC');
+
+  // Detect user's timezone on mount
+  useEffect(() => {
+    try {
+      const detectedTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      setTimeZone(detectedTimeZone);
+    } catch (error) {
+      // Fallback to UTC if detection fails
+      console.warn('Failed to detect timezone, using UTC:', error);
+      setTimeZone('UTC');
+    }
+  }, []);
 
   // Sync initial locale with store on first mount only
   useEffect(() => {
@@ -42,6 +55,7 @@ export function IntlProvider({ locale: initialLocale, children }: IntlProviderPr
     <NextIntlClientProvider
       locale={activeLocale}
       messages={ALL_MESSAGES[activeLocale as keyof typeof ALL_MESSAGES]}
+      timeZone={timeZone}
     >
       {children}
     </NextIntlClientProvider>
