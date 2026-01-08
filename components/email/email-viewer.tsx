@@ -17,6 +17,7 @@ import {
   MoreVertical,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
   Download,
   Paperclip,
   Mail,
@@ -48,6 +49,8 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSettingsStore } from "@/stores/settings-store";
+import { useUIStore } from "@/stores/ui-store";
+import { useDeviceDetection } from "@/hooks/use-media-query";
 
 interface EmailViewerProps {
   email: Email | null;
@@ -62,6 +65,7 @@ interface EmailViewerProps {
   onSetColorTag?: (emailId: string, color: string | null) => void;
   onDownloadAttachment?: (blobId: string, name: string, type?: string) => void;
   onQuickReply?: (body: string) => Promise<void>;
+  onBack?: () => void;
   currentUserEmail?: string;
   currentUserName?: string;
   className?: string;
@@ -127,6 +131,7 @@ export function EmailViewer({
   onSetColorTag,
   onDownloadAttachment,
   onQuickReply,
+  onBack,
   currentUserEmail,
   currentUserName,
   className,
@@ -136,6 +141,10 @@ export function EmailViewer({
   const externalContentPolicy = useSettingsStore((state) => state.externalContentPolicy);
   const addTrustedSender = useSettingsStore((state) => state.addTrustedSender);
   const isSenderTrusted = useSettingsStore((state) => state.isSenderTrusted);
+
+  // Tablet list visibility
+  const { isTablet } = useDeviceDetection();
+  const { tabletListVisible } = useUIStore();
   const [showFullHeaders, setShowFullHeaders] = useState(false);
   const [allowExternalContent, setAllowExternalContent] = useState(false);
   const [hasBlockedContent, setHasBlockedContent] = useState(false);
@@ -467,26 +476,26 @@ export function EmailViewer({
       <div className={cn("flex-1 flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-200", className)}>
         {/* Loading Header Skeleton - gentler animation */}
         <div className="bg-background border-b border-border">
-          <div className="px-4 md:px-6 py-3 md:py-4">
-            <div className="flex items-start justify-between gap-2 md:gap-4">
-              <div className="flex-1 min-w-0 space-y-2 md:space-y-3">
-                <div className="h-6 md:h-8 bg-muted/60 rounded-md w-3/4"></div>
-                <div className="flex items-center gap-2 md:gap-3">
-                  <div className="h-3 md:h-4 bg-muted/60 rounded w-24 md:w-32"></div>
-                  <div className="h-3 md:h-4 bg-muted/60 rounded w-16 md:w-24"></div>
+          <div className="px-4 lg:px-6 py-3 lg:py-4">
+            <div className="flex items-start justify-between gap-2 lg:gap-4">
+              <div className="flex-1 min-w-0 space-y-2 lg:space-y-3">
+                <div className="h-6 lg:h-8 bg-muted/60 rounded-md w-3/4"></div>
+                <div className="flex items-center gap-2 lg:gap-3">
+                  <div className="h-3 lg:h-4 bg-muted/60 rounded w-24 lg:w-32"></div>
+                  <div className="h-3 lg:h-4 bg-muted/60 rounded w-16 lg:w-24"></div>
                 </div>
               </div>
-              <div className="flex items-center gap-1 md:gap-2">
-                <div className="h-8 w-8 md:w-20 bg-muted/60 rounded"></div>
-                <div className="h-8 w-8 bg-muted/60 rounded hidden md:block"></div>
+              <div className="flex items-center gap-1 lg:gap-2">
+                <div className="h-8 w-8 lg:w-20 bg-muted/60 rounded"></div>
+                <div className="h-8 w-8 bg-muted/60 rounded hidden lg:block"></div>
               </div>
             </div>
           </div>
 
           {/* Loading Sender Info Skeleton */}
-          <div className="px-4 md:px-6 pb-3 md:pb-4">
-            <div className="flex items-start gap-3 md:gap-4">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-muted/60 rounded-full"></div>
+          <div className="px-4 lg:px-6 pb-3 lg:pb-4">
+            <div className="flex items-start gap-3 lg:gap-4">
+              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-muted/60 rounded-full"></div>
               <div className="flex-1 space-y-2">
                 <div className="h-4 bg-muted/60 rounded w-48"></div>
                 <div className="h-3 bg-muted/60 rounded w-64"></div>
@@ -543,18 +552,32 @@ export function EmailViewer({
           </div>
         </div>
       )}
-      {/* Modern Header Section */}
-      <div className="bg-background border-b border-border">
-        {/* Subject Bar */}
-        <div className="px-4 md:px-6 py-3 md:py-4">
-          <div className="flex items-start justify-between gap-2 md:gap-4">
+      {/* Subject Bar - sticky on mobile/tablet for quick actions */}
+      <div className={cn(
+        "bg-background border-b border-border",
+        "max-lg:sticky max-lg:top-0 max-lg:z-10"
+      )}>
+        <div className="px-4 lg:px-6 py-3 lg:py-4">
+          <div className="flex items-start justify-between gap-2 lg:gap-4">
+            {/* Tablet Back Button - show when list is hidden */}
+            {isTablet && !tabletListVisible && onBack && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onBack}
+                className="h-10 w-10 flex-shrink-0 -ml-2"
+                aria-label={t('back_to_list')}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+            )}
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg md:text-2xl font-bold text-foreground tracking-tight truncate pr-2">
+              <h1 className="text-lg lg:text-2xl font-bold text-foreground tracking-tight truncate pr-2">
                 {email.subject || "(no subject)"}
               </h1>
-              <div className="flex items-center gap-2 md:gap-3 mt-1.5 md:mt-2 text-xs md:text-sm text-muted-foreground flex-wrap md:flex-nowrap">
-                <span className="flex items-center gap-1 md:gap-1.5 whitespace-nowrap">
-                  <Clock className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <div className="flex items-center gap-2 lg:gap-3 mt-1.5 lg:mt-2 text-xs lg:text-sm text-muted-foreground flex-wrap lg:flex-nowrap">
+                <span className="flex items-center gap-1 lg:gap-1.5 whitespace-nowrap">
+                  <Clock className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                   {new Date(email.receivedAt).toLocaleString('en-US', {
                     weekday: 'short',
                     year: 'numeric',
@@ -565,14 +588,14 @@ export function EmailViewer({
                   })}
                 </span>
                 {email.hasAttachment && (
-                  <span className="flex items-center gap-1 md:gap-1.5 whitespace-nowrap">
-                    <Paperclip className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                    <span className="hidden md:inline">Attachments</span>
+                  <span className="flex items-center gap-1 lg:gap-1.5 whitespace-nowrap">
+                    <Paperclip className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+                    <span className="hidden lg:inline">{t('attachments')}</span>
                   </span>
                 )}
                 {isImportant && (
-                  <span className="px-1.5 md:px-2 py-0.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium whitespace-nowrap">
-                    Important
+                  <span className="px-1.5 lg:px-2 py-0.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium whitespace-nowrap">
+                    {t('important')}
                   </span>
                 )}
               </div>
@@ -582,7 +605,7 @@ export function EmailViewer({
             <div className="flex items-center gap-0.5 flex-shrink-0">
               {/* Loading indicator */}
               {isLoading && (
-                <div className="mr-2 flex items-center gap-1.5 text-muted-foreground hidden md:flex">
+                <div className="mr-2 flex items-center gap-1.5 text-muted-foreground hidden lg:flex">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-xs">Loading...</span>
                 </div>
@@ -591,15 +614,15 @@ export function EmailViewer({
               <Button
                 onClick={onReply}
                 size="sm"
-                className="mr-1 h-8 md:h-9"
+                className="mr-1 h-8 lg:h-9"
                 title="Reply"
               >
                 <Reply className="w-4 h-4" />
-                <span className="ml-1.5 hidden md:inline">Reply</span>
+                <span className="ml-1.5 hidden lg:inline">Reply</span>
               </Button>
 
-              {/* Reply Options Dropdown - hidden on mobile */}
-              <div className="relative group mr-3 hidden md:block">
+              {/* Reply Options Dropdown - hidden on mobile/tablet */}
+              <div className="relative group mr-3 hidden lg:block">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -626,13 +649,13 @@ export function EmailViewer({
                 </div>
               </div>
 
-              <div className="w-px h-5 bg-border hidden md:block" />
+              <div className="w-px h-5 bg-border hidden lg:block" />
 
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={onArchive}
-                className="h-8 w-8 hover:bg-muted hidden md:flex"
+                className="h-8 w-8 hover:bg-muted hidden lg:flex"
                 title="Archive"
               >
                 <Archive className="w-4 h-4 text-muted-foreground" />
@@ -650,7 +673,7 @@ export function EmailViewer({
                 variant="ghost"
                 size="icon"
                 onClick={onToggleStar}
-                className="h-8 w-8 hover:bg-muted hidden md:flex"
+                className="h-8 w-8 hover:bg-muted hidden lg:flex"
                 title={isStarred ? "Unstar" : "Star"}
               >
                 <Star className={cn(
@@ -659,10 +682,10 @@ export function EmailViewer({
                 )} />
               </Button>
 
-              <div className="w-px h-5 bg-border mx-1 hidden md:block" />
+              <div className="w-px h-5 bg-border mx-1 hidden lg:block" />
 
-              {/* Compact Dynamic Color Picker - hidden on mobile */}
-              <div className="relative group hidden md:block">
+              {/* Compact Dynamic Color Picker - hidden on mobile/tablet */}
+              <div className="relative group hidden lg:block">
                 <button
                   className="h-8 w-8 rounded hover:bg-muted flex items-center justify-center"
                   title="Set color"
@@ -749,15 +772,16 @@ export function EmailViewer({
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Sender Info */}
-        <div className="px-4 md:px-6 pb-3 md:pb-4">
-          <div className="flex items-start gap-3 md:gap-4">
+      {/* Sender Info - Desktop only (hidden on mobile/tablet, they see it in scrollable content) */}
+      <div className="hidden lg:block bg-background border-b border-border px-6 py-4">
+          <div className="flex items-start gap-4">
             <Avatar
               name={sender?.name}
               email={sender?.email}
               size="lg"
-              className="shadow-sm w-10 h-10 md:w-12 md:h-12"
+              className="shadow-sm w-12 h-12"
             />
 
             <div className="flex-1 min-w-0">
@@ -815,7 +839,7 @@ export function EmailViewer({
                       <div className="bg-background p-4 space-y-3">
                         {/* Authentication Results */}
                         {email.authenticationResults && (
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                             {/* SPF Check */}
                             {email.authenticationResults.spf && (
                               <div className={cn(
@@ -1096,12 +1120,54 @@ export function EmailViewer({
               </button>
             </div>
           </div>
-
-        </div>
       </div>
 
       {/* Email Content Area */}
       <div className="flex-1 overflow-auto bg-muted/30">
+        {/* Mobile/Tablet Sender Info - scrolls with content */}
+        <div className="lg:hidden bg-background border-b border-border px-4 py-3">
+          <div className="flex items-start gap-3">
+            <Avatar
+              name={sender?.name}
+              email={sender?.email}
+              size="lg"
+              className="shadow-sm w-10 h-10"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-foreground">
+                  {sender?.name || sender?.email || "Unknown"}
+                </span>
+                {sender?.email && sender?.name && (
+                  <span className="text-sm text-muted-foreground">
+                    &lt;{sender.email}&gt;
+                  </span>
+                )}
+              </div>
+              <div className="mt-1 space-y-0.5">
+                {email.to && email.to.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1 text-sm">
+                    <span className="text-muted-foreground">To:</span>
+                    <span className="text-foreground truncate">
+                      {email.to.slice(0, 2).map(r => r.name || r.email).join(", ")}
+                      {email.to.length > 2 && ` +${email.to.length - 2}`}
+                    </span>
+                  </div>
+                )}
+                {email.cc && email.cc.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1 text-sm">
+                    <span className="text-muted-foreground">CC:</span>
+                    <span className="text-foreground truncate">
+                      {email.cc.slice(0, 2).map(r => r.name || r.email).join(", ")}
+                      {email.cc.length > 2 && ` +${email.cc.length - 2}`}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* External Content Banner - show in 'ask' or 'block' mode */}
         {hasBlockedContent && !allowExternalContent && externalContentPolicy !== 'allow' && (
           <div className="border-b border-border">

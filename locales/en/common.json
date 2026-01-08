@@ -21,6 +21,7 @@
     "remove_from_history": "Remove from history"
   },
   "sidebar": {
+    "close": "Close",
     "compose": "Compose",
     "search_placeholder": "Search mail...",
     "storage": "Storage",
@@ -78,6 +79,7 @@
     "copy_source": "Copy to clipboard",
     "source_copied": "Source copied to clipboard",
     "attachments": "Attachments",
+    "important": "Important",
     "download": "Download",
     "from": "From",
     "to": "To",
@@ -90,6 +92,7 @@
     "external_content_warning": "Images and external content have been blocked",
     "load_external_content": "Load images",
     "trust_sender": "Always trust this sender",
+    "back_to_list": "Back to list",
     "message_details": "Message Details",
     "authentication": {
       "title": "Authentication",

@@ -37,6 +37,7 @@ interface SidebarProps {
   onMailboxSelect?: (mailboxId: string) => void;
   onCompose?: () => void;
   onLogout?: () => void;
+  onSidebarClose?: () => void;
   onSearch?: (query: string) => void;
   onClearSearch?: () => void;
   activeSearchQuery?: string;
@@ -111,12 +112,11 @@ function MailboxTreeItem({
       <div
         {...(globalDragging ? dropHandlers : {})}
         className={cn(
-          "group w-full flex items-center px-2 py-1 text-sm transition-all duration-200",
+          "group w-full flex items-center px-2 py-1 lg:py-1 max-lg:py-3 max-lg:min-h-[44px] text-sm transition-all duration-200",
           selectedMailbox === node.id
             ? "bg-accent text-accent-foreground"
             : "hover:bg-muted text-foreground",
-          node.depth === 0 && "font-medium", // Root folders are slightly bolder
-          // Drop target visual feedback
+          node.depth === 0 && "font-medium",
           isValidDropTarget && "bg-primary/20 ring-2 ring-primary ring-inset",
           isInvalidDropTarget && "bg-destructive/10 ring-2 ring-destructive/30 ring-inset opacity-50"
         )}
@@ -148,7 +148,7 @@ function MailboxTreeItem({
           onClick={() => !isVirtualNode && onMailboxSelect?.(node.id)}
           disabled={isVirtualNode}
           className={cn(
-            "flex-1 flex items-center text-left py-1 px-1 rounded",
+            "flex-1 flex items-center text-left py-1 lg:py-1 max-lg:py-2 px-1 rounded",
             "transition-colors duration-150",
             isVirtualNode && "cursor-default"
           )}
@@ -208,6 +208,7 @@ export function Sidebar({
   onMailboxSelect,
   onCompose,
   onLogout,
+  onSidebarClose,
   onSearch,
   onClearSearch,
   activeSearchQuery = "",
@@ -313,21 +314,36 @@ export function Sidebar({
       className={cn(
         "relative flex flex-col h-full border-r transition-all duration-300 overflow-hidden",
         "bg-secondary border-border",
-        isCollapsed ? "w-16" : "w-64",
+        "max-lg:w-full",
+        isCollapsed ? "lg:w-16" : "lg:w-64",
         className
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+        {/* Mobile/Tablet: Close button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onSidebarClose}
+          className="lg:hidden h-11 w-11 flex-shrink-0"
+          aria-label={t("close")}
+        >
+          <X className="w-5 h-5" />
+        </Button>
+
+        {/* Desktop: Collapse toggle */}
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setIsCollapsed(!isCollapsed)}
+          className="hidden lg:flex"
         >
           <Menu className="w-5 h-5" />
         </Button>
+
         {!isCollapsed && (
-          <Button onClick={onCompose} className="ml-2 flex-1">
+          <Button onClick={onCompose} className="flex-1">
             <PenSquare className="w-4 h-4 mr-2" />
             {t("compose")}
           </Button>
