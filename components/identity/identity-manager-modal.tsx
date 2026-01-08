@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { X, Mail, Pencil, Trash2, Plus, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -10,6 +10,7 @@ import { useIdentityStore } from '@/stores/identity-store';
 import { useAuthStore } from '@/stores/auth-store';
 import type { Identity, EmailAddress } from '@/lib/jmap/types';
 import { toast } from '@/stores/toast-store';
+import { useFocusTrap } from '@/hooks/use-focus-trap';
 
 interface IdentityFormData {
   name: string;
@@ -28,7 +29,6 @@ interface IdentityManagerModalProps {
 export function IdentityManagerModal({ isOpen, onClose }: IdentityManagerModalProps) {
   const t = useTranslations('identities');
   const tNotif = useTranslations('notifications');
-  const modalRef = useRef<HTMLDivElement>(null);
 
   const client = useAuthStore((state) => state.client);
   const { identities, addIdentity, updateIdentityLocal, removeIdentity } = useIdentityStore();
@@ -37,24 +37,19 @@ export function IdentityManagerModal({ isOpen, onClose }: IdentityManagerModalPr
   const [isCreating, setIsCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Close on Escape
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (isCreating || editingId) {
-          setIsCreating(false);
-          setEditingId(null);
-        } else {
-          onClose();
-        }
+  // Focus trap with Escape handling
+  const modalRef = useFocusTrap({
+    isActive: isOpen,
+    onEscape: () => {
+      if (isCreating || editingId) {
+        setIsCreating(false);
+        setEditingId(null);
+      } else {
+        onClose();
       }
-    };
-
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [isOpen, isCreating, editingId, onClose]);
+    },
+    restoreFocus: true,
+  });
 
   // Close on click outside
   useEffect(() => {
@@ -68,7 +63,7 @@ export function IdentityManagerModal({ isOpen, onClose }: IdentityManagerModalPr
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, modalRef]);
 
   const handleCreate = useCallback(async (data: IdentityFormData) => {
     if (!client) return;
@@ -146,6 +141,9 @@ export function IdentityManagerModal({ isOpen, onClose }: IdentityManagerModalPr
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
       <div
         ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="identity-modal-title"
         className={cn(
           'bg-background border border-border rounded-lg shadow-xl',
           'w-full max-w-3xl max-h-[90vh] overflow-hidden',
@@ -156,7 +154,7 @@ export function IdentityManagerModal({ isOpen, onClose }: IdentityManagerModalPr
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-3">
             <Mail className="w-5 h-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold text-foreground">
+            <h2 id="identity-modal-title" className="text-lg font-semibold text-foreground">
               {t('modal_title')}
             </h2>
           </div>

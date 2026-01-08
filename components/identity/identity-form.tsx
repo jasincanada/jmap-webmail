@@ -126,9 +126,19 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
           placeholder={t('name_placeholder')}
           disabled={isSubmitting}
           className={errors.name ? 'border-destructive' : ''}
+          aria-describedby={errors.name ? 'name-error' : undefined}
+          aria-invalid={!!errors.name}
         />
         {errors.name && (
-          <p className="text-sm text-destructive mt-1">{errors.name}</p>
+          <p
+            id="name-error"
+            className="text-sm text-destructive mt-1"
+            role="alert"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {errors.name}
+          </p>
         )}
       </div>
 
@@ -146,6 +156,8 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
           placeholder={t('email_placeholder')}
           disabled={isSubmitting || isEditing}
           className={errors.email ? 'border-destructive' : ''}
+          aria-describedby={errors.email ? 'email-error' : undefined}
+          aria-invalid={!!errors.email}
         />
         {isEditing && (
           <p className="text-sm text-muted-foreground mt-1">
@@ -153,7 +165,15 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
           </p>
         )}
         {errors.email && (
-          <p className="text-sm text-destructive mt-1">{errors.email}</p>
+          <p
+            id="email-error"
+            className="text-sm text-destructive mt-1"
+            role="alert"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {errors.email}
+          </p>
         )}
       </div>
 
@@ -171,9 +191,19 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
           placeholder={t('reply_to_placeholder')}
           disabled={isSubmitting}
           className={errors.replyTo ? 'border-destructive' : ''}
+          aria-describedby={errors.replyTo ? 'reply-to-error' : undefined}
+          aria-invalid={!!errors.replyTo}
         />
         {errors.replyTo && (
-          <p className="text-sm text-destructive mt-1">{errors.replyTo}</p>
+          <p
+            id="reply-to-error"
+            className="text-sm text-destructive mt-1"
+            role="alert"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {errors.replyTo}
+          </p>
         )}
       </div>
 
@@ -191,9 +221,19 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
           placeholder={t('bcc_placeholder')}
           disabled={isSubmitting}
           className={errors.bcc ? 'border-destructive' : ''}
+          aria-describedby={errors.bcc ? 'bcc-error' : undefined}
+          aria-invalid={!!errors.bcc}
         />
         {errors.bcc && (
-          <p className="text-sm text-destructive mt-1">{errors.bcc}</p>
+          <p
+            id="bcc-error"
+            className="text-sm text-destructive mt-1"
+            role="alert"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {errors.bcc}
+          </p>
         )}
       </div>
 
@@ -209,6 +249,7 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
           onChange={(e) => setFormData({ ...formData, textSignature: e.target.value })}
           rows={3}
           disabled={isSubmitting}
+          aria-label={t('text_signature_label')}
           className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground transition-all duration-200 placeholder:text-muted-foreground hover:border-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
@@ -225,6 +266,7 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
           onChange={(e) => setFormData({ ...formData, htmlSignature: e.target.value })}
           rows={5}
           disabled={isSubmitting}
+          aria-label={t('html_signature_label')}
           className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground font-mono transition-all duration-200 placeholder:text-muted-foreground hover:border-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50"
         />
         {formData.htmlSignature && (
