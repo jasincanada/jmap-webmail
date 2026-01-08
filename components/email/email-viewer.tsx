@@ -515,13 +515,13 @@ export function EmailViewer({
         .replace(/\n/g, '<br>');
 
       return {
-        html: `<div style="color: #666; font-style: italic;">${previewHtml}</div>`,
+        html: `<div style="color: var(--color-muted-foreground); font-style: italic;">${previewHtml}</div>`,
         isHtml: false
       };
     }
 
     return {
-      html: '<p style="color: #999;">No content available</p>',
+      html: '<p style="color: var(--color-muted-foreground);">No content available</p>',
       isHtml: false
     };
   }, [email, allowExternalContent, hasBlockedContent, externalContentPolicy, isSenderTrusted]);
