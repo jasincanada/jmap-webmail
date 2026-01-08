@@ -810,7 +810,7 @@ export default function Home() {
         {showComposer && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 md:p-0">
             <div className={cn(
-              "w-full h-full md:h-auto md:max-w-3xl md:max-h-[600px]",
+              "w-full h-full md:h-[600px] md:max-w-3xl",
               "max-md:flex max-md:flex-col"
             )}>
               <ErrorBoundary

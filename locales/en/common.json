@@ -139,7 +139,8 @@
     "body_placeholder": "Write your message...",
     "send": "Send",
     "cancel": "Cancel",
-    "attach": "Attach files",
+    "attach": "Attach",
+    "discard": "Discard",
     "discard_draft_confirm": "You have unsaved changes. Do you want to discard this draft?",
     "quote": {
       "reply_header": "On {{date}}, {{sender}} wrote:",

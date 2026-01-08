@@ -301,7 +301,7 @@ export function EmailComposer({
     <div className={cn("flex flex-col h-full bg-background border rounded-lg", className)}>
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold">New Message</h3>
+          <h3 className="font-semibold">{t('new_message')}</h3>
           {saveStatus === 'saving' && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Save className="w-3 h-3 animate-pulse" />
@@ -395,9 +395,9 @@ export function EmailComposer({
           </div>
         </div>
 
-        <div className="flex-1 px-4 py-3">
+        <div className="flex-1 px-4 py-3 min-h-0">
           <textarea
-            className="w-full h-full resize-none outline-none text-sm"
+            className="w-full h-full resize-none outline-none text-sm bg-transparent text-foreground placeholder:text-muted-foreground"
             placeholder="Compose email..."
             value={body}
             onChange={(e) => setBody(e.target.value)}
@@ -413,7 +413,7 @@ export function EmailComposer({
                   key={index}
                   className={cn(
                     "flex items-center gap-2 px-3 py-1 rounded-md text-sm",
-                    att.error ? "bg-red-50 text-red-700" : "bg-gray-100 text-gray-700"
+                    att.error ? "bg-red-500/10 text-red-600 dark:text-red-400" : "bg-muted text-foreground"
                   )}
                 >
                   {att.uploading ? (
@@ -424,12 +424,12 @@ export function EmailComposer({
                     <Paperclip className="w-3 h-3" />
                   )}
                   <span className="max-w-[200px] truncate">{att.file.name}</span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-muted-foreground">
                     ({(att.file.size / 1024).toFixed(1)} KB)
                   </span>
                   <button
                     onClick={() => removeAttachment(index)}
-                    className="ml-1 hover:text-red-600"
+                    className="ml-1 hover:text-red-500"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -440,7 +440,17 @@ export function EmailComposer({
         )}
 
         <div className="flex items-center justify-between px-4 py-3 border-t">
-          <div>
+          {/* Left side - Discard button */}
+          <button
+            type="button"
+            onClick={handleClose}
+            className="text-sm text-muted-foreground hover:text-red-500 transition-colors"
+          >
+            {t('discard')}
+          </button>
+
+          {/* Right side - Attach and Send */}
+          <div className="flex items-center gap-2">
             <input
               ref={fileInputRef}
               type="file"
@@ -455,13 +465,13 @@ export function EmailComposer({
               onClick={() => fileInputRef.current?.click()}
             >
               <Paperclip className="w-4 h-4 mr-2" />
-              Attach
+              {t('attach')}
+            </Button>
+            <Button onClick={handleSend}>
+              <Send className="w-4 h-4 mr-2" />
+              {t('send')}
             </Button>
           </div>
-          <Button onClick={handleSend}>
-            <Send className="w-4 h-4 mr-2" />
-            Send
-          </Button>
         </div>
       </div>
     </div>

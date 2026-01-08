@@ -139,7 +139,8 @@
     "body_placeholder": "Écrivez votre message...",
     "send": "Envoyer",
     "cancel": "Annuler",
-    "attach": "Joindre des fichiers",
+    "attach": "Joindre",
+    "discard": "Supprimer",
     "discard_draft_confirm": "Vous avez des modifications non enregistrées. Voulez-vous supprimer ce brouillon ?",
     "quote": {
       "reply_header": "Le {{date}}, {{sender}} a écrit :",
