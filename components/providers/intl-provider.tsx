@@ -5,11 +5,13 @@ import { NextIntlClientProvider } from 'next-intl';
 import { useLocaleStore } from '@/stores/locale-store';
 import enMessages from '@/locales/en/common.json';
 import frMessages from '@/locales/fr/common.json';
+import jaMessages from '@/locales/ja/common.json';
 
 // Pre-loaded translations (loaded at build time, not runtime)
 const ALL_MESSAGES = {
   en: enMessages,
   fr: frMessages,
+  ja: jaMessages,
 };
 
 interface IntlProviderProps {

@@ -111,7 +111,7 @@
 - [x] Create organized sections for technical email details
 - [x] Parse and display email header information
 - [x] Add dark mode toggle with proper theme persistence
-- [x] Add i18n (internationalization) support with English and French
+- [x] Add i18n (internationalization) support with English, French, and Japanese
 - [x] Fix next-intl timezone configuration with auto-detection for global users
 - [x] Redesign sidebar footer with improved UI/UX for settings
 - [x] Fix theme switching and light mode application
@@ -143,7 +143,7 @@
 - [x] Build Identity Form component (name, email, signatures)
 - [x] Create Identity Settings panel
 - [x] Add Identities tab to Settings page
-- [x] Add i18n keys for identity management (EN + FR)
+- [x] Add i18n keys for identity management (EN + FR + JA)
 - [x] Build Sub-Address Helper component (tag input, suggestions, preview)
 - [x] Build Email Identity Badge component (viewer + list display)
 - [x] Integrate identity selector into email composer

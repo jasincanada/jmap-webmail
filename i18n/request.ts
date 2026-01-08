@@ -9,8 +9,9 @@ export default getRequestConfig(async ({ requestLocale }) => {
   }
 
   // Use static imports for better compatibility
-  const messages = locale === 'fr'
-    ? (await import('../locales/fr/common.json')).default
+  const messages =
+    locale === 'fr' ? (await import('../locales/fr/common.json')).default
+    : locale === 'ja' ? (await import('../locales/ja/common.json')).default
     : (await import('../locales/en/common.json')).default;
 
   return {

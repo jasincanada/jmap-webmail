@@ -83,6 +83,7 @@ This document tracks the development status and planned features for JMAP Webmai
 ### Internationalization
 - [x] English language support
 - [x] French language support
+- [x] Japanese language support
 - [x] Automatic browser language detection
 - [x] Language preference persistence
 - [x] Timezone auto-detection

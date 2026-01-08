@@ -325,9 +325,11 @@
     "title": "Langue",
     "english": "English",
     "french": "Français",
+    "japanese": "日本語",
     "select_language": "Sélectionner la langue",
     "switch_to_english": "Passer à l'anglais",
     "switch_to_french": "Passer au français",
+    "switch_to_japanese": "Passer au japonais",
     "switching": "Changement de langue..."
   },
   "settings": {

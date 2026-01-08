@@ -19,7 +19,8 @@ export function LanguageSwitcher({ className }: { className?: string }) {
 
   const languages = [
     { value: 'en', label: 'English' },
-    { value: 'fr', label: 'Français' }
+    { value: 'fr', label: 'Français' },
+    { value: 'ja', label: '日本語' }
   ];
 
   return (
@@ -34,7 +35,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
           type="button"
           role="radio"
           aria-checked={currentLocale === lang.value}
-          aria-label={t(lang.value === 'en' ? 'switch_to_english' : 'switch_to_french')}
+          aria-label={t(lang.value === 'en' ? 'switch_to_english' : lang.value === 'fr' ? 'switch_to_french' : 'switch_to_japanese')}
           onClick={() => handleLanguageChange(lang.value)}
           className={cn(
             "px-3 py-1.5 text-xs rounded transition-colors",

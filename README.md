@@ -46,7 +46,7 @@ A modern, privacy-focused webmail client built with Next.js and the JMAP protoco
 - **Drag & Drop** - Move emails between folders with native HTML5 DnD
 - **Color Tags** - Organize emails with color labels
 - **Dark Mode** - Full dark theme with intelligent email color transformation for readability
-- **i18n** - English and French language support with auto-detection
+- **i18n** - English, French, and Japanese language support with auto-detection
 - **Mobile Responsive** - Adaptive single/multi-pane layout for all screen sizes
 
 ## Tech Stack
