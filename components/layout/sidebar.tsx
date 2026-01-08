@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -226,7 +226,6 @@ export function Sidebar({
   useEffect(() => {
     setSearchQuery(activeSearchQuery);
   }, [activeSearchQuery]);
-  const params = useParams();
   const router = useRouter();
 
   // Load expanded folders from localStorage on mount
@@ -437,7 +436,7 @@ export function Sidebar({
                 <div className="border-t border-border mt-2 pt-2">
                   {/* Settings */}
                   <button
-                    onClick={() => router.push(`/${params.locale}/settings`)}
+                    onClick={() => router.push('/settings')}
                     className="w-full px-4 py-2 flex items-center justify-between hover:bg-muted transition-colors text-sm"
                   >
                     <span className="flex items-center gap-2">

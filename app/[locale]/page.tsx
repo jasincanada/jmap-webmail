@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useMemo } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { Sidebar } from "@/components/layout/sidebar";
 import { EmailList } from "@/components/email/email-list";
@@ -30,7 +30,6 @@ import { DragDropProvider } from "@/contexts/drag-drop-context";
 
 export default function Home() {
   const router = useRouter();
-  const params = useParams();
   const t = useTranslations();
   const [showComposer, setShowComposer] = useState(false);
   const [composerMode, setComposerMode] = useState<'compose' | 'reply' | 'replyAll' | 'forward'>('compose');
@@ -235,9 +234,9 @@ export default function Home() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (initialCheckDone && !isAuthenticated && !authLoading) {
-      router.push(`/${params.locale}/login`);
+      router.push('/login');
     }
-  }, [initialCheckDone, isAuthenticated, authLoading, router, params.locale]);
+  }, [initialCheckDone, isAuthenticated, authLoading, router]);
 
   // Load mailboxes and emails when authenticated (only if not already loaded)
   useEffect(() => {
@@ -504,7 +503,7 @@ export default function Home() {
 
   const handleLogout = () => {
     logout();
-    router.push(`/${params.locale}/login`);
+    router.push('/login');
   };
 
   const handleSearch = async (query: string) => {

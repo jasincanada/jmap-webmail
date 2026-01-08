@@ -35,6 +35,9 @@
       "dark": "Mode sombre",
       "system": "Thème système"
     },
+    "language": {
+      "title": "Langue"
+    },
     "mailboxes": {
       "inbox": "Boîte de réception",
       "sent": "Envoyés",
@@ -216,7 +219,11 @@
   "language": {
     "title": "Langue",
     "english": "English",
-    "french": "Français"
+    "french": "Français",
+    "select_language": "Sélectionner la langue",
+    "switch_to_english": "Passer à l'anglais",
+    "switch_to_french": "Passer au français",
+    "switching": "Changement de langue..."
   },
   "settings": {
     "title": "Paramètres",
@@ -243,6 +250,10 @@
         "light": "Clair",
         "dark": "Sombre",
         "system": "Système"
+      },
+      "language": {
+        "label": "Langue",
+        "description": "Choisissez votre langue préférée"
       },
       "font_size": {
         "label": "Taille de police",
