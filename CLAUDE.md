@@ -77,10 +77,12 @@ This script will:
 
 After the script runs:
 
-1. **Update public documentation** (if needed):
+1. **Update public documentation** (MANDATORY):
    - `README.md` - Update features list, screenshots, version info for new functionality
-   - `ROADMAP.md` - Move completed items, add new planned features
+   - **`ROADMAP.md`** - ⚠️ **CRITICAL: ALWAYS update this file!** Move completed items, add new planned features
    - Review what changed in master and reflect user-facing changes in public docs
+
+   **NOTE**: ROADMAP.md update is NON-NEGOTIABLE - it must be updated every release to keep the public repository in sync with development progress.
 
 2. **Commit and push**:
 ```bash

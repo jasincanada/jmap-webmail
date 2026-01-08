@@ -52,7 +52,13 @@
     "expand": "Expand",
     "collapse": "Collapse",
     "expand_tooltip": "Expand",
-    "collapse_tooltip": "Collapse"
+    "collapse_tooltip": "Collapse",
+    "mobile": {
+      "search": "Search",
+      "compose": "Compose",
+      "go_back": "Go back"
+    },
+    "clear_search": "Clear search"
   },
   "email_list": {
     "no_emails": "No emails",
@@ -63,7 +69,19 @@
     "to_recipients": "To {{count}} recipients",
     "and_others": "and {{count}} others",
     "draft": "Draft",
-    "starred": "Starred"
+    "starred": "Starred",
+    "conversations_count": "{count} of {total} conversations",
+    "conversations_count_plus": "{count}+ conversations",
+    "conversations_count_simple": "{count} conversations",
+    "no_conversations": "No conversations",
+    "loading_more": "Loading more emails...",
+    "no_more_emails": "No more emails to load",
+    "batch_actions": {
+      "mark_read": "Mark as read",
+      "mark_unread": "Mark as unread",
+      "delete": "Delete",
+      "clear_selection": "Clear selection"
+    }
   },
   "email_viewer": {
     "no_email_selected": "No email selected",
@@ -129,6 +147,9 @@
       "minutes": "minutes"
     },
     "unknown_sender": "Unknown",
+    "recipient_me": "me",
+    "recipient_and_others": "{name} and {count} others",
+    "recipient_to_prefix": "To:",
     "authentication": {
       "title": "Authentication",
       "status": {
@@ -167,7 +188,13 @@
       "green": "Green",
       "blue": "Blue",
       "purple": "Purple",
+      "pink": "Pink",
       "none": "None"
+    },
+    "tooltips": {
+      "reply": "Reply",
+      "archive": "Archive",
+      "delete": "Delete"
     }
   },
   "email_composer": {
@@ -200,6 +227,12 @@
     "bcc_label": "Bcc:",
     "subject_label": "Subject:",
     "file_size_kb": "KB",
+    "prefix": {
+      "forward": "Fwd:",
+      "reply": "Re:"
+    },
+    "no_subject": "(No Subject)",
+    "unknown_sender": "Unknown",
     "quote": {
       "reply_header": "On {{date}}, {{sender}} wrote:",
       "forward_header": "---------- Forwarded message ----------",
@@ -207,7 +240,8 @@
       "date": "Date: {{date}}",
       "subject": "Subject: {{subject}}",
       "to": "To: {{recipients}}"
-    }
+    },
+    "remove_sub_address": "Remove sub-address"
   },
   "common": {
     "loading": "Loading...",
@@ -243,7 +277,12 @@
     "error_loading": "Failed to load emails",
     "new_email": "New email",
     "new_email_from": "From {sender}",
-    "click_to_view": "Click to view"
+    "click_to_view": "Click to view",
+    "email_moved": "Email moved",
+    "emails_moved": "{count} emails moved",
+    "moved_to_mailbox": "Moved to {mailbox}",
+    "move_failed": "Move failed",
+    "move_error": "Could not move emails to the selected folder"
   },
   "date": {
     "today": "Today",
@@ -603,6 +642,17 @@
     "delete_confirm": "Delete this identity? This cannot be undone.",
     "cannot_delete": "This identity cannot be deleted",
     "primary_identity": "Primary",
+    "no_identities": "No identities found",
+    "display": {
+      "reply_to": "Reply-To:",
+      "bcc": "BCC:",
+      "signature": "Signature:",
+      "preview": "Preview:"
+    },
+    "validation_errors": {
+      "invalid_emails": "Invalid emails: {emails}",
+      "unknown_error": "Unknown error"
+    },
     "form": {
       "name_label": "Display Name",
       "name_placeholder": "e.g., Work Email, Personal",
@@ -633,12 +683,19 @@
       "use_address": "Use This Address",
       "invalid_tag": "Tag must be alphanumeric and dashes only",
       "tag_too_long": "Tag must be 30 characters or less",
-      "help_text": "Emails sent to user+tag@domain.com will arrive in your inbox"
+      "help_text": "Emails sent to user+tag@domain.com will arrive in your inbox",
+      "validation": {
+        "empty": "Tag cannot be empty",
+        "too_long": "Tag must be {max} characters or less",
+        "invalid_chars": "Tag must contain only letters, numbers, and dashes"
+      }
     },
     "badge": {
-      "sent_via": "via {{email}}",
-      "sub_address_tag": "Sent using sub-address: {{tag}}",
-      "identity_name": "Sent using identity: {{name}}"
+      "sent_via": "via",
+      "sub_address_tag": "Sent using sub-address: {tag}",
+      "identity_name": "Sent using identity: {name}",
+      "identity_short": "via {name}",
+      "subaddress_tag": "+{tag}"
     }
   },
   "notifications": {

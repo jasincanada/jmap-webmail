@@ -237,7 +237,7 @@
 - [x] Fixed email store not cleared on logout (proper state reset)
 - [x] Fixed search results limited to 50 (added pagination support to searchEmails)
 
-## 📊 Code Audit Summary (Last verified: 2025-12-10)
+## 📊 Code Audit Summary (Last verified: 2026-01-08)
 
 ### Settings Integration Status
 All settings are now properly wired to their functionality:
@@ -297,11 +297,31 @@ All settings are now properly wired to their functionality:
   - Reply/Reply All/Forward buttons on expanded cards
   - Back navigation returns to email list
 
+### Identity Management & Sub-Addressing (2026-01-08)
+- **Identity Management**: Full CRUD operations for multiple email identities
+  - Files: stores/identity-store.ts, lib/jmap/client.ts (Identity/get, Identity/set)
+  - Components: components/identity/identity-manager-modal.tsx, components/identity/identity-form.tsx
+  - UI Integration: components/settings/identity-settings.tsx
+- **Sub-Addressing**: Generate tagged email addresses (user+tag@domain.com)
+  - Files: lib/sub-addressing.ts (parse, generate, suggest utilities)
+  - Component: components/identity/sub-address-helper.tsx
+  - Features: Tag suggestions based on mailbox/subject, email preview, validation
+- **Email Composer Integration**:
+  - Identity selector dropdown with signatures
+  - Sub-address generation with real-time preview
+  - Automatic From field population
+- **Visual Indicators**:
+  - components/email/email-identity-badge.tsx - Shows identity + sub-address tags
+  - Displayed in email viewer (recipient chips) and email list (compact badges)
+- **i18n Support**: Full EN/FR translations in locales/*/common.json (identity.*, sub_address.*)
+- **Security**: Input validation, XSS prevention in signatures (DOMPurify), sub-address format validation
+
 ### Feature Completeness
 - **Authentication**: ✅ Complete (secure design, no password storage)
 - **Email Operations**: ✅ Complete (including threading)
 - **Real-time Updates**: ✅ Complete (EventSource push, toast notifications, status indicator)
 - **UI Enhancements**: ✅ Settings fully integrated, drag-drop, context menus, mobile responsive, keyboard shortcuts
+- **Identity Management**: ✅ Complete (CRUD, sub-addressing, signatures, visual badges)
 - **Contacts/Address Book**: ❌ Not started
 - **Security**: ⚠️ Client-side done, server headers needed
 

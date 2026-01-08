@@ -1044,9 +1044,10 @@ export class JMAPClient {
     body: string,
     cc?: string[],
     bcc?: string[],
+    identityId?: string,
+    fromEmail?: string,
     draftId?: string,
-    attachments?: Array<{ blobId: string; name: string; type: string; size: number }>,
-    fromEmail?: string
+    attachments?: Array<{ blobId: string; name: string; type: string; size: number }>
   ): Promise<string> {
     // Find the drafts mailbox
     const mailboxes = await this.getMailboxes();
@@ -1131,8 +1132,6 @@ export class JMAPClient {
 
     const response = await this.request(methodCalls);
 
-    console.log('Draft save response:', JSON.stringify(response, null, 2));
-
     // If we're updating (destroy + create), check the second response
     // Otherwise check the first response
     const responseIndex = draftId ? 1 : 0;
@@ -1149,7 +1148,6 @@ export class JMAPClient {
       }
 
       if (result.created?.[emailId]) {
-        console.log('Draft created successfully:', result.created[emailId].id);
         return result.created[emailId].id;
       }
     }
@@ -1164,9 +1162,9 @@ export class JMAPClient {
     body: string,
     cc?: string[],
     bcc?: string[],
-    draftId?: string,
+    identityId?: string,
     fromEmail?: string,
-    selectedIdentityId?: string
+    draftId?: string
   ): Promise<void> {
     const emailId = draftId || `draft-${Date.now()}`;
 
@@ -1179,16 +1177,16 @@ export class JMAPClient {
     }
 
     // Use provided identity ID or fetch from server as fallback
-    let identityId = selectedIdentityId;
+    let finalIdentityId = identityId;
 
-    if (!identityId) {
+    if (!finalIdentityId) {
       const identityResponse = await this.request([
         ["Identity/get", {
           accountId: this.accountId,
         }, "0"]
       ]);
 
-      identityId = this.accountId; // fallback
+      finalIdentityId = this.accountId; // fallback
 
       if (identityResponse.methodResponses?.[0]?.[0] === "Identity/get") {
         const identities = (identityResponse.methodResponses[0][1].list || []) as { id: string; email: string }[];
@@ -1196,7 +1194,7 @@ export class JMAPClient {
         if (identities.length > 0) {
           // Use the first identity (or find one matching the fromEmail/username)
           const matchingIdentity = identities.find((id) => id.email === (fromEmail || this.username));
-          identityId = matchingIdentity?.id || identities[0].id;
+          finalIdentityId = matchingIdentity?.id || identities[0].id;
         }
       }
     }
@@ -1221,7 +1219,7 @@ export class JMAPClient {
         create: {
           "1": {
             emailId: draftId,
-            identityId: identityId,
+            identityId: finalIdentityId,
           },
         },
       }, "1"]);
@@ -1255,7 +1253,7 @@ export class JMAPClient {
         create: {
           "1": {
             emailId: `#${emailId}`,
-            identityId: identityId,
+            identityId: finalIdentityId,
           },
         },
       }, "1"]);

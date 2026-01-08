@@ -100,17 +100,6 @@ const getFileIcon = (name?: string, type?: string) => {
   return File;
 };
 
-// Color options for email tags
-const colorOptions = [
-  { name: "Red", value: "red", color: "bg-red-500" },
-  { name: "Orange", value: "orange", color: "bg-orange-500" },
-  { name: "Yellow", value: "yellow", color: "bg-yellow-500" },
-  { name: "Green", value: "green", color: "bg-green-500" },
-  { name: "Blue", value: "blue", color: "bg-blue-500" },
-  { name: "Purple", value: "purple", color: "bg-purple-500" },
-  { name: "Pink", value: "pink", color: "bg-pink-500" },
-];
-
 const getCurrentColor = (keywords: Record<string, boolean> | undefined) => {
   if (!keywords) return null;
   for (const key of Object.keys(keywords)) {
@@ -119,6 +108,42 @@ const getCurrentColor = (keywords: Record<string, boolean> | undefined) => {
     }
   }
   return null;
+};
+
+// Helper function to format recipients with contextual display
+const formatRecipients = (
+  recipients: Array<{ name?: string; email: string }> | undefined,
+  currentUserEmail: string | undefined,
+  t: (key: string, params?: Record<string, string | number>) => string
+): string => {
+  if (!recipients || recipients.length === 0) return '';
+
+  // Check if the first recipient is the current user
+  const firstRecipient = recipients[0];
+  const isFirstRecipientMe = currentUserEmail &&
+    (firstRecipient.email.toLowerCase() === currentUserEmail.toLowerCase() ||
+     firstRecipient.email.toLowerCase().startsWith(currentUserEmail.toLowerCase().split('@')[0] + '+'));
+
+  // If only one recipient and it's the current user, show "me"
+  if (recipients.length === 1 && isFirstRecipientMe) {
+    return t('recipient_me');
+  }
+
+  // Format up to 2 recipients by name (or email if no name)
+  const displayRecipients = recipients.slice(0, 2).map((r, index) => {
+    if (index === 0 && isFirstRecipientMe) {
+      return t('recipient_me');
+    }
+    return r.name || r.email;
+  });
+
+  // If more than 2 recipients, add count
+  if (recipients.length > 2) {
+    const displayName = displayRecipients[0];
+    return t('recipient_and_others', { name: displayName, count: recipients.length - 1 });
+  }
+
+  return displayRecipients.join(', ');
 };
 
 export function EmailViewer({
@@ -145,6 +170,17 @@ export function EmailViewer({
   const externalContentPolicy = useSettingsStore((state) => state.externalContentPolicy);
   const addTrustedSender = useSettingsStore((state) => state.addTrustedSender);
   const isSenderTrusted = useSettingsStore((state) => state.isSenderTrusted);
+
+  // Color options for email tags (using translations)
+  const colorOptions = [
+    { name: t("color_tag.red"), value: "red", color: "bg-red-500" },
+    { name: t("color_tag.orange"), value: "orange", color: "bg-orange-500" },
+    { name: t("color_tag.yellow"), value: "yellow", color: "bg-yellow-500" },
+    { name: t("color_tag.green"), value: "green", color: "bg-green-500" },
+    { name: t("color_tag.blue"), value: "blue", color: "bg-blue-500" },
+    { name: t("color_tag.purple"), value: "purple", color: "bg-purple-500" },
+    { name: t("color_tag.pink"), value: "pink", color: "bg-pink-500" },
+  ];
 
   // Tablet list visibility
   const { isTablet } = useDeviceDetection();
@@ -564,7 +600,7 @@ export function EmailViewer({
             )}
             <div className="flex-1 min-w-0">
               <h1 className="text-lg lg:text-2xl font-bold text-foreground tracking-tight truncate pr-2">
-                {email.subject || "(no subject)"}
+                {email.subject || t('no_subject')}
               </h1>
               <div className="flex items-center gap-2 lg:gap-3 mt-1.5 lg:mt-2 text-xs lg:text-sm text-muted-foreground flex-wrap lg:flex-nowrap">
                 <span className="flex items-center gap-1 lg:gap-1.5 whitespace-nowrap">
@@ -606,7 +642,7 @@ export function EmailViewer({
                 onClick={onReply}
                 size="sm"
                 className="mr-1 h-8 lg:h-9"
-                title="Reply"
+                title={t('tooltips.reply')}
               >
                 <Reply className="w-4 h-4" />
                 <span className="ml-1.5 hidden lg:inline">Reply</span>
@@ -647,7 +683,7 @@ export function EmailViewer({
                 size="icon"
                 onClick={onArchive}
                 className="h-8 w-8 hover:bg-muted hidden lg:flex"
-                title="Archive"
+                title={t('tooltips.archive')}
               >
                 <Archive className="w-4 h-4 text-muted-foreground" />
               </Button>
@@ -656,7 +692,7 @@ export function EmailViewer({
                 size="icon"
                 onClick={onDelete}
                 className="h-8 w-8 hover:bg-muted"
-                title="Delete"
+                title={t('tooltips.delete')}
               >
                 <Trash2 className="w-4 h-4 text-muted-foreground" />
               </Button>
@@ -776,41 +812,39 @@ export function EmailViewer({
             />
 
             <div className="flex-1 min-w-0">
+              {/* Sender line with compact badges */}
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-semibold text-foreground">
                   {sender?.name || sender?.email || t('unknown_sender')}
                 </span>
-                {sender?.email && sender?.name && (
-                  <span className="text-sm text-muted-foreground">
-                    &lt;{sender.email}&gt;
-                  </span>
-                )}
                 <EmailIdentityBadge email={email} identities={identities} />
               </div>
 
+              {/* Recipient section - separate line */}
               <div className="mt-2 space-y-1">
                 {email.to && email.to.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1 text-sm">
-                    <span className="text-muted-foreground">To:</span>
+                    <span className="text-muted-foreground">{t('recipient_to_prefix')}</span>
                     <span className="text-foreground">
-                      {email.to.slice(0, 2).map(r => r.name || r.email).join(", ")}
-                      {email.to.length > 2 && (
-                        <button
-                          onClick={() => setShowFullHeaders(!showFullHeaders)}
-                          className="ml-1 text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          {t('more_count', { count: email.to.length - 2 })}
-                        </button>
-                      )}
+                      {formatRecipients(email.to, currentUserEmail, t)}
                     </span>
+                    {email.to.length > 2 && (
+                      <button
+                        onClick={() => setShowFullHeaders(!showFullHeaders)}
+                        className="ml-1 text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        {t('more_count', { count: email.to.length - 2 })}
+                      </button>
+                    )}
                   </div>
                 )}
 
-                {(email.cc && email.cc.length > 0) && (
+                {email.cc && email.cc.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1 text-sm">
                     <span className="text-muted-foreground">CC:</span>
                     <span className="text-foreground">
-                      {email.cc.map(r => r.name || r.email).join(", ")}
+                      {email.cc.slice(0, 2).map(r => r.name || r.email).join(", ")}
+                      {email.cc.length > 2 && ` +${email.cc.length - 2}`}
                     </span>
                   </div>
                 )}
@@ -1130,37 +1164,39 @@ export function EmailViewer({
               className="shadow-sm w-10 h-10"
             />
             <div className="flex-1 min-w-0">
+              {/* Mobile 2-line layout */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-foreground">
+                <span className="text-sm font-semibold text-foreground">
                   {sender?.name || sender?.email || t('unknown_sender')}
                 </span>
-                {sender?.email && sender?.name && (
-                  <span className="text-sm text-muted-foreground">
-                    &lt;{sender.email}&gt;
-                  </span>
-                )}
                 <EmailIdentityBadge email={email} identities={identities} />
               </div>
-              <div className="mt-1 space-y-0.5">
-                {email.to && email.to.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1 text-sm">
-                    <span className="text-muted-foreground">To:</span>
-                    <span className="text-foreground truncate">
-                      {email.to.slice(0, 2).map(r => r.name || r.email).join(", ")}
-                      {email.to.length > 2 && ` +${email.to.length - 2}`}
-                    </span>
-                  </div>
+              <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground flex-wrap">
+                {sender?.email && sender?.name && (
+                  <>
+                    <span className="truncate">{sender.email}</span>
+                    <span>·</span>
+                  </>
                 )}
-                {email.cc && email.cc.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1 text-sm">
-                    <span className="text-muted-foreground">CC:</span>
-                    <span className="text-foreground truncate">
-                      {email.cc.slice(0, 2).map(r => r.name || r.email).join(", ")}
-                      {email.cc.length > 2 && ` +${email.cc.length - 2}`}
+                {email.to && email.to.length > 0 && (
+                  <>
+                    <span>→ {t('recipient_to_prefix')}</span>
+                    <span className="text-foreground">
+                      {formatRecipients(email.to, currentUserEmail, t)}
                     </span>
-                  </div>
+                  </>
                 )}
               </div>
+              {/* CC line (mobile - only if present) */}
+              {email.cc && email.cc.length > 0 && (
+                <div className="mt-1 flex items-center gap-1 text-sm">
+                  <span className="text-muted-foreground">CC:</span>
+                  <span className="text-foreground truncate">
+                    {email.cc.slice(0, 2).map(r => r.name || r.email).join(", ")}
+                    {email.cc.length > 2 && ` +${email.cc.length - 2}`}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>

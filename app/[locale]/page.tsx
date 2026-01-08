@@ -374,8 +374,11 @@ export default function Home() {
     if (!client) return;
 
     try {
-      await sendEmail(client, data.to, data.subject, data.body, data.cc, data.bcc, data.draftId, data.fromEmail, data.identityId);
+      await sendEmail(client, data.to, data.subject, data.body, data.cc, data.bcc, data.identityId, data.fromEmail, data.draftId);
       setShowComposer(false);
+
+      // Refresh the current mailbox to update the UI
+      await fetchEmails(client, selectedMailbox);
     } catch (error) {
       console.error("Failed to send email:", error);
     }

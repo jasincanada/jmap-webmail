@@ -59,17 +59,6 @@ interface EmailContextMenuProps {
   onBatchMoveToMailbox?: (mailboxId: string) => void;
 }
 
-// Color options for email tags
-const colorOptions = [
-  { name: "Red", value: "red", color: "bg-red-500" },
-  { name: "Orange", value: "orange", color: "bg-orange-500" },
-  { name: "Yellow", value: "yellow", color: "bg-yellow-500" },
-  { name: "Green", value: "green", color: "bg-green-500" },
-  { name: "Blue", value: "blue", color: "bg-blue-500" },
-  { name: "Purple", value: "purple", color: "bg-purple-500" },
-  { name: "Pink", value: "pink", color: "bg-pink-500" },
-];
-
 // Get mailbox icon based on role
 const getMailboxIcon = (role?: string) => {
   switch (role) {
@@ -123,10 +112,22 @@ export function EmailContextMenu({
   onBatchMoveToMailbox,
 }: EmailContextMenuProps) {
   const t = useTranslations("context_menu");
+  const tColor = useTranslations("email_viewer.color_tag");
   const isUnread = !email.keywords?.$seen;
   const isStarred = email.keywords?.$flagged;
   const currentColor = getCurrentColor(email.keywords);
   const showBatchActions = isMultiSelect && selectedCount > 1;
+
+  // Color options for email tags (using translations)
+  const colorOptions = [
+    { name: tColor("red"), value: "red", color: "bg-red-500" },
+    { name: tColor("orange"), value: "orange", color: "bg-orange-500" },
+    { name: tColor("yellow"), value: "yellow", color: "bg-yellow-500" },
+    { name: tColor("green"), value: "green", color: "bg-green-500" },
+    { name: tColor("blue"), value: "blue", color: "bg-blue-500" },
+    { name: tColor("purple"), value: "purple", color: "bg-purple-500" },
+    { name: tColor("pink"), value: "pink", color: "bg-pink-500" },
+  ];
 
   // Filter mailboxes for move-to submenu (exclude current, drafts, virtual nodes)
   const moveTargets = mailboxes.filter(

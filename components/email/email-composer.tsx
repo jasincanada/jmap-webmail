@@ -44,6 +44,7 @@ export function EmailComposer({
   replyTo
 }: EmailComposerProps) {
   const t = useTranslations('email_composer');
+  const tCommon = useTranslations('common');
 
   // Initialize with reply/forward data if provided
   const getInitialTo = () => {
@@ -66,9 +67,11 @@ export function EmailComposer({
   const getInitialSubject = () => {
     if (!replyTo?.subject) return "";
     if (mode === 'forward') {
-      return `Fwd: ${replyTo.subject.replace(/^(Fwd:\s*)+/i, '')}`;
+      const fwdPrefix = t('prefix.forward');
+      return `${fwdPrefix} ${replyTo.subject.replace(/^(Fwd:\s*|Tr:\s*)+/i, '')}`;
     } else if (mode === 'reply' || mode === 'replyAll') {
-      return `Re: ${replyTo.subject.replace(/^(Re:\s*)+/i, '')}`;
+      const rePrefix = t('prefix.reply');
+      return `${rePrefix} ${replyTo.subject.replace(/^(Re:\s*)+/i, '')}`;
     }
     return "";
   };
@@ -78,7 +81,7 @@ export function EmailComposer({
 
     const date = replyTo.receivedAt ? new Date(replyTo.receivedAt).toLocaleString() : "";
     const from = replyTo.from?.[0];
-    const fromStr = from ? `${from.name || from.email}` : "Unknown";
+    const fromStr = from ? `${from.name || from.email}` : tCommon('unknown');
 
     if (mode === 'forward') {
       return `\n\n---------- Forwarded message ----------\nFrom: ${fromStr}\nDate: ${date}\nSubject: ${replyTo.subject || ""}\n\n${replyTo.body}`;
@@ -179,7 +182,7 @@ export function EmailComposer({
       }));
 
     // Create a hash of current data to compare with last saved
-    const currentData = JSON.stringify({ to: toAddresses, cc: ccAddresses, bcc: bccAddresses, subject, body, attachments: uploadedAttachments });
+    const currentData = JSON.stringify({ to: toAddresses, cc: ccAddresses, bcc: bccAddresses, subject, body, attachments: uploadedAttachments, identityId: selectedIdentityId, subAddressTag });
 
     // Only save if data has changed
     if (currentData === lastSavedDataRef.current) {
@@ -188,13 +191,27 @@ export function EmailComposer({
 
     setSaveStatus('saving');
 
+    // Get the selected identity or primary identity
+    const currentIdentity = selectedIdentityId
+      ? identities.find(id => id.id === selectedIdentityId)
+      : primaryIdentity;
+
+    // Generate sub-addressed email if tag is set
+    const fromEmail = currentIdentity?.email
+      ? subAddressTag
+        ? generateSubAddress(currentIdentity.email, subAddressTag)
+        : currentIdentity.email
+      : undefined;
+
     try {
       const savedDraftId = await client.createDraft(
         toAddresses,
-        subject || "(No subject)",
+        subject || t('no_subject'),
         body,
         ccAddresses,
         bccAddresses,
+        currentIdentity?.id,
+        fromEmail,
         draftId || undefined,
         uploadedAttachments
       );
@@ -396,7 +413,7 @@ export function EmailComposer({
                   size="sm"
                   onClick={() => setSubAddressTag('')}
                   className="h-6 px-2 text-xs"
-                  title="Remove sub-address"
+                  title={t('remove_sub_address')}
                 >
                   <X className="w-3 h-3" />
                 </Button>

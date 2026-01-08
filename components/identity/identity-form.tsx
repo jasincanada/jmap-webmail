@@ -25,6 +25,8 @@ interface IdentityFormProps {
 
 export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) {
   const t = useTranslations('identities.form');
+  const tValidation = useTranslations('identities.validation_errors');
+  const tDisplay = useTranslations('identities.display');
   const isEditing = !!identity;
 
   const [formData, setFormData] = useState<IdentityFormData>({
@@ -70,7 +72,7 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
     if (replyToInput.trim()) {
       const validation = validateEmailList(replyToInput);
       if (!validation.valid) {
-        newErrors.replyTo = `Invalid emails: ${validation.invalidEmails.join(', ')}`;
+        newErrors.replyTo = tValidation('invalid_emails', { emails: validation.invalidEmails.join(', ') });
       }
     }
 
@@ -78,7 +80,7 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
     if (bccInput.trim()) {
       const validation = validateEmailList(bccInput);
       if (!validation.valid) {
-        newErrors.bcc = `Invalid emails: ${validation.invalidEmails.join(', ')}`;
+        newErrors.bcc = tValidation('invalid_emails', { emails: validation.invalidEmails.join(', ') });
       }
     }
 
@@ -271,7 +273,7 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
         />
         {formData.htmlSignature && (
           <div className="mt-2 p-2 border rounded bg-muted">
-            <div className="text-xs text-muted-foreground mb-1">Preview:</div>
+            <div className="text-xs text-muted-foreground mb-1">{tDisplay('preview')}</div>
             <div
               dangerouslySetInnerHTML={{
                 __html: sanitizeSignatureHtml(formData.htmlSignature)

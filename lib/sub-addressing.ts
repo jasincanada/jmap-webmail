@@ -7,6 +7,12 @@
 const MAX_TAG_LENGTH = 30;
 const TAG_REGEX = /^[a-zA-Z0-9-]{1,30}$/;
 
+export type TagValidationErrorCode =
+  | 'EMPTY'
+  | 'TOO_LONG'
+  | 'INVALID_CHARS'
+  | null;
+
 export interface ParsedAddress {
   localPart: string;
   baseUser: string;
@@ -138,20 +144,24 @@ export function isValidTag(tag: string): boolean {
 }
 
 /**
- * Get validation error message for an invalid tag
+ * Get validation error code for an invalid tag
+ * Returns an error code that should be translated by the calling component
  */
-export function getTagValidationError(tag: string): string | null {
+export function getTagValidationError(tag: string): TagValidationErrorCode {
   if (!tag) {
-    return 'Tag cannot be empty';
+    return 'EMPTY';
   }
 
   if (tag.length > MAX_TAG_LENGTH) {
-    return `Tag must be ${MAX_TAG_LENGTH} characters or less`;
+    return 'TOO_LONG';
   }
 
   if (!/^[a-zA-Z0-9-]+$/.test(tag)) {
-    return 'Tag must contain only letters, numbers, and dashes';
+    return 'INVALID_CHARS';
   }
 
   return null;
 }
+
+// Export MAX_TAG_LENGTH for use in translations
+export { MAX_TAG_LENGTH };

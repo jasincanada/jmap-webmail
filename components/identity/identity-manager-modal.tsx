@@ -82,11 +82,11 @@ export function IdentityManagerModal({ isOpen, onClose }: IdentityManagerModalPr
       setIsCreating(false);
       toast.success(tNotif('identity_created'));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      const message = error instanceof Error ? error.message : t('validation_errors.unknown_error');
       toast.error(tNotif('identity_create_failed', { error: message }));
       throw error;
     }
-  }, [client, addIdentity, tNotif]);
+  }, [client, addIdentity, t, tNotif]);
 
   const handleUpdate = useCallback(async (identity: Identity, data: IdentityFormData) => {
     if (!client) return;
@@ -104,11 +104,11 @@ export function IdentityManagerModal({ isOpen, onClose }: IdentityManagerModalPr
       setEditingId(null);
       toast.success(tNotif('identity_updated'));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      const message = error instanceof Error ? error.message : t('validation_errors.unknown_error');
       toast.error(tNotif('identity_update_failed', { error: message }));
       throw error;
     }
-  }, [client, updateIdentityLocal, tNotif]);
+  }, [client, updateIdentityLocal, t, tNotif]);
 
   const handleDelete = useCallback(async (identity: Identity) => {
     if (!client) return;
@@ -128,7 +128,7 @@ export function IdentityManagerModal({ isOpen, onClose }: IdentityManagerModalPr
       removeIdentity(identity.id);
       toast.success(tNotif('identity_deleted'));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
+      const message = error instanceof Error ? error.message : t('validation_errors.unknown_error');
       toast.error(tNotif('identity_delete_failed', { error: message }));
     } finally {
       setDeletingId(null);
@@ -230,17 +230,17 @@ export function IdentityManagerModal({ isOpen, onClose }: IdentityManagerModalPr
                         <div className="mt-2 space-y-1 text-xs text-muted-foreground">
                           {identity.replyTo && identity.replyTo.length > 0 && (
                             <p>
-                              Reply-To: {identity.replyTo.map((a) => a.email).join(', ')}
+                              {t('display.reply_to')} {identity.replyTo.map((a) => a.email).join(', ')}
                             </p>
                           )}
                           {identity.bcc && identity.bcc.length > 0 && (
                             <p>
-                              BCC: {identity.bcc.map((a) => a.email).join(', ')}
+                              {t('display.bcc')} {identity.bcc.map((a) => a.email).join(', ')}
                             </p>
                           )}
                           {identity.textSignature && (
                             <p className="line-clamp-2">
-                              Signature: {identity.textSignature}
+                              {t('display.signature')} {identity.textSignature}
                             </p>
                           )}
                         </div>
@@ -291,7 +291,7 @@ export function IdentityManagerModal({ isOpen, onClose }: IdentityManagerModalPr
             {identities.length === 0 && !isCreating && (
               <div className="text-center py-12 text-muted-foreground">
                 <Mail className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p className="text-sm">No identities found</p>
+                <p className="text-sm">{t('no_identities')}</p>
               </div>
             )}
           </div>

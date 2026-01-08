@@ -24,17 +24,28 @@ A modern, privacy-focused webmail client built with Next.js and the JMAP protoco
 
 ## Features
 
+### Core Email
 - **Modern UI** - Clean, minimalist three-pane layout
-- **Dark Mode** - Full dark theme support
-- **Email Threading** - Gmail-style conversation view
-- **Real-time Updates** - Push notifications for new emails
-- **Keyboard Shortcuts** - Navigate efficiently with hotkeys
-- **Drag & Drop** - Move emails between folders
-- **Color Tags** - Organize emails with color labels
+- **Email Threading** - Gmail-style conversation view with inline expansion
+- **Real-time Updates** - Push notifications for new emails via EventSource
 - **Attachments** - Upload and download file attachments
-- **Search** - Full-text email search
-- **i18n** - English and French language support
-- **Mobile Responsive** - Adaptive layout for all screen sizes
+- **Search** - Full-text email search with pagination
+- **Draft Auto-save** - Never lose your work while composing
+
+### Identity & Privacy
+- **Identity Management** - Multiple email identities with custom signatures
+- **Sub-Addressing** - Generate tagged email addresses (user+tag@domain.com) for better organization
+- **External Content Blocking** - Privacy protection with user-controlled image loading
+- **Shared Folders** - Multi-account access with proper ID namespacing
+
+### User Experience
+- **Keyboard Shortcuts** - Navigate efficiently with vim-style hotkeys (j/k, r, f, etc.)
+- **Context Menus** - Right-click for quick actions on emails
+- **Drag & Drop** - Move emails between folders with native HTML5 DnD
+- **Color Tags** - Organize emails with color labels
+- **Dark Mode** - Full dark theme support with system preference detection
+- **i18n** - English and French language support with auto-detection
+- **Mobile Responsive** - Adaptive single/multi-pane layout for all screen sizes
 
 ## Tech Stack
 

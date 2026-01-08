@@ -12,6 +12,7 @@ import {
   extractDomain,
   suggestTagsForDomain,
   getTagValidationError,
+  MAX_TAG_LENGTH,
 } from '@/lib/sub-addressing';
 
 interface SubAddressHelperProps {
@@ -64,14 +65,34 @@ export function SubAddressHelper({
 
   const handleTagChange = (value: string) => {
     setTag(value);
-    const validationError = getTagValidationError(value);
-    setError(validationError);
+    const errorCode = getTagValidationError(value);
+
+    // Translate error code to localized message
+    let errorMessage: string | null = null;
+    if (errorCode === 'EMPTY') {
+      errorMessage = t('validation.empty');
+    } else if (errorCode === 'TOO_LONG') {
+      errorMessage = t('validation.too_long', { max: MAX_TAG_LENGTH });
+    } else if (errorCode === 'INVALID_CHARS') {
+      errorMessage = t('validation.invalid_chars');
+    }
+
+    setError(errorMessage);
   };
 
   const handleSelectTag = (selectedTag: string) => {
-    const validationError = getTagValidationError(selectedTag);
-    if (validationError) {
-      setError(validationError);
+    const errorCode = getTagValidationError(selectedTag);
+    if (errorCode) {
+      // Translate error code to localized message
+      let errorMessage: string | null = null;
+      if (errorCode === 'EMPTY') {
+        errorMessage = t('validation.empty');
+      } else if (errorCode === 'TOO_LONG') {
+        errorMessage = t('validation.too_long', { max: MAX_TAG_LENGTH });
+      } else if (errorCode === 'INVALID_CHARS') {
+        errorMessage = t('validation.invalid_chars');
+      }
+      setError(errorMessage);
       return;
     }
 

@@ -52,7 +52,13 @@
     "expand": "Développer",
     "collapse": "Réduire",
     "expand_tooltip": "Développer",
-    "collapse_tooltip": "Réduire"
+    "collapse_tooltip": "Réduire",
+    "mobile": {
+      "search": "Rechercher",
+      "compose": "Composer",
+      "go_back": "Retour"
+    },
+    "clear_search": "Effacer la recherche"
   },
   "email_list": {
     "no_emails": "Aucun email",
@@ -63,7 +69,19 @@
     "to_recipients": "À {{count}} destinataires",
     "and_others": "et {{count}} autres",
     "draft": "Brouillon",
-    "starred": "Favori"
+    "starred": "Favori",
+    "conversations_count": "{count} sur {total} conversations",
+    "conversations_count_plus": "{count}+ conversations",
+    "conversations_count_simple": "{count} conversations",
+    "no_conversations": "Aucune conversation",
+    "loading_more": "Chargement d'autres emails...",
+    "no_more_emails": "Plus d'emails à charger",
+    "batch_actions": {
+      "mark_read": "Marquer comme lu",
+      "mark_unread": "Marquer comme non lu",
+      "delete": "Supprimer",
+      "clear_selection": "Effacer la sélection"
+    }
   },
   "email_viewer": {
     "no_email_selected": "Aucun email sélectionné",
@@ -129,6 +147,9 @@
       "minutes": "minutes"
     },
     "unknown_sender": "Inconnu",
+    "recipient_me": "moi",
+    "recipient_and_others": "{name} et {count} autres",
+    "recipient_to_prefix": "À :",
     "authentication": {
       "title": "Authentification",
       "status": {
@@ -167,7 +188,13 @@
       "green": "Vert",
       "blue": "Bleu",
       "purple": "Violet",
+      "pink": "Rose",
       "none": "Aucune"
+    },
+    "tooltips": {
+      "reply": "Répondre",
+      "archive": "Archiver",
+      "delete": "Supprimer"
     }
   },
   "email_composer": {
@@ -200,6 +227,12 @@
     "bcc_label": "Cci :",
     "subject_label": "Objet :",
     "file_size_kb": "Ko",
+    "prefix": {
+      "forward": "Tr:",
+      "reply": "Re:"
+    },
+    "no_subject": "(Sans objet)",
+    "unknown_sender": "Inconnu",
     "quote": {
       "reply_header": "Le {{date}}, {{sender}} a écrit :",
       "forward_header": "---------- Message transféré ----------",
@@ -207,7 +240,8 @@
       "date": "Date : {{date}}",
       "subject": "Objet : {{subject}}",
       "to": "À : {{recipients}}"
-    }
+    },
+    "remove_sub_address": "Retirer le sous-adressage"
   },
   "common": {
     "loading": "Chargement...",
@@ -243,7 +277,12 @@
     "error_loading": "Échec du chargement des emails",
     "new_email": "Nouvel email",
     "new_email_from": "De {sender}",
-    "click_to_view": "Cliquer pour voir"
+    "click_to_view": "Cliquer pour voir",
+    "email_moved": "Email déplacé",
+    "emails_moved": "{count} emails déplacés",
+    "moved_to_mailbox": "Déplacé vers {mailbox}",
+    "move_failed": "Échec du déplacement",
+    "move_error": "Impossible de déplacer les emails vers le dossier sélectionné"
   },
   "date": {
     "today": "Aujourd'hui",
@@ -603,6 +642,17 @@
     "delete_confirm": "Supprimer cette identité ? Cette action est irréversible.",
     "cannot_delete": "Cette identité ne peut pas être supprimée",
     "primary_identity": "Principale",
+    "no_identities": "Aucune identité trouvée",
+    "display": {
+      "reply_to": "Répondre à :",
+      "bcc": "CCI :",
+      "signature": "Signature :",
+      "preview": "Aperçu :"
+    },
+    "validation_errors": {
+      "invalid_emails": "Emails invalides : {emails}",
+      "unknown_error": "Erreur inconnue"
+    },
     "form": {
       "name_label": "Nom d'affichage",
       "name_placeholder": "ex: Email professionnel, Personnel",
@@ -633,12 +683,19 @@
       "use_address": "Utiliser cette adresse",
       "invalid_tag": "Le tag doit contenir uniquement des lettres, chiffres et tirets",
       "tag_too_long": "Le tag doit faire 30 caractères ou moins",
-      "help_text": "Les emails envoyés à utilisateur+tag@domaine.com arriveront dans votre boîte de réception"
+      "help_text": "Les emails envoyés à utilisateur+tag@domaine.com arriveront dans votre boîte de réception",
+      "validation": {
+        "empty": "Le tag ne peut pas être vide",
+        "too_long": "Le tag doit faire {max} caractères ou moins",
+        "invalid_chars": "Le tag doit contenir uniquement des lettres, chiffres et tirets"
+      }
     },
     "badge": {
-      "sent_via": "via {{email}}",
-      "sub_address_tag": "Envoyé avec le sous-adresse: {{tag}}",
-      "identity_name": "Envoyé avec l'identité: {{name}}"
+      "sent_via": "via",
+      "sub_address_tag": "Envoyé avec le sous-adresse: {tag}",
+      "identity_name": "Envoyé avec l'identité: {name}",
+      "identity_short": "via {name}",
+      "subaddress_tag": "+{tag}"
     }
   },
   "notifications": {

@@ -11,6 +11,7 @@ import { useEmailStore } from "@/stores/email-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { groupEmailsByThread, sortThreadGroups } from "@/lib/thread-utils";
 import { useContextMenu } from "@/hooks/use-context-menu";
+import { useTranslations } from "next-intl";
 
 interface EmailListProps {
   emails: Email[];
@@ -49,6 +50,7 @@ export function EmailList({
   onSetColorTag,
   onMoveToMailbox,
 }: EmailListProps) {
+  const t = useTranslations('email_list');
   const { client } = useAuthStore();
   const {
     selectedEmailIds,
@@ -188,7 +190,7 @@ export function EmailList({
               variant="ghost"
               size="sm"
               onClick={() => handleBatchMarkAsRead(true)}
-              title="Mark as read"
+              title={t('batch_actions.mark_read')}
               disabled={isProcessing}
               className="hover:bg-accent transition-colors disabled:opacity-50"
             >
@@ -202,7 +204,7 @@ export function EmailList({
               variant="ghost"
               size="sm"
               onClick={() => handleBatchMarkAsRead(false)}
-              title="Mark as unread"
+              title={t('batch_actions.mark_unread')}
               disabled={isProcessing}
               className="hover:bg-accent transition-colors disabled:opacity-50"
             >
@@ -216,7 +218,7 @@ export function EmailList({
               variant="ghost"
               size="sm"
               onClick={handleBatchDelete}
-              title="Delete"
+              title={t('batch_actions.delete')}
               disabled={isProcessing}
               className="text-red-600 dark:text-red-400 hover:bg-red-100/50 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
             >
@@ -231,7 +233,7 @@ export function EmailList({
               variant="ghost"
               size="sm"
               onClick={clearSelection}
-              title="Clear selection"
+              title={t('batch_actions.clear_selection')}
               disabled={isProcessing}
               className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             >
@@ -261,13 +263,13 @@ export function EmailList({
             )}
           </button>
           <h2 className="text-sm font-medium text-foreground">
-            {isLoading ? 'Loading...' : threadGroups.length > 0
-              ? (totalEmails > threadGroups.length
-                  ? `${threadGroups.length} of ${totalEmails} conversations`
+            {isLoading ? t('loading') : threadGroups.length > 0
+              ? (totalEmails !== undefined && totalEmails > threadGroups.length
+                  ? t('conversations_count', { count: threadGroups.length, total: totalEmails })
                   : hasMoreEmails
-                    ? `${threadGroups.length}+ conversations`
-                    : `${threadGroups.length} conversations`)
-              : 'No conversations'}
+                    ? t('conversations_count_plus', { count: threadGroups.length })
+                    : t('conversations_count_simple', { count: threadGroups.length }))
+              : t('no_conversations')}
           </h2>
         </div>
       </div>
@@ -279,7 +281,7 @@ export function EmailList({
           <div className="absolute inset-0 bg-background/50 z-10 flex items-center justify-center animate-in fade-in duration-150">
             <div className="flex items-center gap-2 text-sm text-muted-foreground bg-background/90 px-4 py-2 rounded-full shadow-sm border border-border">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Loading...</span>
+              <span>{t('loading')}</span>
             </div>
           </div>
         )}
@@ -290,8 +292,8 @@ export function EmailList({
         ) : emails.length === 0 && !isLoading ? (
           <div className="flex flex-col items-center justify-center h-full py-12">
             <Inbox className="w-16 h-16 mb-4 text-muted-foreground/50" />
-            <p className="text-base font-medium text-foreground">No emails in this mailbox</p>
-            <p className="text-sm mt-1 text-muted-foreground">New messages will appear here</p>
+            <p className="text-base font-medium text-foreground">{t('no_emails')}</p>
+            <p className="text-sm mt-1 text-muted-foreground">{t('no_emails_description')}</p>
           </div>
         ) : (
           <div className={cn("transition-opacity duration-200", isLoading && "opacity-50")}>
@@ -315,12 +317,12 @@ export function EmailList({
               {isLoadingMore && hasMoreEmails && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Loading more emails...</span>
+                  <span>{t('loading_more')}</span>
                 </div>
               )}
               {!hasMoreEmails && emails.length > 0 && (
                 <div className="text-sm text-muted-foreground border-t border-border pt-6">
-                  No more emails to load
+                  {t('no_more_emails')}
                 </div>
               )}
             </div>

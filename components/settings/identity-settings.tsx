@@ -40,7 +40,7 @@ export function IdentitySettings() {
           description={t('sub_addressing.description')}
         >
           <Button variant="outline" size="sm" onClick={() => setShowModal(true)}>
-            {t('learn_more')}
+            {t('sub_addressing.learn_more')}
           </Button>
         </SettingItem>
       </SettingsSection>
