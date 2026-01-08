@@ -353,11 +353,13 @@ export default function Home() {
     subject: string;
     body: string;
     draftId?: string;
+    fromEmail?: string;
+    identityId?: string;
   }) => {
     if (!client) return;
 
     try {
-      await sendEmail(client, data.to, data.subject, data.body, data.cc, data.bcc, data.draftId);
+      await sendEmail(client, data.to, data.subject, data.body, data.cc, data.bcc, data.draftId, data.fromEmail, data.identityId);
       setShowComposer(false);
     } catch (error) {
       console.error("Failed to send email:", error);

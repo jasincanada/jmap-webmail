@@ -16,6 +16,8 @@ interface EmailComposerProps {
     subject: string;
     body: string;
     draftId?: string;
+    fromEmail?: string;
+    identityId?: string;
   }) => void;
   onClose?: () => void;
   onDiscardDraft?: (draftId: string) => void;
@@ -97,8 +99,9 @@ export function EmailComposer({
   const lastSavedDataRef = useRef<string>("");
   const [attachments, setAttachments] = useState<Array<{ file: File; blobId?: string; uploading?: boolean; error?: boolean }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedIdentityId, setSelectedIdentityId] = useState<string | null>(null);
 
-  const { client } = useAuthStore();
+  const { client, identities, primaryIdentity } = useAuthStore();
 
   // Handle file selection
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -255,6 +258,11 @@ export function EmailComposer({
         }
       }
 
+      // Get the selected identity or primary identity
+      const currentIdentity = selectedIdentityId
+        ? identities.find(id => id.id === selectedIdentityId)
+        : primaryIdentity;
+
       onSend?.({
         to: toAddresses,
         cc: ccAddresses,
@@ -262,6 +270,8 @@ export function EmailComposer({
         subject,
         body,
         draftId: finalDraftId || undefined,
+        fromEmail: currentIdentity?.email,
+        identityId: currentIdentity?.id,
       });
 
       // Reset form
@@ -328,8 +338,32 @@ export function EmailComposer({
 
       <div className="flex-1 flex flex-col">
         <div className="space-y-2 px-4 py-3 border-b">
+          {/* From field - show dropdown if multiple identities, otherwise display email */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground w-16">To:</span>
+            <span className="text-sm text-muted-foreground w-16">{t('from')}:</span>
+            {identities.length > 1 ? (
+              <select
+                value={selectedIdentityId || primaryIdentity?.id || ''}
+                onChange={(e) => setSelectedIdentityId(e.target.value)}
+                className="flex-1 bg-transparent text-sm text-foreground outline-none cursor-pointer hover:text-muted-foreground transition-colors"
+              >
+                {identities.map((identity) => (
+                  <option key={identity.id} value={identity.id}>
+                    {identity.name ? `${identity.name} <${identity.email}>` : identity.email}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-sm text-foreground">
+                {primaryIdentity?.name
+                  ? `${primaryIdentity.name} <${primaryIdentity.email}>`
+                  : primaryIdentity?.email || ''}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground w-16">{t('to')}:</span>
             <Input
               type="email"
               placeholder="Recipient email addresses (comma separated)"

@@ -132,6 +132,7 @@
     "reply_to": "Reply",
     "reply_all_to": "Reply All",
     "forward_message": "Forward",
+    "from": "From",
     "to": "To",
     "cc": "CC",
     "bcc": "BCC",
