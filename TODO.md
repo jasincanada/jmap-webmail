@@ -85,6 +85,7 @@
 - [x] Implement batch operations (mark read/unread, delete multiple)
 - [x] Implement functional quick reply form
 - [x] Add email threading support (Gmail-style inline expansion)
+- [x] Add List-Unsubscribe header support (RFC 2369) with one-click unsubscribe
 
 ### Real-time Updates
 - [x] Set up EventSource for JMAP push notifications
@@ -102,6 +103,7 @@
 - [x] Redesign email action buttons with modern look
 - [x] Improve email headers display with expandable details
 - [x] Add minimalist external content warning banner
+- [x] Simplify email notification banners (removed separators, cleaner spacing)
 - [x] Implement color tags with background tint display
 - [x] Create compact dynamic color picker (hover to reveal)
 - [x] Redesign Message Details with security & authentication indicators
@@ -131,6 +133,7 @@
 - [x] Add context menus (right-click on emails with all actions)
 - [x] Create mobile-responsive design (hamburger menu, single/multi-pane adaptive layout)
 - [x] Implement pagination/infinite scroll for email list
+- [x] Fix dark mode email readability (transform inline color styles for unreadable emails)
 
 ### Identity Management & Sub-Addressing
 - [x] Add Identity/set methods to JMAP client (create, update, delete)
@@ -182,7 +185,7 @@
 - [ ] Add image optimization for email content
 
 ### Testing
-- [ ] Add unit tests for utilities
+- [x] Add unit tests for utilities (validation.test.ts: 57 tests, full coverage including XSS vectors)
 - [ ] Create component tests
 - [ ] Add E2E tests with Playwright
 - [ ] Test JMAP client methods
@@ -297,6 +300,27 @@ All settings are now properly wired to their functionality:
   - Reply/Reply All/Forward buttons on expanded cards
   - Back navigation returns to email list
 
+### Dark Mode Email Readability (2026-01-08)
+- **Problem**: HTML emails with inline color styles (e.g., `color: #333333`) became unreadable in dark mode
+- **Solution**: Intelligent color transformation during HTML sanitization
+- **Files**:
+  - lib/color-transform.ts - Color parsing, luminance calculation, and transformation utilities
+  - lib/__tests__/color-transform.test.ts - Comprehensive test suite (40 tests)
+  - components/email/email-viewer.tsx - Extended DOMPurify hook to transform inline styles
+- **Features**:
+  - Automatically detects and transforms dark text colors in dark mode
+  - Preserves light colors and original design intent
+  - Only affects dark mode (light mode unchanged)
+  - Supports multiple color formats (hex, rgb, rgba, hsl, named colors)
+  - Transforms `color`, `background-color`, `background`, and `border-color` properties
+  - Uses WCAG 2.0 luminance calculation for accurate color detection
+  - Handles edge cases: transparency, inherit, currentColor, !important
+- **Technical Details**:
+  - Luminance < 0.4 (very dark): Inverted and brightened
+  - Luminance 0.4-0.6 (medium): Lightened by 40-50%
+  - Luminance > 0.6 (light): Preserved as-is
+  - Falls back gracefully on parse errors
+
 ### Identity Management & Sub-Addressing (2026-01-08)
 - **Identity Management**: Full CRUD operations for multiple email identities
   - Files: stores/identity-store.ts, lib/jmap/client.ts (Identity/get, Identity/set)
@@ -316,12 +340,34 @@ All settings are now properly wired to their functionality:
 - **i18n Support**: Full EN/FR translations in locales/*/common.json (identity.*, sub_address.*)
 - **Security**: Input validation, XSS prevention in signatures (DOMPurify), sub-address format validation
 
+### Newsletter Unsubscribe (2026-01-08)
+- **RFC 2369 Compliance**: Parses List-Unsubscribe headers from emails
+  - Files: lib/validation.ts (parseUnsubscribeUrls, isValidUnsubscribeUrl)
+  - Files: lib/email-headers.ts (extractListHeaders function)
+  - Component: components/email/unsubscribe-banner.tsx
+  - Integration: email-viewer.tsx detects and displays unsubscribe banner
+- **Security Features**:
+  - URL validation blocks XSS vectors (javascript:, data:, file:, etc.)
+  - Only allows http://, https://, and mailto: protocols
+  - Email validation for mailto: URLs
+  - Comprehensive test coverage (57 tests including XSS attack vectors)
+- **User Experience**:
+  - Two-step confirmation process (prevents accidental clicks)
+  - Dismissible with localStorage persistence (won't re-show for same email)
+  - Supports both HTTP (one-click) and mailto methods
+  - Auto-prefers HTTP over mailto when both available
+  - Integrated with external content banner (unified notification area)
+  - Success/error states with auto-dismiss
+  - Mobile-friendly with 44px touch targets
+- **i18n Support**: Full EN/FR translations in email_viewer.unsubscribe_banner.*
+
 ### Feature Completeness
 - **Authentication**: ✅ Complete (secure design, no password storage)
-- **Email Operations**: ✅ Complete (including threading)
+- **Email Operations**: ✅ Complete (including threading, unsubscribe)
 - **Real-time Updates**: ✅ Complete (EventSource push, toast notifications, status indicator)
 - **UI Enhancements**: ✅ Settings fully integrated, drag-drop, context menus, mobile responsive, keyboard shortcuts
 - **Identity Management**: ✅ Complete (CRUD, sub-addressing, signatures, visual badges)
+- **Newsletter Management**: ✅ RFC 2369 List-Unsubscribe support with security validation
 - **Contacts/Address Book**: ❌ Not started
 - **Security**: ⚠️ Client-side done, server headers needed
 

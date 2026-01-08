@@ -63,6 +63,7 @@ interface EmailStore {
   markAsSpam: (client: JMAPClient, emailId: string) => Promise<void>;
   undoSpam: (client: JMAPClient, emailId: string) => Promise<void>;
   batchMarkAsSpam: (client: JMAPClient, emailIds: string[]) => Promise<void>;
+  batchUndoSpam: (client: JMAPClient, emailIds: string[]) => Promise<void>;
 
   // Push notification handlers
   setPushConnected: (connected: boolean) => void;
@@ -863,6 +864,38 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       }));
     } catch (error) {
       console.error('Failed to batch mark as spam:', error);
+      throw error;
+    }
+  },
+
+  batchUndoSpam: async (client: JMAPClient, emailIds: string[]) => {
+    const { mailboxes, selectedMailbox } = get();
+
+    // Find inbox (batch operations don't preserve original mailboxes)
+    const currentMailbox = mailboxes.find(m => m.id === selectedMailbox);
+    const accountId = currentMailbox?.accountId;
+
+    const inboxMailbox = mailboxes.find(m =>
+      m.role === 'inbox' &&
+      (accountId ? m.accountId === accountId : !m.accountId)
+    );
+
+    if (!inboxMailbox) {
+      throw new Error('Inbox not found');
+    }
+
+    try {
+      for (const emailId of emailIds) {
+        await client.undoSpam(emailId, inboxMailbox.id, accountId);
+      }
+
+      set(state => ({
+        emails: state.emails.filter(e => !emailIds.includes(e.id)),
+        selectedEmail: emailIds.includes(state.selectedEmail?.id || '') ? null : state.selectedEmail,
+        selectedEmailIds: new Set(),
+      }));
+    } catch (error) {
+      console.error('Failed to batch restore emails:', error);
       throw error;
     }
   },

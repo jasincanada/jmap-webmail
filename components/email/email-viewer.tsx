@@ -7,7 +7,7 @@ import { hasRichFormatting, EMAIL_SANITIZE_CONFIG } from "@/lib/email-sanitizati
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { formatFileSize, cn } from "@/lib/utils";
-import { getSecurityStatus } from "@/lib/email-headers";
+import { getSecurityStatus, extractListHeaders } from "@/lib/email-headers";
 import {
   Reply,
   ReplyAll,
@@ -53,7 +53,10 @@ import { useSettingsStore } from "@/stores/settings-store";
 import { useUIStore } from "@/stores/ui-store";
 import { useDeviceDetection } from "@/hooks/use-media-query";
 import { useAuthStore } from "@/stores/auth-store";
+import { useThemeStore } from "@/stores/theme-store";
+import { transformInlineStyles } from "@/lib/color-transform";
 import { EmailIdentityBadge } from "./email-identity-badge";
+import { UnsubscribeBanner } from "./unsubscribe-banner";
 
 interface EmailViewerProps {
   email: Email | null;
@@ -195,6 +198,7 @@ export function EmailViewer({
   const { isTablet } = useDeviceDetection();
   const { tabletListVisible } = useUIStore();
   const { identities } = useAuthStore();
+  const theme = useThemeStore((state) => state.theme);
   const [showFullHeaders, setShowFullHeaders] = useState(false);
   const [allowExternalContent, setAllowExternalContent] = useState(false);
   const [hasBlockedContent, setHasBlockedContent] = useState(false);
@@ -203,6 +207,13 @@ export function EmailViewer({
   const [isSendingQuickReply, setIsSendingQuickReply] = useState(false);
   const [showSourceModal, setShowSourceModal] = useState(false);
   const currentColor = getCurrentColor(email?.keywords);
+  const [dismissedUnsubBanners, setDismissedUnsubBanners] = useState<Set<string>>(
+    () => {
+      if (typeof window === 'undefined') return new Set();
+      const saved = localStorage.getItem('dismissed-unsub-banners');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    }
+  );
 
   useEffect(() => {
     // Mark as read when email is viewed
@@ -441,6 +452,15 @@ export function EmailViewer({
                   blockedExternalContent = true;
                 }
               }
+
+              // Transform inline color styles for dark mode readability
+              if (theme === 'dark') {
+                const originalStyles = htmlNode.style.cssText;
+                const transformedStyles = transformInlineStyles(originalStyles, 'dark');
+                if (transformedStyles !== originalStyles) {
+                  htmlNode.style.cssText = transformedStyles;
+                }
+              }
             }
           });
         }
@@ -505,6 +525,16 @@ export function EmailViewer({
       isHtml: false
     };
   }, [email, allowExternalContent, hasBlockedContent, externalContentPolicy, isSenderTrusted]);
+
+  // Detect List-Unsubscribe header for newsletter banners
+  const listHeaders = useMemo(() => {
+    if (!email?.headers) return null;
+    return extractListHeaders(email.headers);
+  }, [email?.headers]);
+
+  const shouldShowUnsubBanner =
+    listHeaders?.listUnsubscribe?.preferred &&
+    !dismissedUnsubBanners.has(email?.messageId || '');
 
   // Show loading skeleton while email is being fetched
   if (isLoading && !email) {
@@ -1257,38 +1287,57 @@ export function EmailViewer({
           </div>
         </div>
 
-        {/* External Content Banner - show in 'ask' or 'block' mode */}
-        {hasBlockedContent && !allowExternalContent && externalContentPolicy !== 'allow' && (
-          <div className="border-b border-border">
-            <div className="max-w-4xl mx-auto px-6 py-2 flex items-center justify-center gap-4">
-              {/* Load images button - only in 'ask' mode */}
-              {externalContentPolicy === 'ask' && (
-                <button
-                  onClick={() => setAllowExternalContent(true)}
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Image className="w-3.5 h-3.5" />
-                  {t('load_external_content')}
-                </button>
-              )}
-              {/* Trust sender button - in both 'ask' and 'block' modes */}
-              {email.from?.[0]?.email && (
-                <>
-                  {externalContentPolicy === 'ask' && <span className="text-muted-foreground/50">|</span>}
-                  <button
-                    onClick={() => {
-                      const senderEmail = email.from?.[0]?.email;
-                      if (senderEmail) {
-                        addTrustedSender(senderEmail);
-                        setAllowExternalContent(true);
-                      }
+        {/* Unified Notification Banner - External Content + Unsubscribe */}
+        {((hasBlockedContent && !allowExternalContent && externalContentPolicy !== 'allow') ||
+          (shouldShowUnsubBanner && listHeaders?.listUnsubscribe)) && (
+          <div className="border-b border-border bg-muted/30">
+            <div className="max-w-4xl mx-auto px-6 py-1.5">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-center gap-3">
+                {/* External Content Controls */}
+                {hasBlockedContent && !allowExternalContent && externalContentPolicy !== 'allow' && (
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {/* Load images button - only in 'ask' mode */}
+                    {externalContentPolicy === 'ask' && (
+                      <button
+                        onClick={() => setAllowExternalContent(true)}
+                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px] md:min-h-0"
+                      >
+                        <Image className="w-3.5 h-3.5" />
+                        {t('load_external_content')}
+                      </button>
+                    )}
+                    {/* Trust sender button - in both 'ask' and 'block' modes */}
+                    {email.from?.[0]?.email && (
+                      <button
+                        onClick={() => {
+                          const senderEmail = email.from?.[0]?.email;
+                          if (senderEmail) {
+                            addTrustedSender(senderEmail);
+                            setAllowExternalContent(true);
+                          }
+                        }}
+                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px] md:min-h-0"
+                      >
+                        {t('trust_sender')}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Unsubscribe Controls */}
+                {shouldShowUnsubBanner && listHeaders?.listUnsubscribe && (
+                  <UnsubscribeBanner
+                    listUnsubscribe={listHeaders.listUnsubscribe}
+                    senderEmail={email?.from?.[0]?.email || ''}
+                    onDismiss={() => {
+                      const messageId = email?.messageId || '';
+                      const newSet = new Set(dismissedUnsubBanners).add(messageId);
+                      setDismissedUnsubBanners(newSet);
+                      localStorage.setItem('dismissed-unsub-banners', JSON.stringify([...newSet]));
                     }}
-                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {t('trust_sender')}
-                  </button>
-                </>
-              )}
+                  />
+                )}
+              </div>
             </div>
           </div>
         )}

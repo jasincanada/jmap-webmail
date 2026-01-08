@@ -206,6 +206,17 @@
       "toast_not_spam_batch": "{count} e-mails déplacés vers Boîte de réception",
       "error": "Échec du signalement spam",
       "error_not_spam": "Échec de la restauration"
+    },
+    "unsubscribe_banner": {
+      "label": "Newsletter",
+      "button": "Se désabonner",
+      "confirm_title": "Se désabonner de cet expéditeur ?",
+      "confirm_button": "Confirmer",
+      "cancel": "Annuler",
+      "success_http": "Page de désabonnement ouverte dans un nouvel onglet",
+      "success_mailto": "Demande de désabonnement envoyée à votre client mail",
+      "error": "Impossible de se désabonner",
+      "dismiss": "Ignorer"
     }
   },
   "email_composer": {

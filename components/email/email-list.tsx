@@ -64,6 +64,7 @@ export function EmailList({
     batchDelete,
     batchMoveToMailbox,
     batchMarkAsSpam,
+    batchUndoSpam,
     loadMoreEmails,
     hasMoreEmails,
     isLoadingMore,
@@ -364,16 +365,34 @@ export function EmailList({
           onBatchMarkAsRead={(read) => client && batchMarkAsRead(client, read)}
           onBatchDelete={() => client && batchDelete(client)}
           onBatchMoveToMailbox={(mailboxId) => client && batchMoveToMailbox(client, mailboxId)}
-          onBatchMarkAsSpam={() => {
+          onBatchMarkAsSpam={async () => {
             if (client) {
               const emailIds = Array.from(selectedEmailIds);
-              batchMarkAsSpam(client, emailIds);
+              try {
+                await batchMarkAsSpam(client, emailIds);
+                const { toast } = await import('sonner');
+                toast.success(
+                  t('../email_viewer.spam.toast_batch', { count: emailIds.length })
+                );
+              } catch {
+                const { toast } = await import('sonner');
+                toast.error(t('../email_viewer.spam.error'));
+              }
             }
           }}
-          onBatchUndoSpam={() => {
-            if (client && onUndoSpam) {
-              const selectedEmails = emails.filter(e => selectedEmailIds.has(e.id));
-              selectedEmails.forEach(email => onUndoSpam(email));
+          onBatchUndoSpam={async () => {
+            if (client) {
+              const emailIds = Array.from(selectedEmailIds);
+              try {
+                await batchUndoSpam(client, emailIds);
+                const { toast } = await import('sonner');
+                toast.success(
+                  t('../email_viewer.spam.toast_not_spam_batch', { count: emailIds.length })
+                );
+              } catch {
+                const { toast } = await import('sonner');
+                toast.error(t('../email_viewer.spam.error_not_spam'));
+              }
             }
           }}
         />

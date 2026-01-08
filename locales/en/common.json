@@ -206,6 +206,17 @@
       "toast_not_spam_batch": "{count} emails moved to Inbox",
       "error": "Failed to report spam",
       "error_not_spam": "Failed to restore email"
+    },
+    "unsubscribe_banner": {
+      "label": "Newsletter",
+      "button": "Unsubscribe",
+      "confirm_title": "Unsubscribe from this sender?",
+      "confirm_button": "Confirm",
+      "cancel": "Cancel",
+      "success_http": "Unsubscribe page opened in new tab",
+      "success_mailto": "Unsubscribe request sent to your email client",
+      "error": "Unable to unsubscribe",
+      "dismiss": "Dismiss"
     }
   },
   "email_composer": {

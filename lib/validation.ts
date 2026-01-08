@@ -66,3 +66,58 @@ export function getEmailValidationError(email: string): string | null {
 
   return null;
 }
+
+/**
+ * Validate unsubscribe URL (RFC 2369 List-Unsubscribe)
+ * Only allows safe protocols: http, https, mailto
+ * @param url - URL to validate
+ * @returns true if URL is safe to use
+ */
+export function isValidUnsubscribeUrl(url: string): boolean {
+  if (!url?.trim()) return false;
+
+  if (url.startsWith('mailto:')) {
+    const email = url.substring(7);
+    const emailPart = email.split('?')[0];
+    return isValidEmail(emailPart);
+  }
+
+  try {
+    const parsed = new URL(url);
+    return ['http:', 'https:'].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Parse List-Unsubscribe header and extract all valid URLs
+ * RFC 2369 allows multiple comma-separated URLs in <url> format
+ * @param header - Raw List-Unsubscribe header value
+ * @returns Object with http and mailto URLs, plus preferred method
+ */
+export function parseUnsubscribeUrls(header: string): {
+  http?: string;
+  mailto?: string;
+  preferred?: 'http' | 'mailto';
+} {
+  if (!header?.trim()) return {};
+
+  const matches = header.match(/<([^>]+)>/g);
+  if (!matches) return {};
+
+  const urls = matches.map(m => m.slice(1, -1).trim());
+
+  const http = urls.find(u =>
+    (u.startsWith('http://') || u.startsWith('https://')) &&
+    isValidUnsubscribeUrl(u)
+  );
+  const mailto = urls.find(u =>
+    u.startsWith('mailto:') &&
+    isValidUnsubscribeUrl(u)
+  );
+
+  const preferred = http ? 'http' : (mailto ? 'mailto' : undefined);
+
+  return { http, mailto, preferred };
+}

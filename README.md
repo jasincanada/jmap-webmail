@@ -35,6 +35,8 @@ A modern, privacy-focused webmail client built with Next.js and the JMAP protoco
 ### Identity & Privacy
 - **Identity Management** - Multiple email identities with custom signatures
 - **Sub-Addressing** - Generate tagged email addresses (user+tag@domain.com) for better organization
+- **Newsletter Management** - RFC 2369 one-click unsubscribe with security validation
+- **Spam Reporting** - Mark emails as spam with bidirectional handling and batch operations
 - **External Content Blocking** - Privacy protection with user-controlled image loading
 - **Shared Folders** - Multi-account access with proper ID namespacing
 
@@ -43,7 +45,7 @@ A modern, privacy-focused webmail client built with Next.js and the JMAP protoco
 - **Context Menus** - Right-click for quick actions on emails
 - **Drag & Drop** - Move emails between folders with native HTML5 DnD
 - **Color Tags** - Organize emails with color labels
-- **Dark Mode** - Full dark theme support with system preference detection
+- **Dark Mode** - Full dark theme with intelligent email color transformation for readability
 - **i18n** - English and French language support with auto-detection
 - **Mobile Responsive** - Adaptive single/multi-pane layout for all screen sizes
 

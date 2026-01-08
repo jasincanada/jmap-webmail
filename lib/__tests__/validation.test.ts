@@ -3,6 +3,8 @@ import {
   isValidEmail,
   validateEmailList,
   getEmailValidationError,
+  isValidUnsubscribeUrl,
+  parseUnsubscribeUrls,
 } from '../validation';
 
 describe('validation', () => {
@@ -180,6 +182,180 @@ describe('validation', () => {
       expect(error1).toContain('valid');
       expect(error2).toContain('valid');
       expect(error3).toContain('valid');
+    });
+  });
+
+  describe('isValidUnsubscribeUrl', () => {
+    describe('HTTP/HTTPS URLs', () => {
+      it('should accept valid HTTP URLs', () => {
+        expect(isValidUnsubscribeUrl('http://example.com/unsubscribe')).toBe(true);
+        expect(isValidUnsubscribeUrl('http://newsletter.example.com/unsub?id=123')).toBe(true);
+      });
+
+      it('should accept valid HTTPS URLs', () => {
+        expect(isValidUnsubscribeUrl('https://example.com/unsubscribe')).toBe(true);
+        expect(isValidUnsubscribeUrl('https://example.com/unsub?token=abc123')).toBe(true);
+        expect(isValidUnsubscribeUrl('https://sub.domain.com/unsubscribe')).toBe(true);
+      });
+
+      it('should accept URLs with paths and query params', () => {
+        expect(isValidUnsubscribeUrl('https://example.com/path/to/unsub?id=123&token=abc')).toBe(true);
+        expect(isValidUnsubscribeUrl('http://example.com/unsub#section')).toBe(true);
+      });
+    });
+
+    describe('mailto URLs', () => {
+      it('should accept valid mailto URLs', () => {
+        expect(isValidUnsubscribeUrl('mailto:unsubscribe@example.com')).toBe(true);
+        expect(isValidUnsubscribeUrl('mailto:unsub@newsletter.com')).toBe(true);
+      });
+
+      it('should accept mailto with query params', () => {
+        expect(isValidUnsubscribeUrl('mailto:unsub@example.com?subject=Unsubscribe')).toBe(true);
+        expect(isValidUnsubscribeUrl('mailto:unsub@example.com?subject=Remove&body=Please%20remove')).toBe(true);
+      });
+
+      it('should reject mailto with invalid email', () => {
+        expect(isValidUnsubscribeUrl('mailto:invalid-email')).toBe(false);
+        expect(isValidUnsubscribeUrl('mailto:@example.com')).toBe(false);
+        expect(isValidUnsubscribeUrl('mailto:user@')).toBe(false);
+      });
+    });
+
+    describe('XSS attack vectors', () => {
+      it('should reject javascript: protocol', () => {
+        expect(isValidUnsubscribeUrl('javascript:alert(1)')).toBe(false);
+        expect(isValidUnsubscribeUrl('javascript:alert(document.cookie)')).toBe(false);
+        expect(isValidUnsubscribeUrl('javascript:void(0)')).toBe(false);
+      });
+
+      it('should reject data: protocol', () => {
+        expect(isValidUnsubscribeUrl('data:text/html,<script>alert(1)</script>')).toBe(false);
+        expect(isValidUnsubscribeUrl('data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==')).toBe(false);
+      });
+
+      it('should reject file: protocol', () => {
+        expect(isValidUnsubscribeUrl('file:///etc/passwd')).toBe(false);
+        expect(isValidUnsubscribeUrl('file://C:/Windows/System32/config')).toBe(false);
+      });
+
+      it('should reject vbscript: protocol', () => {
+        expect(isValidUnsubscribeUrl('vbscript:msgbox(1)')).toBe(false);
+      });
+
+      it('should reject about: protocol', () => {
+        expect(isValidUnsubscribeUrl('about:blank')).toBe(false);
+      });
+
+      it('should reject ftp: protocol', () => {
+        expect(isValidUnsubscribeUrl('ftp://example.com/file')).toBe(false);
+      });
+    });
+
+    describe('edge cases', () => {
+      it('should reject empty or null input', () => {
+        expect(isValidUnsubscribeUrl('')).toBe(false);
+        expect(isValidUnsubscribeUrl('   ')).toBe(false);
+      });
+
+      it('should reject malformed URLs', () => {
+        expect(isValidUnsubscribeUrl('not-a-url')).toBe(false);
+        expect(isValidUnsubscribeUrl('example.com/unsub')).toBe(false);
+        expect(isValidUnsubscribeUrl('//example.com')).toBe(false);
+      });
+
+      it('should reject relative URLs', () => {
+        expect(isValidUnsubscribeUrl('/unsubscribe')).toBe(false);
+        expect(isValidUnsubscribeUrl('../unsub')).toBe(false);
+      });
+    });
+  });
+
+  describe('parseUnsubscribeUrls', () => {
+    it('should parse single HTTP URL', () => {
+      const result = parseUnsubscribeUrls('<https://example.com/unsub>');
+      expect(result.http).toBe('https://example.com/unsub');
+      expect(result.mailto).toBeUndefined();
+      expect(result.preferred).toBe('http');
+    });
+
+    it('should parse single mailto URL', () => {
+      const result = parseUnsubscribeUrls('<mailto:unsub@example.com>');
+      expect(result.http).toBeUndefined();
+      expect(result.mailto).toBe('mailto:unsub@example.com');
+      expect(result.preferred).toBe('mailto');
+    });
+
+    it('should parse multiple URLs and prefer HTTP', () => {
+      const result = parseUnsubscribeUrls('<https://example.com/unsub>, <mailto:unsub@example.com>');
+      expect(result.http).toBe('https://example.com/unsub');
+      expect(result.mailto).toBe('mailto:unsub@example.com');
+      expect(result.preferred).toBe('http');
+    });
+
+    it('should prefer HTTP over mailto when both present', () => {
+      const result = parseUnsubscribeUrls('<mailto:unsub@example.com>, <https://example.com/unsub>');
+      expect(result.http).toBe('https://example.com/unsub');
+      expect(result.mailto).toBe('mailto:unsub@example.com');
+      expect(result.preferred).toBe('http');
+    });
+
+    it('should handle URLs with query parameters', () => {
+      const result = parseUnsubscribeUrls('<https://example.com/unsub?token=abc123&id=456>');
+      expect(result.http).toBe('https://example.com/unsub?token=abc123&id=456');
+      expect(result.preferred).toBe('http');
+    });
+
+    it('should handle mailto with query parameters', () => {
+      const result = parseUnsubscribeUrls('<mailto:unsub@example.com?subject=Unsubscribe&body=Remove>');
+      expect(result.mailto).toBe('mailto:unsub@example.com?subject=Unsubscribe&body=Remove');
+      expect(result.preferred).toBe('mailto');
+    });
+
+    it('should filter out invalid URLs', () => {
+      const result = parseUnsubscribeUrls('<javascript:alert(1)>, <https://example.com/unsub>');
+      expect(result.http).toBe('https://example.com/unsub');
+      expect(result.preferred).toBe('http');
+    });
+
+    it('should return empty object for all invalid URLs', () => {
+      const result = parseUnsubscribeUrls('<javascript:alert(1)>, <data:text/html,<script>>');
+      expect(result.http).toBeUndefined();
+      expect(result.mailto).toBeUndefined();
+      expect(result.preferred).toBeUndefined();
+    });
+
+    it('should handle empty or null input', () => {
+      expect(parseUnsubscribeUrls('')).toEqual({});
+      expect(parseUnsubscribeUrls('   ')).toEqual({});
+    });
+
+    it('should handle malformed headers without angle brackets', () => {
+      const result = parseUnsubscribeUrls('https://example.com/unsub');
+      expect(result).toEqual({});
+    });
+
+    it('should handle whitespace in headers', () => {
+      const result = parseUnsubscribeUrls('  <https://example.com/unsub>  ,  <mailto:unsub@example.com>  ');
+      expect(result.http).toBe('https://example.com/unsub');
+      expect(result.mailto).toBe('mailto:unsub@example.com');
+      expect(result.preferred).toBe('http');
+    });
+
+    it('should handle three or more URLs', () => {
+      const result = parseUnsubscribeUrls(
+        '<https://example.com/unsub>, <http://backup.com/unsub>, <mailto:unsub@example.com>'
+      );
+      expect(result.http).toBeDefined();
+      expect(result.mailto).toBe('mailto:unsub@example.com');
+      expect(result.preferred).toBe('http');
+    });
+
+    it('should validate email addresses in mailto URLs', () => {
+      const result = parseUnsubscribeUrls('<mailto:invalid-email>, <https://example.com/unsub>');
+      expect(result.mailto).toBeUndefined();
+      expect(result.http).toBe('https://example.com/unsub');
+      expect(result.preferred).toBe('http');
     });
   });
 });
