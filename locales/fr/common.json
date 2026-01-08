@@ -82,6 +82,7 @@
     "hide_details": "Masquer les détails",
     "external_content_warning": "Les images et le contenu externe ont été bloqués",
     "load_external_content": "Charger les images",
+    "trust_sender": "Toujours faire confiance à cet expéditeur",
     "message_details": "Détails du message",
     "authentication": {
       "title": "Authentification",
@@ -315,6 +316,25 @@
         "ask": "Toujours demander",
         "block": "Toujours bloquer",
         "allow": "Toujours autoriser"
+      },
+      "trusted_senders": {
+        "label": "Expéditeurs de confiance",
+        "description": "Gérer les expéditeurs dont les images se chargent automatiquement",
+        "count_zero": "Aucun",
+        "count_one": "1 expéditeur",
+        "count_other": "{count} expéditeurs",
+        "modal_title": "Expéditeurs de confiance",
+        "empty_title": "Aucun expéditeur de confiance",
+        "empty_description": "Lorsque vous consultez un email avec des images bloquées, cliquez sur « Toujours faire confiance à cet expéditeur » pour l'ajouter ici.",
+        "add_manually": "Ajouter manuellement",
+        "add_button": "Ajouter",
+        "add_placeholder": "Entrez une adresse email",
+        "search_placeholder": "Rechercher...",
+        "no_results": "Aucun expéditeur ne correspond à votre recherche",
+        "remove": "Supprimer",
+        "close": "Fermer",
+        "invalid_email": "Veuillez entrer une adresse email valide",
+        "already_added": "Cet expéditeur est déjà de confiance"
       }
     },
     "composer": {

@@ -82,6 +82,7 @@
     "hide_details": "Hide details",
     "external_content_warning": "Images and external content have been blocked",
     "load_external_content": "Load images",
+    "trust_sender": "Always trust this sender",
     "message_details": "Message Details",
     "authentication": {
       "title": "Authentication",
@@ -315,6 +316,25 @@
         "ask": "Always ask",
         "block": "Always block",
         "allow": "Always allow"
+      },
+      "trusted_senders": {
+        "label": "Trusted Senders",
+        "description": "Manage senders whose images load automatically",
+        "count_zero": "None",
+        "count_one": "1 sender",
+        "count_other": "{count} senders",
+        "modal_title": "Trusted Senders",
+        "empty_title": "No trusted senders yet",
+        "empty_description": "When viewing an email with blocked images, click \"Always trust this sender\" to add them here.",
+        "add_manually": "Add sender manually",
+        "add_button": "Add",
+        "add_placeholder": "Enter email address",
+        "search_placeholder": "Search senders...",
+        "no_results": "No senders match your search",
+        "remove": "Remove",
+        "close": "Close",
+        "invalid_email": "Please enter a valid email address",
+        "already_added": "This sender is already trusted"
       }
     },
     "composer": {
