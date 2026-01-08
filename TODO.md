@@ -111,7 +111,7 @@
 - [x] Create organized sections for technical email details
 - [x] Parse and display email header information
 - [x] Add dark mode toggle with proper theme persistence
-- [x] Add i18n (internationalization) support with English, French, and Japanese
+- [x] Add i18n (internationalization) support with English, French, Japanese, Spanish, Italian, German, Dutch, and Portuguese
 - [x] Fix next-intl timezone configuration with auto-detection for global users
 - [x] Redesign sidebar footer with improved UI/UX for settings
 - [x] Fix theme switching and light mode application
@@ -143,7 +143,7 @@
 - [x] Build Identity Form component (name, email, signatures)
 - [x] Create Identity Settings panel
 - [x] Add Identities tab to Settings page
-- [x] Add i18n keys for identity management (EN + FR + JA)
+- [x] Add i18n keys for identity management (EN + FR + JA + ES + IT + DE + NL + PT)
 - [x] Build Sub-Address Helper component (tag input, suggestions, preview)
 - [x] Build Email Identity Badge component (viewer + list display)
 - [x] Integrate identity selector into email composer
@@ -337,7 +337,7 @@ All settings are now properly wired to their functionality:
 - **Visual Indicators**:
   - components/email/email-identity-badge.tsx - Shows identity + sub-address tags
   - Displayed in email viewer (recipient chips) and email list (compact badges)
-- **i18n Support**: Full EN/FR translations in locales/*/common.json (identity.*, sub_address.*)
+- **i18n Support**: Full EN/FR/JA/ES/IT/DE/NL/PT translations in locales/*/common.json (identity.*, sub_address.*)
 - **Security**: Input validation, XSS prevention in signatures (DOMPurify), sub-address format validation
 
 ### Newsletter Unsubscribe (2026-01-08)
@@ -359,7 +359,7 @@ All settings are now properly wired to their functionality:
   - Integrated with external content banner (unified notification area)
   - Success/error states with auto-dismiss
   - Mobile-friendly with 44px touch targets
-- **i18n Support**: Full EN/FR translations in email_viewer.unsubscribe_banner.*
+- **i18n Support**: Full EN/FR/JA/ES/IT/DE/NL/PT translations in email_viewer.unsubscribe_banner.*
 
 ### Accessibility Improvements (2026-01-08)
 - **WCAG 2.0 Level AA Compliance**: Comprehensive color contrast review and fixes

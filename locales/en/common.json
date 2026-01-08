@@ -304,7 +304,15 @@
     "emails_moved": "{count} emails moved",
     "moved_to_mailbox": "Moved to {mailbox}",
     "move_failed": "Move failed",
-    "move_error": "Could not move emails to the selected folder"
+    "move_error": "Could not move emails to the selected folder",
+    "identity_created": "Identity created successfully",
+    "identity_updated": "Identity updated successfully",
+    "identity_deleted": "Identity deleted",
+    "identity_create_failed": "Failed to create identity: {{error}}",
+    "identity_update_failed": "Failed to update identity: {{error}}",
+    "identity_delete_failed": "Failed to delete identity: {{error}}",
+    "identity_unauthorized": "You are not authorized to send from this email address",
+    "identity_not_found": "Identity not found"
   },
   "date": {
     "today": "Today",
@@ -326,10 +334,20 @@
     "english": "English",
     "french": "Français",
     "japanese": "日本語",
+    "spanish": "Español",
+    "italian": "Italiano",
+    "german": "Deutsch",
+    "dutch": "Nederlands",
+    "portuguese": "Português",
     "select_language": "Select language",
     "switch_to_english": "Switch to English",
     "switch_to_french": "Switch to French",
     "switch_to_japanese": "Switch to Japanese",
+    "switch_to_spanish": "Switch to Spanish",
+    "switch_to_italian": "Switch to Italian",
+    "switch_to_german": "Switch to German",
+    "switch_to_dutch": "Switch to Dutch",
+    "switch_to_portuguese": "Switch to Portuguese",
     "switching": "Changing language..."
   },
   "settings": {
@@ -724,15 +742,5 @@
       "identity_short": "via {name}",
       "subaddress_tag": "+{tag}"
     }
-  },
-  "notifications": {
-    "identity_created": "Identity created successfully",
-    "identity_updated": "Identity updated successfully",
-    "identity_deleted": "Identity deleted",
-    "identity_create_failed": "Failed to create identity: {{error}}",
-    "identity_update_failed": "Failed to update identity: {{error}}",
-    "identity_delete_failed": "Failed to delete identity: {{error}}",
-    "identity_unauthorized": "You are not authorized to send from this email address",
-    "identity_not_found": "Identity not found"
   }
 }

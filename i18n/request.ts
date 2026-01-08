@@ -12,6 +12,11 @@ export default getRequestConfig(async ({ requestLocale }) => {
   const messages =
     locale === 'fr' ? (await import('../locales/fr/common.json')).default
     : locale === 'ja' ? (await import('../locales/ja/common.json')).default
+    : locale === 'es' ? (await import('../locales/es/common.json')).default
+    : locale === 'it' ? (await import('../locales/it/common.json')).default
+    : locale === 'de' ? (await import('../locales/de/common.json')).default
+    : locale === 'nl' ? (await import('../locales/nl/common.json')).default
+    : locale === 'pt' ? (await import('../locales/pt/common.json')).default
     : (await import('../locales/en/common.json')).default;
 
   return {

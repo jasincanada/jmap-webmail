@@ -5,7 +5,7 @@
 
 ## Internationalization (i18n)
 
-This project uses **next-intl** for internationalization with support for English, French, and Japanese.
+This project uses **next-intl** for internationalization with support for English, French, Japanese, Spanish, Italian, German, Dutch, and Portuguese.
 
 ### Key Guidelines:
 
@@ -19,6 +19,11 @@ This project uses **next-intl** for internationalization with support for Englis
    - English: `/locales/en/common.json`
    - French: `/locales/fr/common.json`
    - Japanese: `/locales/ja/common.json`
+   - Spanish: `/locales/es/common.json`
+   - Italian: `/locales/it/common.json`
+   - German: `/locales/de/common.json`
+   - Dutch: `/locales/nl/common.json`
+   - Portuguese: `/locales/pt/common.json`
 
 3. **Namespace organization**: Group related translations:
    - `login.*` - Login page strings
@@ -38,7 +43,7 @@ This project uses **next-intl** for internationalization with support for Englis
    ```
 
 6. **Adding new strings**:
-   - Add to all translation files: `/locales/en/common.json`, `/locales/fr/common.json`, and `/locales/ja/common.json`
+   - Add to all translation files: `/locales/en/common.json`, `/locales/fr/common.json`, `/locales/ja/common.json`, `/locales/es/common.json`, `/locales/it/common.json`, `/locales/de/common.json`, `/locales/nl/common.json`, and `/locales/pt/common.json`
    - Use descriptive, hierarchical keys
    - Keep translations consistent in tone and terminology
 
