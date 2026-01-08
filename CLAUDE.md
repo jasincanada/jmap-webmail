@@ -75,7 +75,14 @@ This script will:
 6. Validate no forbidden files are staged
 7. Show changes for review
 
-After the script runs, manually commit and push:
+After the script runs:
+
+1. **Update public documentation** (if needed):
+   - `README.md` - Update features list, screenshots, version info for new functionality
+   - `ROADMAP.md` - Move completed items, add new planned features
+   - Review what changed in master and reflect user-facing changes in public docs
+
+2. **Commit and push**:
 ```bash
 git add -A
 git commit -S --author="Matthieu MALVACHE <matthieu@root.cloud>" -m "feat: Your message"
