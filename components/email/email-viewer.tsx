@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import DOMPurify from "dompurify";
 import { Email } from "@/lib/jmap/types";
+import { hasRichFormatting, EMAIL_SANITIZE_CONFIG } from "@/lib/email-sanitization";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { formatFileSize, cn } from "@/lib/utils";
@@ -342,16 +343,8 @@ export function EmailViewer({
       if (email.htmlBody?.[0]?.partId && email.bodyValues[email.htmlBody[0].partId]) {
         htmlContent = email.bodyValues[email.htmlBody[0].partId].value;
 
-        // Check if HTML is just a minimal wrapper around plain text
-        // by checking if it lacks common HTML formatting elements
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = htmlContent;
-        const hasRichFormatting = tempDiv.querySelector('table, img, style, b, strong, i, em, u, font, div[style], span[style], p[style], h1, h2, h3, h4, h5, h6, ul, ol, blockquote');
-        const hasMultipleParagraphs = tempDiv.querySelectorAll('p').length > 2;
-        const hasBrTags = tempDiv.querySelectorAll('br').length > 0;
-
-        // Use HTML if it has rich formatting, multiple paragraphs, or explicit line breaks
-        useHtmlVersion = !!(hasRichFormatting || hasMultipleParagraphs || hasBrTags);
+        // Use safe parsing instead of innerHTML to detect rich formatting
+        useHtmlVersion = hasRichFormatting(htmlContent);
       }
 
       // If we should use HTML version and it exists
@@ -359,14 +352,8 @@ export function EmailViewer({
         // Create a custom DOMPurify hook to handle external content
         let blockedExternalContent = false;
 
-        const sanitizeConfig = {
-          ADD_TAGS: ['style'],
-          ADD_ATTR: ['target', 'style', 'class', 'width', 'height', 'align', 'valign', 'bgcolor', 'color'],
-          ALLOW_DATA_ATTR: false,
-          FORCE_BODY: true,
-          FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button'],
-          FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur'],
-        };
+        // Use shared sanitization config as base (more secure)
+        const sanitizeConfig = { ...EMAIL_SANITIZE_CONFIG };
 
         // Check if sender is trusted
         const senderEmail = email.from?.[0]?.email?.toLowerCase();

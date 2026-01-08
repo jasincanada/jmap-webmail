@@ -5,6 +5,8 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { Identity, EmailAddress } from '@/lib/jmap/types';
+import { sanitizeSignatureHtml } from '@/lib/email-sanitization';
+import { getEmailValidationError, validateEmailList } from '@/lib/validation';
 
 interface IdentityFormData {
   name: string;
@@ -44,10 +46,6 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const validateEmail = (email: string): boolean => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
   const parseEmailList = (input: string): EmailAddress[] | undefined => {
     if (!input.trim()) return undefined;
 
@@ -62,31 +60,25 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
       newErrors.name = t('name_required');
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = t('email_required');
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = t('email_invalid');
+    // Use secure email validation
+    const emailError = getEmailValidationError(formData.email);
+    if (emailError) {
+      newErrors.email = emailError;
     }
 
-    // Validate reply-to emails
+    // Validate reply-to email list
     if (replyToInput.trim()) {
-      const emails = replyToInput.split(',').map(e => e.trim());
-      for (const email of emails) {
-        if (email && !validateEmail(email)) {
-          newErrors.replyTo = t('email_invalid');
-          break;
-        }
+      const validation = validateEmailList(replyToInput);
+      if (!validation.valid) {
+        newErrors.replyTo = `Invalid emails: ${validation.invalidEmails.join(', ')}`;
       }
     }
 
-    // Validate bcc emails
+    // Validate bcc email list
     if (bccInput.trim()) {
-      const emails = bccInput.split(',').map(e => e.trim());
-      for (const email of emails) {
-        if (email && !validateEmail(email)) {
-          newErrors.bcc = t('email_invalid');
-          break;
-        }
+      const validation = validateEmailList(bccInput);
+      if (!validation.valid) {
+        newErrors.bcc = `Invalid emails: ${validation.invalidEmails.join(', ')}`;
       }
     }
 
@@ -102,11 +94,17 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
     setIsSubmitting(true);
 
     try {
-      await onSave({
+      // Sanitize HTML signature before sending to server
+      const sanitizedData: IdentityFormData = {
         ...formData,
         replyTo: parseEmailList(replyToInput),
         bcc: parseEmailList(bccInput),
-      });
+        htmlSignature: formData.htmlSignature
+          ? sanitizeSignatureHtml(formData.htmlSignature)
+          : undefined,
+      };
+
+      await onSave(sanitizedData);
     } finally {
       setIsSubmitting(false);
     }
@@ -122,6 +120,7 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
         <Input
           id="identity-name"
           type="text"
+          maxLength={256}
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder={t('name_placeholder')}
@@ -141,6 +140,7 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
         <Input
           id="identity-email"
           type="email"
+          maxLength={254}
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           placeholder={t('email_placeholder')}
@@ -165,6 +165,7 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
         <Input
           id="identity-reply-to"
           type="text"
+          maxLength={512}
           value={replyToInput}
           onChange={(e) => setReplyToInput(e.target.value)}
           placeholder={t('reply_to_placeholder')}
@@ -184,6 +185,7 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
         <Input
           id="identity-bcc"
           type="text"
+          maxLength={512}
           value={bccInput}
           onChange={(e) => setBccInput(e.target.value)}
           placeholder={t('bcc_placeholder')}
@@ -202,6 +204,7 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
         </label>
         <textarea
           id="identity-text-sig"
+          maxLength={2000}
           value={formData.textSignature}
           onChange={(e) => setFormData({ ...formData, textSignature: e.target.value })}
           rows={3}
@@ -217,12 +220,23 @@ export function IdentityForm({ identity, onSave, onCancel }: IdentityFormProps) 
         </label>
         <textarea
           id="identity-html-sig"
+          maxLength={5000}
           value={formData.htmlSignature}
           onChange={(e) => setFormData({ ...formData, htmlSignature: e.target.value })}
           rows={5}
           disabled={isSubmitting}
           className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground font-mono transition-all duration-200 placeholder:text-muted-foreground hover:border-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50"
         />
+        {formData.htmlSignature && (
+          <div className="mt-2 p-2 border rounded bg-muted">
+            <div className="text-xs text-muted-foreground mb-1">Preview:</div>
+            <div
+              dangerouslySetInnerHTML={{
+                __html: sanitizeSignatureHtml(formData.htmlSignature)
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Actions */}
