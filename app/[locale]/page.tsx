@@ -223,7 +223,7 @@ export default function Home() {
     }
 
     document.title = title;
-  }, [showComposer, composerMode, selectedEmail, selectedMailbox, mailboxes, t]);
+  }, [showComposer, composerMode, selectedEmail, selectedMailbox, mailboxes, t, tCommon]);
 
   // Check auth on mount
   useEffect(() => {
