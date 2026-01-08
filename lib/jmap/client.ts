@@ -753,6 +753,58 @@ export class JMAPClient {
     ]);
   }
 
+  /**
+   * Move email to Junk folder
+   */
+  async markAsSpam(emailId: string, accountId?: string): Promise<void> {
+    const targetAccountId = accountId || this.accountId;
+
+    const mailboxes = await this.getMailboxes();
+    const junkMailbox = mailboxes.find(m => {
+      if (accountId) {
+        return m.role === 'junk' && m.accountId === accountId;
+      }
+      return m.role === 'junk' && !m.isShared;
+    });
+
+    if (!junkMailbox) {
+      throw new Error('Junk mailbox not found');
+    }
+
+    const mailboxId = accountId && junkMailbox.originalId
+      ? junkMailbox.originalId
+      : junkMailbox.id;
+
+    await this.request([
+      ["Email/set", {
+        accountId: targetAccountId,
+        update: {
+          [emailId]: {
+            mailboxIds: { [mailboxId]: true },
+          },
+        },
+      }, "0"],
+    ]);
+  }
+
+  /**
+   * Undo spam - move email back from Junk to original mailbox
+   */
+  async undoSpam(emailId: string, originalMailboxId: string, accountId?: string): Promise<void> {
+    const targetAccountId = accountId || this.accountId;
+
+    await this.request([
+      ["Email/set", {
+        accountId: targetAccountId,
+        update: {
+          [emailId]: {
+            mailboxIds: { [originalMailboxId]: true },
+          },
+        },
+      }, "0"],
+    ]);
+  }
+
   async searchEmails(query: string, mailboxId?: string, accountId?: string, limit: number = 50, position: number = 0): Promise<{ emails: Email[], hasMore: boolean, total: number }> {
     try {
       // Use provided accountId or fallback to primary account

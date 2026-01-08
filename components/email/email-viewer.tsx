@@ -68,9 +68,12 @@ interface EmailViewerProps {
   onSetColorTag?: (emailId: string, color: string | null) => void;
   onDownloadAttachment?: (blobId: string, name: string, type?: string) => void;
   onQuickReply?: (body: string) => Promise<void>;
+  onMarkAsSpam?: () => void;
+  onUndoSpam?: () => void;
   onBack?: () => void;
   currentUserEmail?: string;
   currentUserName?: string;
+  currentMailboxRole?: string;
   className?: string;
 }
 
@@ -159,9 +162,12 @@ export function EmailViewer({
   onSetColorTag,
   onDownloadAttachment,
   onQuickReply,
+  onMarkAsSpam,
+  onUndoSpam,
   onBack,
   currentUserEmail,
   currentUserName,
+  currentMailboxRole,
   className,
 }: EmailViewerProps) {
   const t = useTranslations('email_viewer');
@@ -170,6 +176,9 @@ export function EmailViewer({
   const externalContentPolicy = useSettingsStore((state) => state.externalContentPolicy);
   const addTrustedSender = useSettingsStore((state) => state.addTrustedSender);
   const isSenderTrusted = useSettingsStore((state) => state.isSenderTrusted);
+
+  // Detect if current mailbox is Junk folder
+  const isInJunkFolder = currentMailboxRole === 'junk';
 
   // Color options for email tags (using translations)
   const colorOptions = [
@@ -687,6 +696,29 @@ export function EmailViewer({
               >
                 <Archive className="w-4 h-4 text-muted-foreground" />
               </Button>
+
+              {/* Spam/Not Spam Button - Desktop only, contextual based on folder */}
+              {(onMarkAsSpam || onUndoSpam) && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={isInJunkFolder ? onUndoSpam : onMarkAsSpam}
+                  className={cn(
+                    "hidden h-8 w-8 lg:flex",
+                    isInJunkFolder
+                      ? "hover:bg-green-50 dark:hover:bg-green-950/30"
+                      : "hover:bg-red-50 dark:hover:bg-red-950/30"
+                  )}
+                  title={isInJunkFolder ? t('spam.not_spam_title') : t('spam.button_title')}
+                >
+                  {isInJunkFolder ? (
+                    <ShieldCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  ) : (
+                    <ShieldAlert className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  )}
+                </Button>
+              )}
+
               <Button
                 variant="ghost"
                 size="icon"
@@ -794,6 +826,30 @@ export function EmailViewer({
                     <Printer className="w-4 h-4" />
                     {t('print')}
                   </button>
+                  {/* Separator */}
+                  <div className="h-px bg-border my-1" />
+                  {/* Spam action - contextual */}
+                  {(onMarkAsSpam || onUndoSpam) && (
+                    <button
+                      onClick={isInJunkFolder ? onUndoSpam : onMarkAsSpam}
+                      className={cn(
+                        "w-full px-3 py-2 text-sm text-left hover:bg-muted flex items-center gap-2",
+                        isInJunkFolder ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"
+                      )}
+                    >
+                      {isInJunkFolder ? (
+                        <>
+                          <ShieldCheck className="w-4 h-4" />
+                          {t('spam.not_spam_title')}
+                        </>
+                      ) : (
+                        <>
+                          <ShieldAlert className="w-4 h-4" />
+                          {t('spam.button_title')}
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

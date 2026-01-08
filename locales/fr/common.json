@@ -195,6 +195,17 @@
       "reply": "Répondre",
       "archive": "Archiver",
       "delete": "Supprimer"
+    },
+    "spam": {
+      "button_title": "Signaler comme spam",
+      "not_spam_title": "Marquer comme légitime",
+      "toast_success": "Déplacé vers Indésirables",
+      "toast_batch": "{count} e-mails déplacés vers Indésirables",
+      "toast_undo": "Annuler",
+      "toast_not_spam_success": "Déplacé vers Boîte de réception",
+      "toast_not_spam_batch": "{count} e-mails déplacés vers Boîte de réception",
+      "error": "Échec du signalement spam",
+      "error_not_spam": "Échec de la restauration"
     }
   },
   "email_composer": {
@@ -582,6 +593,8 @@
     "move_to": "Déplacer vers...",
     "archive": "Archiver",
     "delete": "Supprimer",
+    "mark_as_spam": "Signaler comme spam",
+    "not_spam": "Pas un spam",
     "color_tag": "Étiquette de couleur",
     "remove_color": "Supprimer la couleur",
     "items_selected": "{{count}} emails sélectionnés"
@@ -609,7 +622,8 @@
       "archive": "Archiver",
       "delete": "Supprimer",
       "mark_unread": "Marquer comme non lu",
-      "mark_read": "Marquer comme lu"
+      "mark_read": "Marquer comme lu",
+      "toggle_spam": "Signaler / Pas un spam"
     },
     "global": {
       "compose": "Composer un email",

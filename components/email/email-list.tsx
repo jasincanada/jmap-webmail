@@ -31,6 +31,8 @@ interface EmailListProps {
   onArchive?: (email: Email) => void;
   onSetColorTag?: (emailId: string, color: string | null) => void;
   onMoveToMailbox?: (emailId: string, mailboxId: string) => void;
+  onMarkAsSpam?: (email: Email) => void;
+  onUndoSpam?: (email: Email) => void;
 }
 
 export function EmailList({
@@ -48,6 +50,8 @@ export function EmailList({
   onDelete,
   onArchive,
   onSetColorTag,
+  onMarkAsSpam,
+  onUndoSpam,
   onMoveToMailbox,
 }: EmailListProps) {
   const t = useTranslations('email_list');
@@ -59,6 +63,7 @@ export function EmailList({
     batchMarkAsRead,
     batchDelete,
     batchMoveToMailbox,
+    batchMarkAsSpam,
     loadMoreEmails,
     hasMoreEmails,
     isLoadingMore,
@@ -340,6 +345,7 @@ export function EmailList({
           menuRef={menuRef}
           mailboxes={mailboxes}
           selectedMailbox={selectedMailbox}
+          currentMailboxRole={mailboxes.find(m => m.id === selectedMailbox)?.role}
           isMultiSelect={selectedEmailIds.has(contextMenu.data.id)}
           selectedCount={selectedEmailIds.size}
           // Single email actions
@@ -352,10 +358,24 @@ export function EmailList({
           onArchive={() => onArchive?.(contextMenu.data!)}
           onSetColorTag={(color) => onSetColorTag?.(contextMenu.data!.id, color)}
           onMoveToMailbox={(mailboxId) => onMoveToMailbox?.(contextMenu.data!.id, mailboxId)}
+          onMarkAsSpam={() => onMarkAsSpam?.(contextMenu.data!)}
+          onUndoSpam={() => onUndoSpam?.(contextMenu.data!)}
           // Batch actions
           onBatchMarkAsRead={(read) => client && batchMarkAsRead(client, read)}
           onBatchDelete={() => client && batchDelete(client)}
           onBatchMoveToMailbox={(mailboxId) => client && batchMoveToMailbox(client, mailboxId)}
+          onBatchMarkAsSpam={() => {
+            if (client) {
+              const emailIds = Array.from(selectedEmailIds);
+              batchMarkAsSpam(client, emailIds);
+            }
+          }}
+          onBatchUndoSpam={() => {
+            if (client && onUndoSpam) {
+              const selectedEmails = emails.filter(e => selectedEmailIds.has(e.id));
+              selectedEmails.forEach(email => onUndoSpam(email));
+            }
+          }}
         />
       )}
     </div>

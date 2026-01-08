@@ -25,6 +25,8 @@ import {
   Send,
   File,
   Folder,
+  ShieldAlert,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +43,7 @@ interface EmailContextMenuProps {
   menuRef: React.RefObject<HTMLDivElement | null>;
   mailboxes: Mailbox[];
   selectedMailbox: string;
+  currentMailboxRole?: string;
   isMultiSelect?: boolean;
   selectedCount?: number;
   // Single email actions
@@ -53,10 +56,14 @@ interface EmailContextMenuProps {
   onArchive?: () => void;
   onSetColorTag?: (color: string | null) => void;
   onMoveToMailbox?: (mailboxId: string) => void;
+  onMarkAsSpam?: () => void;
+  onUndoSpam?: () => void;
   // Batch actions
   onBatchMarkAsRead?: (read: boolean) => void;
   onBatchDelete?: () => void;
   onBatchMoveToMailbox?: (mailboxId: string) => void;
+  onBatchMarkAsSpam?: () => void;
+  onBatchUndoSpam?: () => void;
 }
 
 // Get mailbox icon based on role
@@ -96,6 +103,7 @@ export function EmailContextMenu({
   menuRef,
   mailboxes,
   selectedMailbox,
+  currentMailboxRole,
   isMultiSelect = false,
   selectedCount = 1,
   onReply,
@@ -107,9 +115,13 @@ export function EmailContextMenu({
   onArchive,
   onSetColorTag,
   onMoveToMailbox,
+  onMarkAsSpam,
+  onUndoSpam,
   onBatchMarkAsRead,
   onBatchDelete,
   onBatchMoveToMailbox,
+  onBatchMarkAsSpam,
+  onBatchUndoSpam,
 }: EmailContextMenuProps) {
   const t = useTranslations("context_menu");
   const tColor = useTranslations("email_viewer.color_tag");
@@ -117,6 +129,7 @@ export function EmailContextMenu({
   const isStarred = email.keywords?.$flagged;
   const currentColor = getCurrentColor(email.keywords);
   const showBatchActions = isMultiSelect && selectedCount > 1;
+  const isInJunkFolder = currentMailboxRole === 'junk';
 
   // Color options for email tags (using translations)
   const colorOptions = [
@@ -236,6 +249,23 @@ export function EmailContextMenu({
         label={t("archive")}
         onClick={() => handleAction(onArchive!)}
         disabled={!onArchive}
+      />
+
+      <ContextMenuSeparator />
+
+      {/* Spam - contextual based on folder */}
+      <ContextMenuItem
+        icon={isInJunkFolder ? ShieldCheck : ShieldAlert}
+        label={isInJunkFolder ? t("not_spam") : t("mark_as_spam")}
+        onClick={() =>
+          handleAction(
+            showBatchActions
+              ? (isInJunkFolder ? onBatchUndoSpam! : onBatchMarkAsSpam!)
+              : (isInJunkFolder ? onUndoSpam! : onMarkAsSpam!)
+          )
+        }
+        disabled={showBatchActions ? (isInJunkFolder ? !onBatchUndoSpam : !onBatchMarkAsSpam) : (isInJunkFolder ? !onUndoSpam : !onMarkAsSpam)}
+        destructive={!isInJunkFolder}
       />
 
       <ContextMenuSeparator />
