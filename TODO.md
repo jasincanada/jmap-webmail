@@ -217,7 +217,7 @@
 - [ ] Add free/busy queries (Principal/getAvailability)
 - [x] Add iCalendar import via CalendarEvent/parse (file upload, preview, bulk import, 5MB limit)
 - [ ] Add calendar sharing UI (JMAP Sharing RFC 9670)
-- [ ] Add calendar event notifications display
+- [x] Add calendar event notifications display (client-side alert evaluation, toast notifications, sound, global hook, settings toggles, 26 tests)
 - [x] Add signature management (implemented via Identity Management - per-identity signatures)
 - [x] Implement vacation responder settings (JMAP VacationResponse singleton, settings tab, sidebar indicator)
 - [x] Add email aliases support (implemented via Sub-Addressing - user+tag@domain.com)
@@ -544,5 +544,6 @@ All settings are now properly wired to their functionality:
 - **Security**: ✅ CSP Report-Only + all P0 headers deployed (nonce-based scripts, proxy.ts middleware)
 - **Calendar**: ✅ Phase 2 complete (drag-and-drop rescheduling, iCalendar import, plus phase 1: views, event CRUD, multi-day, overlaps, locale dates, accessibility, security)
 - **Email Filters**: ✅ Complete (JMAP Sieve RFC 9661, visual rule builder, raw Sieve editor, 64 tests, capability-gated, 8 locales)
-- **Testing**: ✅ 514 tests passing (identity, sub-addressing, contacts, vCard, validation, color, threads, headers, sieve generator, sieve parser)
+- **Calendar Notifications**: ✅ Complete (client-side alert evaluation, toast display, notification sound, proactive event fetch, settings toggles, acknowledged persistence, 44 tests)
+- **Testing**: ✅ 558 tests passing (identity, sub-addressing, contacts, vCard, validation, color, threads, headers, sieve generator, sieve parser, calendar alerts, calendar notification store)
 
