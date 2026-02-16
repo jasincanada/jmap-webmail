@@ -209,7 +209,7 @@
 - [x] Add bulk contact operations (multi-select, bulk delete, bulk add to group, bulk export)
 
 ### Advanced Features
-- [ ] Implement filters and labels
+- [x] Implement email filters (JMAP Sieve Scripts RFC 9661 — visual rule builder + raw Sieve editor, capability-gated)
 - [x] Add calendar integration (JMAP Calendars - see Calendar Integration section)
 - [ ] Create email templates
 - [x] Add calendar event drag-and-drop rescheduling (week/day time snap, month date move, visual indicators)
@@ -504,6 +504,32 @@ All settings are now properly wired to their functionality:
   - Toolbar Import button with Upload icon
   - i18n: calendar.import.* keys in all 8 locales (17 strings each)
 
+### Email Filters & Sieve Rules (2026-02-16)
+- **JMAP Sieve Scripts (RFC 9661)**: Full server-side email filtering with visual builder + raw editor
+  - Types: lib/jmap/sieve-types.ts (SieveScript, SieveCapabilities, FilterRule, FilterCondition, FilterAction)
+  - Client: lib/jmap/client.ts (12 Sieve methods: supportsSieve, getSieveCapabilities, getSieveScripts, getSieveScriptContent, createSieveScript, updateSieveScript, deleteSieveScript, activateSieveScript, deactivateSieveScript, validateSieveScript)
+  - Capability detection: `urn:ietf:params:jmap:sieve` in auth-store.ts
+- **Sieve Generator/Parser**: lib/sieve/generator.ts, lib/sieve/parser.ts
+  - Rules stored as JSON metadata in `/* @metadata:begin ... @metadata:end */` comment block
+  - Dynamic `require` extension computation from enabled rules' actions
+  - Round-trip fidelity: parse → edit → regenerate preserves all rule data
+  - Hand-edited scripts detected as "opaque" → raw editor only
+  - 64 tests (50 generator + 14 parser)
+- **Store**: stores/filter-store.ts (Zustand, no persist)
+  - Rules CRUD: addRule, updateRule, deleteRule, reorderRules, toggleRule
+  - fetchFilters, saveFilters, validateScript via JMAP client
+  - Opaque script detection for hand-edited Sieve scripts
+  - Auto-fetch on login via auth-store, clear on logout
+- **UI Components**:
+  - components/settings/filter-settings.tsx — Settings tab: rule list with drag-and-drop reorder, toggle, edit, delete, raw editor toggle
+  - components/filters/filter-rule-modal.tsx — Modal: name, match type (all/any), condition rows, action rows, stop processing
+  - components/filters/sieve-editor-modal.tsx — Modal: monospace editor with line numbers, validate button, two-step save confirmation
+- **Conditions**: From, To, Cc, Subject, Custom Header, Size, Body with comparators: contains, not contains, is, not is, starts with, ends with, matches, greater than, less than
+- **Actions**: Move to folder, Copy to folder, Forward, Mark as read, Star, Add label, Discard, Reject, Keep, Stop processing
+- **Integration**: Settings tab (capability-gated), push notification handling (SieveScript state changes), auth-store init/cleanup
+- **i18n**: Full EN/FR/JA/ES/IT/DE/NL/PT translations (settings.filters.* namespace + sieve_editor sub-namespace)
+- **Accessibility**: Focus trap in modals, ARIA labels, keyboard support (Esc to close, Ctrl+Enter to save), drag-and-drop reorder with grip handles
+
 ### Feature Completeness
 - **Authentication**: ✅ Complete (secure design, no password storage)
 - **Email Operations**: ✅ Complete (including threading, unsubscribe)
@@ -517,5 +543,6 @@ All settings are now properly wired to their functionality:
 - **Virtual Scrolling**: ✅ Complete (@tanstack/react-virtual, dynamic measurement, keyboard scroll-to)
 - **Security**: ✅ CSP Report-Only + all P0 headers deployed (nonce-based scripts, proxy.ts middleware)
 - **Calendar**: ✅ Phase 2 complete (drag-and-drop rescheduling, iCalendar import, plus phase 1: views, event CRUD, multi-day, overlaps, locale dates, accessibility, security)
-- **Testing**: ✅ 450 tests passing (identity, sub-addressing, contacts, vCard, validation, color, threads, headers)
+- **Email Filters**: ✅ Complete (JMAP Sieve RFC 9661, visual rule builder, raw Sieve editor, 64 tests, capability-gated, 8 locales)
+- **Testing**: ✅ 514 tests passing (identity, sub-addressing, contacts, vCard, validation, color, threads, headers, sieve generator, sieve parser)
 
