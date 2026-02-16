@@ -156,6 +156,45 @@
 - [x] Test sub-addressing workflow (60 unit tests)
 - [x] Test error handling and edge cases (31 store tests)
 
+### Calendar Integration
+- [x] Add JMAP Calendar TypeScript types (Calendar, CalendarEvent, Participant, RecurrenceRule, Alert, Location)
+- [x] Add JMAP Calendar client methods (getCalendars, queryCalendarEvents, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent)
+- [x] Add calendar capability detection (supportsCalendars via urn:ietf:params:jmap:calendars)
+- [x] Create calendar Zustand store with persist middleware (calendars, events, view mode, date range)
+- [x] Add calendar i18n translations (all 8 locales: EN/FR/JA/ES/IT/DE/NL/PT)
+- [x] Build calendar page with month/week/day/agenda views
+- [x] Build event modal (create/edit/delete with date/time, recurrence, reminders)
+- [x] Build mini-calendar sidebar and calendar list with color toggles
+- [x] Add calendar settings tab (default view, week start, time format)
+- [x] Integrate calendar into sidebar navigation (capability-gated)
+- [x] Integrate calendar into auth store (auto-fetch on login, clear on logout)
+- [x] Add calendar state to push notification handling
+- [x] Fix multi-day events rendering across all spanned days
+- [x] Fix overlapping timed events with column-based layout (Google Calendar style)
+- [x] Wire firstDayOfWeek and timeFormat settings to all calendar views
+- [x] Add locale-aware date formatting via next-intl useFormatter
+- [x] Add error handling with toast feedback on event CRUD failures
+- [x] Add capability check on calendar page (redirect if unsupported)
+- [x] Add ARIA roles/labels to calendar grids (role=grid, gridcell, aria-selected)
+- [x] Add ARIA labels to event cards (title, time, calendar context)
+- [x] Add timezone support on event creation (Intl.DateTimeFormat auto-detection)
+- [x] Add input length validation on event fields (title, description, location)
+- [x] Add color value sanitization for calendar/event colors in inline styles
+- [x] Add start/end time validation in event modal (auto-adjust end if before start)
+- [x] Add focus trap in event modal
+- [x] Add mobile touch targets (44px minimum) on event card chips
+- [x] Add P1W (week) duration parsing in event cards
+- [x] Fix current time indicator to update every minute (was static)
+- [x] Fix week view date label to use correct week start
+- [x] Fix calendar push notifications (Calendar/CalendarEvent state changes now refresh data)
+- [x] Fix error messages to use generic text (no server detail leakage)
+- [x] Fix debug logging (calendar store now uses lib/debug.ts)
+- [x] Fix ICU pluralization for alert time translations (all 8 locales)
+- [x] Fix sidebar panel heading semantic mismatch (now uses "My calendars")
+- [x] Add loading indicator during event fetching
+- [x] Add store error state display via toast
+- [x] Add agenda view keyboard shortcut (a)
+
 ### Address Book & Contacts
 - [x] Create contact store with Zustand (dual mode: JMAP sync + local fallback)
 - [x] Implement contact CRUD operations (create, read, update, delete)
@@ -171,8 +210,14 @@
 
 ### Advanced Features
 - [ ] Implement filters and labels
-- [ ] Add calendar integration (if server supports)
+- [x] Add calendar integration (JMAP Calendars - see Calendar Integration section)
 - [ ] Create email templates
+- [ ] Add calendar event drag-and-drop rescheduling
+- [ ] Add participant scheduling with iTIP invitations
+- [ ] Add free/busy queries (Principal/getAvailability)
+- [ ] Add iCalendar import via CalendarEvent/parse
+- [ ] Add calendar sharing UI (JMAP Sharing RFC 9670)
+- [ ] Add calendar event notifications display
 - [x] Add signature management (implemented via Identity Management - per-identity signatures)
 - [x] Implement vacation responder settings (JMAP VacationResponse singleton, settings tab, sidebar indicator)
 - [x] Add email aliases support (implemented via Sub-Addressing - user+tag@domain.com)
@@ -419,6 +464,34 @@ All settings are now properly wired to their functionality:
 - Notable: next 16.1.6, react 19.2.4, next-intl 4.8.3, zustand 5.0.11, vitest 4.0.18
 - eslint 10 skipped (ecosystem plugins not yet compatible)
 
+### Calendar Integration (2026-02-16)
+- **JMAP Calendars**: Full CalendarEvent CRUD with RFC 8984 types
+  - Files: lib/jmap/types.ts (Calendar, CalendarEvent, Participant, RecurrenceRule, Alert, Location types)
+  - Files: lib/jmap/client.ts (getCalendars, queryCalendarEvents, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent)
+  - Capability detection: `urn:ietf:params:jmap:calendars` in auth-store.ts
+- **Store**: stores/calendar-store.ts (Zustand with persist middleware)
+  - Calendars, events, view mode (month/week/day/agenda), date range, selected event
+  - Auto-fetch on login, clear on logout via auth-store integration
+  - Error logging via lib/debug.ts, generic user-facing error messages
+- **UI Components**: components/calendar/ (9 components)
+  - month-view.tsx, week-view.tsx, day-view.tsx, agenda-view.tsx
+  - toolbar.tsx, event-modal.tsx, event-card.tsx
+  - mini-calendar.tsx, calendar-sidebar-panel.tsx
+- **Settings**: components/settings/calendar-settings.tsx (default view, week start, time format)
+- **Page**: app/[locale]/calendar/page.tsx
+  - Capability check (redirects if server doesn't support calendars)
+  - Error handling with toast feedback on CRUD failures
+  - Loading indicator during event fetching
+  - Settings forwarded to all view components (firstDayOfWeek, timeFormat)
+- **Integration**: auth-store capability detection, sidebar nav link (capability-gated), settings tab, push notification state handling (Calendar + CalendarEvent)
+- **i18n**: Full EN/FR/JA/ES/IT/DE/NL/PT translations (calendar.* namespace, ICU pluralization)
+- **Multi-day Events**: Events spanning multiple days render on each day they cover
+- **Overlap Detection**: Column-based layout for concurrent events (Google Calendar style)
+- **Locale-aware Dates**: Month/day names via next-intl useFormatter (respects user locale)
+- **Accessibility**: ARIA grid roles, event card labels, 44px mobile touch targets, focus trap in modal
+- **Security**: Input length validation, color value sanitization, timezone auto-detection, error message sanitization
+- **Keyboard Shortcuts**: m (month), w (week), d (day), a (agenda), t (today), n (new event), arrows (navigate)
+
 ### Feature Completeness
 - **Authentication**: ✅ Complete (secure design, no password storage)
 - **Email Operations**: ✅ Complete (including threading, unsubscribe)
@@ -431,5 +504,6 @@ All settings are now properly wired to their functionality:
 - **Vacation Responder**: ✅ Complete (JMAP VacationResponse, settings tab, sidebar indicator, 8 locales)
 - **Virtual Scrolling**: ✅ Complete (@tanstack/react-virtual, dynamic measurement, keyboard scroll-to)
 - **Security**: ✅ CSP Report-Only + all P0 headers deployed (nonce-based scripts, proxy.ts middleware)
+- **Calendar**: ✅ Phase 1 complete (JMAP Calendars, month/week/day/agenda views, event CRUD, multi-day spanning, overlap layout, locale-aware dates, ARIA accessibility, security hardening, 8 locales)
 - **Testing**: ✅ 450 tests passing (identity, sub-addressing, contacts, vCard, validation, color, threads, headers)
 
