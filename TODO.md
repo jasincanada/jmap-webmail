@@ -134,6 +134,7 @@
 - [x] Create mobile-responsive design (hamburger menu, single/multi-pane adaptive layout)
 - [x] Implement pagination/infinite scroll for email list
 - [x] Fix dark mode email readability (transform inline color styles for unreadable emails)
+- [x] Fix email layout overflow (horizontal scroll, left-side clipping, blocked image empty spaces)
 
 ### Identity Management & Sub-Addressing
 - [x] Add Identity/set methods to JMAP client (create, update, delete)
@@ -240,8 +241,10 @@
 - [x] Fixed inbox not selected by default on login (auto-select primary account inbox)
 - [x] Fixed email store not cleared on logout (proper state reset)
 - [x] Fixed search results limited to 50 (added pagination support to searchEmails)
+- [x] Fixed email layout horizontal scroll and left-side text clipping (removed width: max-content CSS)
+- [x] Fixed blocked external images leaving large empty spaces in newsletter emails (container collapsing)
 
-## 📊 Code Audit Summary (Last verified: 2026-01-08)
+## 📊 Code Audit Summary (Last verified: 2026-02-16)
 
 ### Settings Integration Status
 All settings are now properly wired to their functionality:
@@ -386,6 +389,25 @@ All settings are now properly wired to their functionality:
   - Color decision tree for choosing appropriate text colors
   - Common mistakes to avoid documented
   - Browser DevTools accessibility testing instructions
+
+### Email Layout & Blocked Content Fix (2026-02-16)
+- **Problem**: Newsletter emails had horizontal scroll, left-side text clipping, and large empty spaces when images blocked
+- **Root Cause**: CSS `width: max-content` and `display: inline-block` on email content wrappers forced content wider than container
+- **Files**:
+  - app/globals.css - Removed problematic width/display rules from `.email-content-wrapper` and `.email-content`
+  - lib/email-sanitization.ts - New `collapseBlockedImageContainers()` utility
+  - components/email/email-viewer.tsx - Post-processing to collapse empty containers after DOMPurify
+  - components/email/thread-conversation-view.tsx - Same fix for thread view
+- **Fixes**:
+  - Removed `display: inline-block` from wrapper, `width: max-content` from content, `min-width: max-content` from tables
+  - Added `overflow-wrap: break-word` for long text handling
+  - Blocked images: walks up DOM from hidden `<img>` to parent `<td>`/`<th>`/`<div>`, collapses if no visible text/links/media
+
+### Dependency Updates (2026-02-16)
+- All packages updated to latest compatible versions
+- Major upgrades: @types/node 22→25, jsdom 27→28, lucide-react 0.562→0.564
+- Notable: next 16.1.6, react 19.2.4, next-intl 4.8.3, zustand 5.0.11, vitest 4.0.18
+- eslint 10 skipped (ecosystem plugins not yet compatible)
 
 ### Feature Completeness
 - **Authentication**: ✅ Complete (secure design, no password storage)
