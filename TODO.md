@@ -52,6 +52,7 @@
 - [x] Implement logout functionality
 - [x] Add remember me functionality (username history only - no password storage for security)
 - [x] Handle authentication errors
+- [x] Add TOTP 2FA support (Stalwart-compatible password$totp concatenation, user-toggled field)
 
 ### JMAP Server Connection
 - [x] Connect to real JMAP server
@@ -151,9 +152,9 @@
 - [x] Add sub-addressing support to email composer
 - [x] Show identity badges in email viewer
 - [x] Show sub-address badges in email list
-- [ ] Test identity CRUD operations
-- [ ] Test sub-addressing workflow
-- [ ] Test error handling and edge cases
+- [x] Test identity CRUD operations (20 JMAP client tests)
+- [x] Test sub-addressing workflow (60 unit tests)
+- [x] Test error handling and edge cases (31 store tests)
 
 ### Address Book & Contacts
 - [x] Create contact store with Zustand (dual mode: JMAP sync + local fallback)
@@ -164,22 +165,22 @@
 - [x] Implement email autocomplete from contacts
 - [x] Integrate contacts with email composer (To/Cc/Bcc autocomplete)
 - [x] Add i18n support for contacts (all 8 languages)
-- [ ] Implement contact groups/lists management
-- [ ] Add vCard import/export support
-- [ ] Add bulk contact operations
+- [x] Implement contact groups/lists management (JMAP members map, group CRUD, composer autocomplete expansion)
+- [x] Add vCard import/export support (custom RFC 6350 parser/generator, import with duplicate detection, export via Blob API)
+- [x] Add bulk contact operations (multi-select, bulk delete, bulk add to group, bulk export)
 
 ### Advanced Features
 - [ ] Implement filters and labels
 - [ ] Add calendar integration (if server supports)
 - [ ] Create email templates
 - [x] Add signature management (implemented via Identity Management - per-identity signatures)
-- [ ] Implement vacation responder settings
+- [x] Implement vacation responder settings (JMAP VacationResponse singleton, settings tab, sidebar indicator)
 - [x] Add email aliases support (implemented via Sub-Addressing - user+tag@domain.com)
-- [ ] Create advanced search with filters
+- [x] Create advanced search with filters (JMAP filter panel, search chips, debounced inputs, AbortController dedup)
 - [ ] Add email encryption support (PGP/GPG)
 
 ### Performance Optimizations
-- [ ] Implement virtual scrolling for large email lists
+- [x] Implement virtual scrolling for large email lists (@tanstack/react-virtual, dynamic measurement, keyboard scroll-to)
 - [ ] Add email content caching
 - [ ] Optimize bundle size
 - [ ] Add service worker for offline support
@@ -188,9 +189,15 @@
 
 ### Testing
 - [x] Add unit tests for utilities (validation.test.ts: 57 tests, full coverage including XSS vectors)
-- [ ] Create component tests
-- [ ] Add E2E tests with Playwright
-- [ ] Test JMAP client methods
+- [x] Add unit tests for contact store (contact-store.test.ts: 56 tests)
+- [x] Add unit tests for JMAP contact client (jmap-contact-client.test.ts: 41 tests)
+- [x] Add unit tests for vCard parser (vcard.test.ts: 18 tests)
+- [x] Add unit tests for thread utilities (thread-utils.test.ts: 20 tests)
+- [x] Add unit tests for email headers (email-headers.test.ts: 39 tests)
+- [x] Create component tests (contact-list, contact-detail, contact-form, contact-list-item, button, input, avatar: 41 tests)
+- [x] Test JMAP client methods (identity: 20 tests, contacts: 41 tests)
+- [x] Set up Playwright E2E framework (login, contacts, email test skeletons)
+- [ ] Add E2E tests with real JMAP server
 - [ ] Add accessibility testing
 - [ ] Performance testing
 
@@ -205,6 +212,9 @@
 - [x] Create environment variable management (.env.local and .env.example)
 - [x] Add runtime configuration support (Docker-friendly, no rebuild required)
 - [x] Add health check endpoint
+- [x] Add Docker support (Dockerfile multi-stage build, docker-compose.yml, .dockerignore)
+- [x] Add Next.js standalone output for container deployments
+- [x] Add structured server-side logger (lib/logger.ts - text/JSON format, configurable level)
 - [ ] Configure production build optimizations
 - [ ] Set up monitoring and logging
 
@@ -212,8 +222,8 @@
 - [x] Block external images/content by default (privacy protection)
 - [x] Add user control for loading external content
 - [x] Sanitize HTML email content with DOMPurify (comprehensive config with forbidden tags/attributes)
-- [ ] Implement CSP headers (not configured in next.config)
-- [ ] Add additional XSS protection layers (X-XSS-Protection, X-Content-Type-Options, X-Frame-Options)
+- [x] Implement CSP headers (Content-Security-Policy-Report-Only via proxy.ts middleware with per-request nonce)
+- [x] Add security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy, X-XSS-Protection)
 - [ ] Implement rate limiting
 - [ ] Add CORS configuration
 - [ ] Implement secure cookie handling (note: uses Basic Auth, no session tokens)
@@ -416,6 +426,10 @@ All settings are now properly wired to their functionality:
 - **UI Enhancements**: ✅ Settings fully integrated, drag-drop, context menus, mobile responsive, keyboard shortcuts, WCAG AA accessibility
 - **Identity Management**: ✅ Complete (CRUD, sub-addressing, signatures, visual badges)
 - **Newsletter Management**: ✅ RFC 2369 List-Unsubscribe support with security validation
-- **Contacts/Address Book**: ✅ Phase 1 complete (CRUD, JMAP sync, local fallback, composer autocomplete)
-- **Security**: ⚠️ Client-side done, server headers needed
+- **Contacts/Address Book**: ✅ Phase 2 complete (groups, vCard import/export, bulk ops, composer group expansion)
+- **Advanced Search**: ✅ Complete (JMAP filters, advanced panel, search chips, cross-mailbox)
+- **Vacation Responder**: ✅ Complete (JMAP VacationResponse, settings tab, sidebar indicator, 8 locales)
+- **Virtual Scrolling**: ✅ Complete (@tanstack/react-virtual, dynamic measurement, keyboard scroll-to)
+- **Security**: ✅ CSP Report-Only + all P0 headers deployed (nonce-based scripts, proxy.ts middleware)
+- **Testing**: ✅ 450 tests passing (identity, sub-addressing, contacts, vCard, validation, color, threads, headers)
 
