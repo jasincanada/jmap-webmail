@@ -155,15 +155,16 @@
 - [ ] Test error handling and edge cases
 
 ### Address Book & Contacts
-- [ ] Create contact store with Zustand
-- [ ] Implement contact CRUD operations (create, read, update, delete)
-- [ ] Create contacts list view with search/filter
-- [ ] Add contact details view/edit form
+- [x] Create contact store with Zustand (dual mode: JMAP sync + local fallback)
+- [x] Implement contact CRUD operations (create, read, update, delete)
+- [x] Create contacts list view with search/filter
+- [x] Add contact details view/edit form
+- [x] Sync contacts with JMAP server (RFC 9553/9610 ContactCard/AddressBook)
+- [x] Implement email autocomplete from contacts
+- [x] Integrate contacts with email composer (To/Cc/Bcc autocomplete)
+- [x] Add i18n support for contacts (all 8 languages)
 - [ ] Implement contact groups/lists management
 - [ ] Add vCard import/export support
-- [ ] Sync contacts with JMAP server (if supported)
-- [ ] Implement email autocomplete from contacts
-- [ ] Integrate contacts with email composer
 - [ ] Add bulk contact operations
 
 ### Advanced Features
@@ -393,6 +394,6 @@ All settings are now properly wired to their functionality:
 - **UI Enhancements**: ✅ Settings fully integrated, drag-drop, context menus, mobile responsive, keyboard shortcuts, WCAG AA accessibility
 - **Identity Management**: ✅ Complete (CRUD, sub-addressing, signatures, visual badges)
 - **Newsletter Management**: ✅ RFC 2369 List-Unsubscribe support with security validation
-- **Contacts/Address Book**: ❌ Not started
+- **Contacts/Address Book**: ✅ Phase 1 complete (CRUD, JMAP sync, local fallback, composer autocomplete)
 - **Security**: ⚠️ Client-side done, server headers needed
 
