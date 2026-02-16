@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -30,17 +29,27 @@ npx tsc --noEmit || {
     echo -e "${RED}Type check failed. Fix errors before releasing.${NC}"
     exit 1
 }
+echo -e "${GREEN}✓ Type check passed${NC}"
 
-# 4. Check for Claude references in code
-echo -e "${YELLOW}Checking for Claude references...${NC}"
-if grep -ri "claude" --include="*.ts" --include="*.tsx" --include="*.js" --exclude-dir=node_modules --exclude-dir=.next 2>/dev/null | grep -v "// claude" | head -5; then
-    echo -e "${RED}Warning: Found Claude references in code files${NC}"
-    read -p "Continue anyway? (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-    fi
+# 4. Check for Claude/AI references in shipped code (not .md, not test files)
+echo -e "${YELLOW}Checking for Claude/AI references in code...${NC}"
+CLAUDE_HITS=$(grep -ri "claude\|anthropic" \
+    --include="*.ts" --include="*.tsx" --include="*.js" --include="*.json" \
+    --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.claude \
+    --exclude="CLAUDE.md" --exclude="TODO.md" \
+    -l 2>/dev/null || true)
+
+if [ -n "$CLAUDE_HITS" ]; then
+    echo -e "${RED}Error: Found Claude/AI references in code files:${NC}"
+    echo "$CLAUDE_HITS"
+    grep -ri "claude\|anthropic" \
+        --include="*.ts" --include="*.tsx" --include="*.js" --include="*.json" \
+        --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.claude \
+        --exclude="CLAUDE.md" --exclude="TODO.md" \
+        -n 2>/dev/null | head -10
+    exit 1
 fi
+echo -e "${GREEN}✓ No Claude/AI references${NC}"
 
 # 5. Switch to public-release
 echo -e "${YELLOW}Switching to public-release branch...${NC}"
@@ -60,7 +69,7 @@ CODE_FILES=(
 # 7. Checkout code files from master
 echo -e "${YELLOW}Updating code files from master...${NC}"
 for path in "${CODE_FILES[@]}"; do
-    if [ -e "../../../$path" ] || git ls-tree -d master -- "$path" &>/dev/null; then
+    if git ls-tree -d master -- "$path" &>/dev/null; then
         git checkout master -- "$path" 2>/dev/null || true
     fi
 done
@@ -69,17 +78,14 @@ done
 echo -e "${YELLOW}Updating package.json dependencies...${NC}"
 git checkout master -- package-lock.json
 
-# Use node to merge dependencies from master into public-release's package.json
 node -e "
 const fs = require('fs');
 const master = JSON.parse(fs.readFileSync('/dev/stdin', 'utf8'));
 const current = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
-// Update dependencies and devDependencies from master
 current.dependencies = master.dependencies;
 current.devDependencies = master.devDependencies;
 
-// Remove private and dev-only scripts
 delete current.private;
 if (current.scripts) {
   delete current.scripts['seed:demo'];
@@ -91,28 +97,30 @@ console.log('✓ Dependencies merged');
 
 git add package.json package-lock.json
 
-# 9. Show what changed
-echo -e "${YELLOW}Changes to be committed:${NC}"
-git status --short
-
-# 10. Check for forbidden files
-FORBIDDEN_FILES=("CLAUDE.md" "TODO.md" "scripts/seed-demo.ts" ".claude")
-for file in "${FORBIDDEN_FILES[@]}"; do
-    if git status --short | grep -q "$file"; then
-        echo -e "${RED}Error: Forbidden file detected: $file${NC}"
-        git checkout public-release -- . 2>/dev/null || true
-        git checkout master
-        exit 1
+# 9. Check for forbidden files in staging
+echo -e "${YELLOW}Checking for forbidden files...${NC}"
+FORBIDDEN_PATTERNS=("CLAUDE.md" "TODO.md" "scripts/seed-demo.ts" ".claude/")
+HAS_FORBIDDEN=0
+for pattern in "${FORBIDDEN_PATTERNS[@]}"; do
+    if git status --short | grep -q "$pattern"; then
+        echo -e "${RED}Error: Forbidden file detected: $pattern${NC}"
+        HAS_FORBIDDEN=1
     fi
 done
 
-# 11. Final check for Claude in diff
-if git diff --cached | grep -i claude; then
-    echo -e "${RED}Error: Claude reference found in diff${NC}"
+if [ "$HAS_FORBIDDEN" -eq 1 ]; then
+    echo -e "${RED}Aborting: removing forbidden files and returning to master${NC}"
     git checkout public-release -- . 2>/dev/null || true
     git checkout master
     exit 1
 fi
+echo -e "${GREEN}✓ No forbidden files${NC}"
+
+# 10. Show what changed
+echo ""
+echo -e "${YELLOW}Changes to be committed:${NC}"
+git status --short
+echo ""
 
 echo -e "${GREEN}✓ All checks passed${NC}"
 echo ""
