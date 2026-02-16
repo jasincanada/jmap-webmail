@@ -212,10 +212,10 @@
 - [ ] Implement filters and labels
 - [x] Add calendar integration (JMAP Calendars - see Calendar Integration section)
 - [ ] Create email templates
-- [ ] Add calendar event drag-and-drop rescheduling
+- [x] Add calendar event drag-and-drop rescheduling (week/day time snap, month date move, visual indicators)
 - [ ] Add participant scheduling with iTIP invitations
 - [ ] Add free/busy queries (Principal/getAvailability)
-- [ ] Add iCalendar import via CalendarEvent/parse
+- [x] Add iCalendar import via CalendarEvent/parse (file upload, preview, bulk import, 5MB limit)
 - [ ] Add calendar sharing UI (JMAP Sharing RFC 9670)
 - [ ] Add calendar event notifications display
 - [x] Add signature management (implemented via Identity Management - per-identity signatures)
@@ -491,6 +491,18 @@ All settings are now properly wired to their functionality:
 - **Accessibility**: ARIA grid roles, event card labels, 44px mobile touch targets, focus trap in modal
 - **Security**: Input length validation, color value sanitization, timezone auto-detection, error message sanitization
 - **Keyboard Shortcuts**: m (month), w (week), d (day), a (agenda), t (today), n (new event), arrows (navigate)
+- **Drag-and-Drop Rescheduling**: Drag events in week/day views to change time (15-min snap), month view to change date
+  - HTML5 DnD API with `application/x-calendar-event` payload
+  - Visual snap indicator with time label in week/day views, blue ring highlight in month view
+  - Optimistic update via updateEvent, error rollback with toast
+  - `aria-roledescription="draggable event"` for accessibility
+- **iCalendar Import**: Upload .ics files, parse via JMAP CalendarEvent/parse, bulk create
+  - Files: lib/jmap/client.ts (parseCalendarEvents), components/calendar/ical-import-modal.tsx
+  - Multi-step flow: file select → preview list → calendar selector → import
+  - File validation (5MB max, .ics/.ical extension), DOMPurify for descriptions
+  - Select/deselect individual events, progress indicator, success/error toasts
+  - Toolbar Import button with Upload icon
+  - i18n: calendar.import.* keys in all 8 locales (17 strings each)
 
 ### Feature Completeness
 - **Authentication**: ✅ Complete (secure design, no password storage)
@@ -504,6 +516,6 @@ All settings are now properly wired to their functionality:
 - **Vacation Responder**: ✅ Complete (JMAP VacationResponse, settings tab, sidebar indicator, 8 locales)
 - **Virtual Scrolling**: ✅ Complete (@tanstack/react-virtual, dynamic measurement, keyboard scroll-to)
 - **Security**: ✅ CSP Report-Only + all P0 headers deployed (nonce-based scripts, proxy.ts middleware)
-- **Calendar**: ✅ Phase 1 complete (JMAP Calendars, month/week/day/agenda views, event CRUD, multi-day spanning, overlap layout, locale-aware dates, ARIA accessibility, security hardening, 8 locales)
+- **Calendar**: ✅ Phase 2 complete (drag-and-drop rescheduling, iCalendar import, plus phase 1: views, event CRUD, multi-day, overlaps, locale dates, accessibility, security)
 - **Testing**: ✅ 450 tests passing (identity, sub-addressing, contacts, vCard, validation, color, threads, headers)
 
