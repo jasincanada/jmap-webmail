@@ -211,7 +211,7 @@
 ### Advanced Features
 - [x] Implement email filters (JMAP Sieve Scripts RFC 9661 — visual rule builder + raw Sieve editor, capability-gated)
 - [x] Add calendar integration (JMAP Calendars - see Calendar Integration section)
-- [ ] Create email templates
+- [x] Create email templates (local storage, placeholder variables, composer integration, settings tab, 48 tests)
 - [x] Add calendar event drag-and-drop rescheduling (week/day time snap, month date move, visual indicators)
 - [x] Add participant scheduling with iTIP invitations (organizer/attendee UI, RSVP buttons, contact autocomplete, scheduling messages, DnD notification, 26 tests)
 - [ ] Add free/busy queries (Principal/getAvailability)
@@ -300,7 +300,7 @@
 - [x] Fixed email layout horizontal scroll and left-side text clipping (removed width: max-content CSS)
 - [x] Fixed blocked external images leaving large empty spaces in newsletter emails (container collapsing)
 
-## 📊 Code Audit Summary (Last verified: 2026-02-16)
+## 📊 Code Audit Summary (Last verified: 2026-02-17)
 
 ### Settings Integration Status
 All settings are now properly wired to their functionality:
@@ -531,6 +531,27 @@ All settings are now properly wired to their functionality:
 - **i18n**: Full EN/FR/JA/ES/IT/DE/NL/PT translations (settings.filters.* namespace + sieve_editor sub-namespace)
 - **Accessibility**: Focus trap in modals, ARIA labels, keyboard support (Esc to close, Ctrl+Enter to save), drag-and-drop reorder with grip handles
 
+### Email Templates (2026-02-17)
+- **Local Storage**: Templates persisted in browser via Zustand persist middleware
+  - Files: lib/template-types.ts (EmailTemplate type), stores/template-store.ts (CRUD, categories, search)
+  - Categories: General, Business, Personal, Support, Follow-up, custom
+- **Placeholder Variables**: Dynamic `{{variable}}` syntax with auto-fill from composer context
+  - Files: lib/template-utils.ts (extractPlaceholders, fillPlaceholders, variable suggestions)
+  - Built-in variables: recipientName, recipientEmail, senderName, senderEmail, date, time, subject
+  - Custom placeholders prompted via modal on template use
+  - Context-aware: auto-fills from To field, identity, current date/time
+- **UI Components**: components/templates/ (4 components)
+  - template-manager-modal.tsx — Full CRUD: list, search, filter by category, edit, delete, duplicate
+  - template-form.tsx — Create/edit with name, category, subject, body, placeholder preview
+  - template-picker.tsx — Quick picker in composer toolbar with search and category filter
+  - placeholder-fill-modal.tsx — Prompt for custom placeholder values before inserting
+- **Composer Integration**: Template picker button in email composer toolbar
+  - Populates subject and body fields, merges placeholders with context
+  - Keyboard shortcut: Ctrl+Shift+T to open template picker
+- **Settings**: components/settings/template-settings.tsx — Settings tab for template management
+- **i18n**: Full EN/FR/JA/ES/IT/DE/NL/PT translations (templates.* namespace)
+- **Testing**: 48 tests (lib/__tests__/template-utils.test.ts)
+
 ### Feature Completeness
 - **Authentication**: ✅ Complete (secure design, no password storage)
 - **Email Operations**: ✅ Complete (including threading, unsubscribe)
@@ -546,5 +567,6 @@ All settings are now properly wired to their functionality:
 - **Calendar**: ✅ Phase 3 complete (inline invitation banner with RSVP/import, drag-and-drop rescheduling, iCalendar import, plus phase 1: views, event CRUD, multi-day, overlaps, locale dates, accessibility, security)
 - **Email Filters**: ✅ Complete (JMAP Sieve RFC 9661, visual rule builder, raw Sieve editor, 64 tests, capability-gated, 8 locales)
 - **Calendar Notifications**: ✅ Complete (client-side alert evaluation, toast display, notification sound, proactive event fetch, settings toggles, acknowledged persistence, 44 tests)
-- **Testing**: ✅ 607 tests passing (identity, sub-addressing, contacts, vCard, validation, color, threads, headers, sieve generator, sieve parser, calendar alerts, calendar notification store, calendar invitation)
+- **Email Templates**: ✅ Complete (local storage, placeholder variables with auto-fill, composer integration, settings management, 48 tests)
+- **Testing**: ✅ 669 tests passing (identity, sub-addressing, contacts, vCard, validation, color, threads, headers, sieve generator, sieve parser, calendar alerts, calendar notification store, calendar invitation, template utils)
 
