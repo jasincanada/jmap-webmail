@@ -213,9 +213,10 @@
 - [x] Add calendar integration (JMAP Calendars - see Calendar Integration section)
 - [ ] Create email templates
 - [x] Add calendar event drag-and-drop rescheduling (week/day time snap, month date move, visual indicators)
-- [ ] Add participant scheduling with iTIP invitations
+- [x] Add participant scheduling with iTIP invitations (organizer/attendee UI, RSVP buttons, contact autocomplete, scheduling messages, DnD notification, 26 tests)
 - [ ] Add free/busy queries (Principal/getAvailability)
 - [x] Add iCalendar import via CalendarEvent/parse (file upload, preview, bulk import, 5MB limit)
+- [x] Add inline calendar invitation banner in email viewer (auto-detect .ics attachments, parse event details, RSVP Accept/Maybe/Decline, import to calendar, cancellation display, 25 tests)
 - [ ] Add calendar sharing UI (JMAP Sharing RFC 9670)
 - [x] Add calendar event notifications display (client-side alert evaluation, toast notifications, sound, global hook, settings toggles, 26 tests)
 - [x] Add signature management (implemented via Identity Management - per-identity signatures)
@@ -542,8 +543,8 @@ All settings are now properly wired to their functionality:
 - **Vacation Responder**: ✅ Complete (JMAP VacationResponse, settings tab, sidebar indicator, 8 locales)
 - **Virtual Scrolling**: ✅ Complete (@tanstack/react-virtual, dynamic measurement, keyboard scroll-to)
 - **Security**: ✅ CSP Report-Only + all P0 headers deployed (nonce-based scripts, proxy.ts middleware)
-- **Calendar**: ✅ Phase 2 complete (drag-and-drop rescheduling, iCalendar import, plus phase 1: views, event CRUD, multi-day, overlaps, locale dates, accessibility, security)
+- **Calendar**: ✅ Phase 3 complete (inline invitation banner with RSVP/import, drag-and-drop rescheduling, iCalendar import, plus phase 1: views, event CRUD, multi-day, overlaps, locale dates, accessibility, security)
 - **Email Filters**: ✅ Complete (JMAP Sieve RFC 9661, visual rule builder, raw Sieve editor, 64 tests, capability-gated, 8 locales)
 - **Calendar Notifications**: ✅ Complete (client-side alert evaluation, toast display, notification sound, proactive event fetch, settings toggles, acknowledged persistence, 44 tests)
-- **Testing**: ✅ 558 tests passing (identity, sub-addressing, contacts, vCard, validation, color, threads, headers, sieve generator, sieve parser, calendar alerts, calendar notification store)
+- **Testing**: ✅ 607 tests passing (identity, sub-addressing, contacts, vCard, validation, color, threads, headers, sieve generator, sieve parser, calendar alerts, calendar notification store, calendar invitation)
 
