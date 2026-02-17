@@ -136,6 +136,20 @@
 - [x] Implement pagination/infinite scroll for email list
 - [x] Fix dark mode email readability (transform inline color styles for unreadable emails)
 - [x] Fix email layout overflow (horizontal scroll, left-side clipping, blocked image empty spaces)
+- [x] Add ConfirmDialog component with promise-based useConfirmDialog hook (async await confirmation flow)
+- [x] Add WelcomeBanner onboarding component (one-time display, localStorage persistence, animated dismiss)
+- [x] Add NavigationRail component (vertical desktop icon rail, horizontal mobile bottom tab bar)
+- [x] Implement unified notification banner hierarchy in email viewer (external content, unsubscribe, calendar invitation)
+- [x] Add reusable focus trap hook (useFocusTrap: Tab cycling, Escape handling, focus restore)
+- [x] Add inline form validation with shake animation (email composer: required fields, contact form: email format on blur)
+- [x] Add login form UX polish (shake on error, TOTP slide animation, password visibility toggle, session expired banner)
+- [x] Add empty state patterns for contacts (distinct "no data" vs "no search results" with contextual actions)
+- [x] Add WCAG AA compliant reduced-motion media query (global animation/transition reset)
+- [x] Add safe area inset utilities for notched devices (env(safe-area-inset-*))
+- [x] Add sr-only live region for screen reader announcements
+- [x] Add toast notification system with undo action support (Zustand store, typed durations, stacking)
+- [x] Add dynamic page title updates (mailbox name, email subject, composer mode)
+- [x] Create UI/UX patterns documentation (docs/UI_UX_PATTERNS.md)
 
 ### Identity Management & Sub-Addressing
 - [x] Add Identity/set methods to JMAP client (create, update, delete)
