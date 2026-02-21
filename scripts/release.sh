@@ -64,12 +64,15 @@ CODE_FILES=(
     "lib/"
     "stores/"
     "locales/"
+    "Dockerfile"
+    ".dockerignore"
+    ".github/"
 )
 
 # 7. Checkout code files from master
 echo -e "${YELLOW}Updating code files from master...${NC}"
 for path in "${CODE_FILES[@]}"; do
-    if git ls-tree -d master -- "$path" &>/dev/null; then
+    if git ls-tree master -- "$path" &>/dev/null; then
         git checkout master -- "$path" 2>/dev/null || true
     fi
 done
