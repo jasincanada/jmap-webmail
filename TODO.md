@@ -275,6 +275,8 @@
 - [x] Add Docker support (Dockerfile multi-stage build, docker-compose.yml, .dockerignore)
 - [x] Add Next.js standalone output for container deployments
 - [x] Add structured server-side logger (lib/logger.ts - text/JSON format, configurable level)
+- [x] Publish Docker image to GitHub Container Registry (ghcr.io/root-fr/jmap-webmail, multi-arch amd64/arm64)
+- [x] Add GitHub Actions CI/CD for automated image builds (path-filtered, version-tagged)
 - [ ] Configure production build optimizations
 - [ ] Set up monitoring and logging
 
