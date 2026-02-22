@@ -173,6 +173,7 @@ git checkout master
 ### Files to NEVER release to GitHub
 - `CLAUDE.md` - AI instructions
 - `TODO.md` - Internal task tracking
+- `docs/ARCHITECTURE.md` - Internal architecture reference
 - `scripts/seed-demo.ts` - Demo data seeder
 - `.claude/` directory
 - Any file containing "claude" or AI references

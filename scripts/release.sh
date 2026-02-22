@@ -102,7 +102,7 @@ git add package.json package-lock.json
 
 # 9. Check for forbidden files in staging
 echo -e "${YELLOW}Checking for forbidden files...${NC}"
-FORBIDDEN_PATTERNS=("CLAUDE.md" "TODO.md" "scripts/seed-demo.ts" ".claude/")
+FORBIDDEN_PATTERNS=("CLAUDE.md" "TODO.md" "docs/ARCHITECTURE.md" "scripts/seed-demo.ts" ".claude/")
 HAS_FORBIDDEN=0
 for pattern in "${FORBIDDEN_PATTERNS[@]}"; do
     if git status --short | grep -q "$pattern"; then
