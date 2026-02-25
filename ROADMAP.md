@@ -16,6 +16,7 @@ This document tracks the development status and planned features for JMAP Webmai
 - [x] Username autocomplete with history
 - [x] Logout functionality
 - [x] Authentication error handling
+- [x] OAuth2/OIDC with PKCE (SSO login, session persistence, RP-initiated logout)
 
 ### JMAP Server Connection
 - [x] Session establishment and keep-alive

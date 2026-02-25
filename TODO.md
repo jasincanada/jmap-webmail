@@ -6,7 +6,7 @@
 ## 📝 Remaining Tasks
 
 ### Authentication
-- [x] OAuth2/OIDC with PKCE (SSO login, session persistence via refresh tokens)
+- [x] OAuth2/OIDC with PKCE (SSO login, session persistence, RP-initiated logout)
 - [ ] Test OAuth2 flow with Stalwart's built-in OAuth provider
 
 ### Advanced Features
