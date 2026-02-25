@@ -7,6 +7,7 @@
 
 ### Authentication
 - [x] OAuth2/OIDC with PKCE (SSO login, session persistence, RP-initiated logout)
+- [x] "Remember me" session persistence for Basic Auth (encrypted httpOnly cookie)
 - [ ] Test OAuth2 flow with Stalwart's built-in OAuth provider
 
 ### Advanced Features
@@ -40,7 +41,7 @@
 ### Security
 - [ ] Implement rate limiting
 - [ ] Add CORS configuration
-- [x] Implement secure cookie handling (httpOnly cookies for OAuth refresh tokens)
+- [x] Implement secure cookie handling (httpOnly cookies for OAuth refresh tokens and session persistence)
 
 ## 🐛 Known Issues
 - [ ] Fix Next.js workspace root warning
