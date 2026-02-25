@@ -14,6 +14,7 @@
       "cors_blocked": "El servidor es accesible pero está bloqueando las solicitudes de origen cruzado. Verifique la configuración CORS de su servidor JMAP y permita este dominio.",
       "generic": "Ocurrió un error. Por favor, inténtelo de nuevo.",
       "totp_invalid": "Código de autenticación inválido. Verifica tu aplicación de autenticación.",
+      "oauth_discovery_failed": "SSO está habilitado pero no se pudo contactar al proveedor de identidad. Verifica tu configuración OAuth.",
       "server_error": "El servidor no está disponible temporalmente. Inténtalo más tarde."
     },
     "config_error": {

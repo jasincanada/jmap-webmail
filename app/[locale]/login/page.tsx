@@ -19,7 +19,7 @@ export default function LoginPage() {
   const t = useTranslations("login");
   const params = useParams();
   const { login, isLoading, error, clearError, isAuthenticated } = useAuthStore();
-  const { appName, jmapServerUrl: serverUrl, oauthEnabled, oauthClientId, isLoading: configLoading, error: configError } = useConfig();
+  const { appName, jmapServerUrl: serverUrl, oauthEnabled, oauthClientId, oauthIssuerUrl, isLoading: configLoading, error: configError } = useConfig();
 
   const [formData, setFormData] = useState({
     username: "",
@@ -36,6 +36,7 @@ export default function LoginPage() {
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const [oauthMetadata, setOauthMetadata] = useState<OAuthMetadata | null>(null);
+  const [oauthDiscoveryDone, setOauthDiscoveryDone] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
 
   const suggestionsRef = useRef<HTMLDivElement>(null);
@@ -134,8 +135,16 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!oauthEnabled || !serverUrl) return;
-    discoverOAuth(serverUrl).then(setOauthMetadata);
-  }, [oauthEnabled, serverUrl]);
+    discoverOAuth(oauthIssuerUrl || serverUrl)
+      .then((metadata) => {
+        setOauthMetadata(metadata);
+        setOauthDiscoveryDone(true);
+      })
+      .catch(() => {
+        setOauthMetadata(null);
+        setOauthDiscoveryDone(true);
+      });
+  }, [oauthEnabled, serverUrl, oauthIssuerUrl]);
 
   if (configLoading) {
     return (
@@ -518,6 +527,15 @@ export default function LoginPage() {
                 {t("sign_in_sso")}
               </Button>
             </>
+          )}
+
+          {oauthEnabled && oauthDiscoveryDone && !oauthMetadata && (
+            <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-700 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-700 dark:text-amber-400">
+                {t("error.oauth_discovery_failed")}
+              </p>
+            </div>
           )}
         </form>
       </div>

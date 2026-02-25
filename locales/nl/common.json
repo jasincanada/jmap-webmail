@@ -14,6 +14,7 @@
       "cors_blocked": "De server is bereikbaar maar blokkeert cross-origin verzoeken. Controleer de CORS-instellingen van uw JMAP-server en sta dit domein toe.",
       "generic": "Er is een fout opgetreden. Probeer het opnieuw.",
       "totp_invalid": "Ongeldige authenticatiecode. Controleer uw authenticator-app.",
+      "oauth_discovery_failed": "SSO is ingeschakeld maar de identiteitsprovider is niet bereikbaar. Controleer uw OAuth-configuratie.",
       "server_error": "De server is tijdelijk niet beschikbaar. Probeer het later opnieuw."
     },
     "config_error": {

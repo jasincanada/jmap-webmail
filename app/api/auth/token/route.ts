@@ -17,15 +17,20 @@ const COOKIE_OPTIONS = {
 function getRequiredConfig() {
   const clientId = process.env.OAUTH_CLIENT_ID;
   const serverUrl = process.env.JMAP_SERVER_URL || process.env.NEXT_PUBLIC_JMAP_SERVER_URL;
+  const issuerUrl = process.env.OAUTH_ISSUER_URL;
   if (!clientId || !serverUrl) {
     throw new Error(`OAuth misconfigured: ${[!clientId && 'OAUTH_CLIENT_ID', !serverUrl && 'JMAP_SERVER_URL'].filter(Boolean).join(', ')} not set`);
   }
-  return { clientId, serverUrl };
+  const discoveryUrl = issuerUrl?.trim() || serverUrl;
+  if (issuerUrl !== undefined && !issuerUrl.trim()) {
+    logger.warn('OAUTH_ISSUER_URL is set but empty, falling back to JMAP_SERVER_URL for discovery');
+  }
+  return { clientId, serverUrl, discoveryUrl };
 }
 
 async function getTokenEndpoint(): Promise<string> {
-  const { serverUrl } = getRequiredConfig();
-  const metadata = await discoverOAuth(serverUrl);
+  const { discoveryUrl } = getRequiredConfig();
+  const metadata = await discoverOAuth(discoveryUrl);
   if (!metadata?.token_endpoint) {
     throw new Error('OAuth token endpoint not found');
   }
@@ -33,8 +38,8 @@ async function getTokenEndpoint(): Promise<string> {
 }
 
 async function getRevocationEndpoint(): Promise<string | null> {
-  const { serverUrl } = getRequiredConfig();
-  const metadata = await discoverOAuth(serverUrl);
+  const { discoveryUrl } = getRequiredConfig();
+  const metadata = await discoverOAuth(discoveryUrl);
   return metadata?.revocation_endpoint || null;
 }
 

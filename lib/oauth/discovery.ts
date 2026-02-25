@@ -19,10 +19,15 @@ export async function discoverOAuth(serverUrl: string): Promise<OAuthMetadata | 
     `${serverUrl}/.well-known/openid-configuration`,
   ];
 
+  const errors: string[] = [];
+
   for (const url of urls) {
     try {
       const response = await fetch(url);
-      if (!response.ok) continue;
+      if (!response.ok) {
+        errors.push(`${url} returned HTTP ${response.status}`);
+        continue;
+      }
 
       const data = await response.json();
       if (data.authorization_endpoint && data.token_endpoint) {
@@ -36,10 +41,13 @@ export async function discoverOAuth(serverUrl: string): Promise<OAuthMetadata | 
         metadataCache.set(serverUrl, { metadata, expiresAt: Date.now() + CACHE_TTL_MS });
         return metadata;
       }
-    } catch {
+      errors.push(`${url} response missing required endpoints`);
+    } catch (err) {
+      errors.push(`${url}: ${err instanceof Error ? err.message : String(err)}`);
       continue;
     }
   }
 
+  console.error(`[OAuth] Discovery failed for ${serverUrl}: ${errors.join('; ')}`);
   return null;
 }
