@@ -5,6 +5,10 @@
 
 ## 📝 Remaining Tasks
 
+### Authentication
+- [x] OAuth2/OIDC with PKCE (SSO login, session persistence via refresh tokens)
+- [ ] Test OAuth2 flow with Stalwart's built-in OAuth provider
+
 ### Advanced Features
 - [ ] Add free/busy queries (Principal/getAvailability)
 - [ ] Add calendar sharing UI (JMAP Sharing RFC 9670)
@@ -36,7 +40,7 @@
 ### Security
 - [ ] Implement rate limiting
 - [ ] Add CORS configuration
-- [ ] Implement secure cookie handling (note: uses Basic Auth, no session tokens)
+- [x] Implement secure cookie handling (httpOnly cookies for OAuth refresh tokens)
 
 ## 🐛 Known Issues
 - [ ] Fix Next.js workspace root warning
