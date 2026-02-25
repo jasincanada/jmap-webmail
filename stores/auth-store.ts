@@ -19,8 +19,13 @@ interface AuthState {
   client: JMAPClient | null;
   identities: Identity[];
   primaryIdentity: Identity | null;
+  authMode: 'basic' | 'oauth';
+  accessToken: string | null;
+  tokenExpiresAt: number | null;
 
   login: (serverUrl: string, username: string, password: string, totp?: string) => Promise<boolean>;
+  loginWithOAuth: (serverUrl: string, code: string, codeVerifier: string, redirectUri: string) => Promise<boolean>;
+  refreshAccessToken: () => Promise<string | null>;
   logout: () => void;
   checkAuth: () => Promise<void>;
   clearError: () => void;
@@ -88,6 +93,27 @@ function initializeFeatureStores(client: JMAPClient): void {
   }
 }
 
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+let refreshPromise: Promise<string | null> | null = null;
+
+function scheduleRefresh(expiresIn: number, refreshFn: () => Promise<string | null>): void {
+  if (refreshTimer) clearTimeout(refreshTimer);
+  const refreshAt = Math.max((expiresIn - 60) * 1000, 10_000);
+  refreshTimer = setTimeout(() => {
+    refreshFn().catch((err) => {
+      debug.error('Scheduled token refresh failed:', err);
+    });
+  }, refreshAt);
+}
+
+function clearRefreshTimer(): void {
+  if (refreshTimer) {
+    clearTimeout(refreshTimer);
+    refreshTimer = null;
+  }
+  refreshPromise = null;
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -99,6 +125,9 @@ export const useAuthStore = create<AuthState>()(
       client: null,
       identities: [],
       primaryIdentity: null,
+      authMode: 'basic',
+      accessToken: null,
+      tokenExpiresAt: null,
 
       login: async (serverUrl, username, password, totp) => {
         const effectivePassword = totp ? `${password}$${totp}` : password;
@@ -119,6 +148,9 @@ export const useAuthStore = create<AuthState>()(
             client,
             identities,
             primaryIdentity,
+            authMode: 'basic',
+            accessToken: null,
+            tokenExpiresAt: null,
             error: null,
           });
 
@@ -135,8 +167,106 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      loginWithOAuth: async (serverUrl, code, codeVerifier, redirectUri) => {
+        set({ isLoading: true, error: null });
+
+        try {
+          const tokenRes = await fetch('/api/auth/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, code_verifier: codeVerifier, redirect_uri: redirectUri }),
+          });
+
+          if (!tokenRes.ok) {
+            throw new Error('token_exchange_failed');
+          }
+
+          const { access_token, expires_in } = await tokenRes.json();
+
+          const refreshFn = get().refreshAccessToken;
+          const client = JMAPClient.withBearer(serverUrl, access_token, '', () => refreshFn());
+          await client.connect();
+
+          const username = client.getUsername();
+          const { identities, primaryIdentity } = loadIdentities(await client.getIdentities(), username);
+          initializeFeatureStores(client);
+
+          set({
+            isAuthenticated: true,
+            isLoading: false,
+            serverUrl,
+            username,
+            client,
+            identities,
+            primaryIdentity,
+            authMode: 'oauth',
+            accessToken: access_token,
+            tokenExpiresAt: Date.now() + expires_in * 1000,
+            error: null,
+          });
+
+          scheduleRefresh(expires_in, get().refreshAccessToken);
+
+          return true;
+        } catch (error) {
+          debug.error('OAuth login error:', error);
+          set({
+            isLoading: false,
+            error: error instanceof Error ? error.message : 'generic',
+            isAuthenticated: false,
+            client: null,
+          });
+          return false;
+        }
+      },
+
+      refreshAccessToken: async () => {
+        if (refreshPromise) return refreshPromise;
+
+        refreshPromise = (async () => {
+          try {
+            const res = await fetch('/api/auth/token', { method: 'PUT' });
+
+            if (!res.ok) {
+              markSessionExpired();
+              get().logout();
+              return null;
+            }
+
+            const { access_token, expires_in } = await res.json();
+
+            get().client?.updateAccessToken(access_token);
+
+            set({
+              accessToken: access_token,
+              tokenExpiresAt: Date.now() + expires_in * 1000,
+            });
+
+            scheduleRefresh(expires_in, get().refreshAccessToken);
+            return access_token;
+          } catch (error) {
+            debug.error('Token refresh failed:', error);
+            markSessionExpired();
+            get().logout();
+            return null;
+          } finally {
+            refreshPromise = null;
+          }
+        })();
+
+        return refreshPromise;
+      },
+
       logout: () => {
         const state = get();
+
+        if (state.authMode === 'oauth') {
+          fetch('/api/auth/token', { method: 'DELETE' }).catch((err) => {
+            debug.error('Token revocation failed:', err);
+          });
+        }
+
+        clearRefreshTimer();
         state.client?.disconnect();
 
         set({
@@ -146,6 +276,9 @@ export const useAuthStore = create<AuthState>()(
           client: null,
           identities: [],
           primaryIdentity: null,
+          authMode: 'basic',
+          accessToken: null,
+          tokenExpiresAt: null,
           error: null,
         });
 
@@ -173,6 +306,34 @@ export const useAuthStore = create<AuthState>()(
         const state = get();
 
         if (state.isAuthenticated && !state.client) {
+          if (state.authMode === 'oauth' && state.serverUrl) {
+            set({ isLoading: true });
+            try {
+              const token = await get().refreshAccessToken();
+              if (token && state.serverUrl) {
+                const refreshFn = get().refreshAccessToken;
+                const client = JMAPClient.withBearer(state.serverUrl, token, state.username || '', () => refreshFn());
+                await client.connect();
+
+                const { identities, primaryIdentity } = loadIdentities(await client.getIdentities(), state.username || '');
+                initializeFeatureStores(client);
+
+                set({
+                  isAuthenticated: true,
+                  isLoading: false,
+                  client,
+                  identities,
+                  primaryIdentity,
+                  accessToken: token,
+                });
+                return;
+              }
+            } catch (error) {
+              debug.error('OAuth session restore failed:', error);
+              clearRefreshTimer();
+            }
+          }
+
           markSessionExpired();
 
           set({
@@ -181,6 +342,9 @@ export const useAuthStore = create<AuthState>()(
             client: null,
             serverUrl: null,
             username: null,
+            authMode: 'basic',
+            accessToken: null,
+            tokenExpiresAt: null,
           });
         }
 
@@ -194,6 +358,8 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         serverUrl: state.serverUrl,
         username: state.username,
+        authMode: state.authMode,
+        isAuthenticated: state.authMode === 'oauth' ? state.isAuthenticated : undefined,
       }),
     }
   )

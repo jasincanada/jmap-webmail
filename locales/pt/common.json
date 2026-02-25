@@ -31,7 +31,18 @@
     "totp_hint": "Ative se sua conta requer um código de autenticação de dois fatores",
     "totp_checkbox": "Usar código de autenticação de dois fatores",
     "session_expired": "Sua sessão expirou. Faça login novamente.",
-    "dismiss": "Fechar"
+    "dismiss": "Fechar",
+    "or": "ou",
+    "sign_in_sso": "Entrar com SSO",
+    "oauth_completing": "Concluindo login...",
+    "oauth_error": {
+      "title": "Falha na autenticação",
+      "invalid_state": "A validação de segurança falhou. Tente entrar novamente.",
+      "missing_params": "Dados de autorização ausentes. Tente entrar novamente.",
+      "token_exchange_failed": "Não foi possível concluir a autenticação. Tente novamente.",
+      "access_denied": "Acesso negado. Entre em contato com seu administrador.",
+      "back_to_login": "Voltar ao login"
+    }
   },
   "sidebar": {
     "close": "Fechar",

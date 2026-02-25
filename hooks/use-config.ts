@@ -5,15 +5,17 @@ import { useState, useEffect } from 'react';
 interface AppConfig {
   appName: string;
   jmapServerUrl: string;
+  oauthEnabled: boolean;
+  oauthClientId: string;
   isLoading: boolean;
   error: string | null;
 }
 
 // Cache the config to avoid multiple fetches
-let configCache: { appName: string; jmapServerUrl: string } | null = null;
-let configPromise: Promise<{ appName: string; jmapServerUrl: string }> | null = null;
+let configCache: { appName: string; jmapServerUrl: string; oauthEnabled: boolean; oauthClientId: string } | null = null;
+let configPromise: Promise<{ appName: string; jmapServerUrl: string; oauthEnabled: boolean; oauthClientId: string }> | null = null;
 
-async function fetchConfig(): Promise<{ appName: string; jmapServerUrl: string }> {
+async function fetchConfig(): Promise<{ appName: string; jmapServerUrl: string; oauthEnabled: boolean; oauthClientId: string }> {
   // Return cached config if available
   if (configCache) {
     return configCache;
@@ -55,6 +57,8 @@ export function useConfig(): AppConfig {
   const [config, setConfig] = useState<AppConfig>({
     appName: configCache?.appName || 'Webmail',
     jmapServerUrl: configCache?.jmapServerUrl || '',
+    oauthEnabled: configCache?.oauthEnabled || false,
+    oauthClientId: configCache?.oauthClientId || '',
     isLoading: !configCache,
     error: null,
   });
@@ -65,6 +69,8 @@ export function useConfig(): AppConfig {
       setConfig({
         appName: configCache.appName,
         jmapServerUrl: configCache.jmapServerUrl,
+        oauthEnabled: configCache.oauthEnabled,
+        oauthClientId: configCache.oauthClientId,
         isLoading: false,
         error: null,
       });
@@ -76,6 +82,8 @@ export function useConfig(): AppConfig {
         setConfig({
           appName: data.appName,
           jmapServerUrl: data.jmapServerUrl,
+          oauthEnabled: data.oauthEnabled,
+          oauthClientId: data.oauthClientId,
           isLoading: false,
           error: null,
         });

@@ -31,7 +31,18 @@
     "totp_hint": "Aktivieren Sie dies, wenn Ihr Konto einen Zwei-Faktor-Code erfordert",
     "totp_checkbox": "Zwei-Faktor-Authentifizierungscode verwenden",
     "session_expired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
-    "dismiss": "Schließen"
+    "dismiss": "Schließen",
+    "or": "oder",
+    "sign_in_sso": "Mit SSO anmelden",
+    "oauth_completing": "Anmeldung wird abgeschlossen...",
+    "oauth_error": {
+      "title": "Authentifizierung fehlgeschlagen",
+      "invalid_state": "Sicherheitsvalidierung fehlgeschlagen. Bitte erneut anmelden.",
+      "missing_params": "Fehlende Autorisierungsdaten. Bitte erneut anmelden.",
+      "token_exchange_failed": "Authentifizierung konnte nicht abgeschlossen werden. Bitte erneut versuchen.",
+      "access_denied": "Zugriff verweigert. Bitte kontaktieren Sie Ihren Administrator.",
+      "back_to_login": "Zurück zur Anmeldung"
+    }
   },
   "sidebar": {
     "close": "Schließen",

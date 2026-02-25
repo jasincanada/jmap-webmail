@@ -31,7 +31,18 @@
     "totp_hint": "Activa si tu cuenta requiere un código de autenticación en dos pasos",
     "totp_checkbox": "Usar código de autenticación en dos pasos",
     "session_expired": "Tu sesión ha expirado. Inicia sesión de nuevo.",
-    "dismiss": "Cerrar"
+    "dismiss": "Cerrar",
+    "or": "o",
+    "sign_in_sso": "Iniciar sesión con SSO",
+    "oauth_completing": "Completando inicio de sesión...",
+    "oauth_error": {
+      "title": "Error de autenticación",
+      "invalid_state": "La validación de seguridad falló. Intenta iniciar sesión de nuevo.",
+      "missing_params": "Faltan datos de autorización. Intenta iniciar sesión de nuevo.",
+      "token_exchange_failed": "No se pudo completar la autenticación. Inténtalo de nuevo.",
+      "access_denied": "Acceso denegado. Contacta a tu administrador.",
+      "back_to_login": "Volver al inicio de sesión"
+    }
   },
   "sidebar": {
     "close": "Cerrar",
