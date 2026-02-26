@@ -183,6 +183,29 @@ git checkout master
 - `.gitignore` - Public version doesn't have .claude entries
 - `package.json` - May differ, only update if dependencies changed
 
+### Versioning (Semantic Versioning)
+
+This project follows **semver** (`MAJOR.MINOR.PATCH`). Version lives in `package.json`.
+
+**When to bump:**
+- **PATCH** (`1.0.x`): Bug fixes, typo corrections, dependency updates, minor CSS tweaks
+- **MINOR** (`1.x.0`): New features, new UI components, new translations, non-breaking improvements
+- **MAJOR** (`x.0.0`): Breaking changes (auth flow change, config format change, dropped browser support)
+
+**How to bump (during release):**
+1. Update `version` in `package.json` on `master` before running `release.sh`
+2. After pushing to GitHub, create a git tag on `public-release`:
+   ```bash
+   git tag v1.2.0
+   git push github v1.2.0
+   ```
+3. The tag triggers the Docker workflow, which produces `rootfr/jmap-webmail:1.2.0` + `latest`
+
+**Rules:**
+- Every release to GitHub MUST have a version bump — no two releases share the same version
+- Tag format is always `v` + semver: `v1.0.0`, `v1.1.0`, `v2.0.0`
+- CHANGELOG.md on `public-release` must list what changed for each version
+
 ### Important Notes
 - All public commits must be signed with GPG
 - Author must be `Matthieu MALVACHE <matthieu@root.cloud>`
