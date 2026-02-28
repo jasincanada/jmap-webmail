@@ -193,7 +193,7 @@ This project follows **semver** (`MAJOR.MINOR.PATCH`). Version lives in `package
 - **MAJOR** (`x.0.0`): Breaking changes (auth flow change, config format change, dropped browser support)
 
 **How to bump (during release):**
-1. Update `version` in `package.json` on `master` before running `release.sh`
+1. ⚠️ **FIRST** update `version` in `package.json` on `master` and commit — this MUST happen before `release.sh` since the script copies it to `public-release`
 2. After pushing to GitHub, create a git tag on `public-release`:
    ```bash
    git tag v1.2.0

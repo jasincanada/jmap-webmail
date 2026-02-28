@@ -64,6 +64,8 @@ CODE_FILES=(
     "lib/"
     "stores/"
     "locales/"
+    "next.config.ts"
+    "instrumentation.ts"
     "Dockerfile"
     ".dockerignore"
     ".github/"
@@ -86,6 +88,7 @@ const fs = require('fs');
 const master = JSON.parse(fs.readFileSync('/dev/stdin', 'utf8'));
 const current = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
+current.version = master.version;
 current.dependencies = master.dependencies;
 current.devDependencies = master.devDependencies;
 
@@ -100,7 +103,11 @@ console.log('✓ Dependencies merged');
 
 git add package.json package-lock.json
 
-# 9. Check for forbidden files in staging
+# 9. Generate VERSION file from package.json (single source of truth)
+node -e "console.log(require('./package.json').version)" > VERSION
+git add VERSION
+
+# 10. Check for forbidden files in staging
 echo -e "${YELLOW}Checking for forbidden files...${NC}"
 FORBIDDEN_PATTERNS=("CLAUDE.md" "TODO.md" "docs/ARCHITECTURE.md" "scripts/seed-demo.ts" ".claude/")
 HAS_FORBIDDEN=0
