@@ -1198,7 +1198,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         await client.batchDeleteEmails(ids);
         totalDeleted += ids.length;
         onProgress?.(totalDeleted, totalEmails);
-      } catch (error) {
+      } catch {
         throw new Error(`Deleted ${totalDeleted} of ${totalEmails} emails before failure`);
       }
 
