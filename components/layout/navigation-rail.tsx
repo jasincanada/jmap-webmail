@@ -52,7 +52,7 @@ export function NavigationRail({
   if (orientation === "horizontal") {
     return (
       <nav
-        className={cn("flex items-center justify-around bg-background border-t border-border", className)}
+        className={cn("flex items-center justify-around bg-background border-t border-border relative z-10", className)}
         role="navigation"
         aria-label={t("nav_label")}
       >
@@ -78,9 +78,6 @@ export function NavigationRail({
                   <span className="absolute -top-1.5 -right-2.5 flex items-center justify-center min-w-[16px] h-4 text-[10px] font-bold rounded-full bg-red-500 text-white px-1">
                     {item.badge > 99 ? "99+" : item.badge}
                   </span>
-                )}
-                {isActive && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-primary" />
                 )}
               </div>
               <span className="text-[10px] font-medium leading-tight">{t(item.labelKey)}</span>
