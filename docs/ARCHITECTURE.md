@@ -1,7 +1,7 @@
 # JMAP Webmail - Architecture Reference
 
 > Implementation details, file locations, and feature documentation.
-> Last verified: 2026-02-22
+> Last verified: 2026-03-16
 
 ## Settings Integration Status
 
@@ -29,8 +29,11 @@ All settings are properly wired to their functionality:
 - Reply, Forward, Move to, Color tags, Delete — supports batch operations
 
 ### Mobile Responsive
-- Adaptive single/multi-pane layout
+- Adaptive single/multi-pane layout with CSS-first breakpoints (no JS layout lag)
 - Files: `stores/ui-store.ts`, `hooks/use-media-query.ts`, `components/layout/mobile-header.tsx`
+- Mobile bottom action bar: `components/email/mobile-action-bar.tsx` (reply, archive, delete, more)
+- Long-press context menu: `hooks/use-long-press.ts` (300ms, vibration, scale feedback)
+- Touch-friendly submenu: tap-to-expand on `pointer: coarse` devices
 - Hamburger menu navigation, view switching, safe area support
 
 ### Keyboard Shortcuts
@@ -54,9 +57,18 @@ All settings are properly wired to their functionality:
   - `components/email/thread-conversation-view.tsx` — Full-screen mobile conversation view
   - `components/email/email-list.tsx` — Groups emails by threadId
 
+### Sandboxed Email Rendering
+- Rich HTML emails (tables, stylesheets) rendered in sandboxed iframe for CSS isolation
+- Simple HTML/plain text rendered inline via DOMPurify (faster, no iframe overhead)
+- Decision function: `lib/email-sanitization.ts` (`needsIframeRendering()`)
+- Iframe component: `components/email/sandboxed-email-frame.tsx` (auto-height, link interception)
+- Applied in both `email-viewer.tsx` and `thread-conversation-view.tsx`
+- DOMPurify remains the security boundary; iframe provides CSS containment only
+
 ### Dark Mode Email Readability
 - Intelligent color transformation during HTML sanitization
 - Files: `lib/color-transform.ts`, `components/email/email-viewer.tsx`
+- Iframe path: uses `prefers-color-scheme` media query via `generateIframeStylesheet()`
 - Luminance < 0.4 (very dark): Inverted and brightened
 - Luminance 0.4-0.6 (medium): Lightened by 40-50%
 - Luminance > 0.6 (light): Preserved as-is
@@ -150,7 +162,7 @@ All settings are properly wired to their functionality:
 - @types/node 25, jsdom 28, lucide-react 0.564
 
 ## Feature Completeness Summary
-- **Authentication**: Complete (Basic Auth + TOTP 2FA)
+- **Authentication**: Complete (Basic Auth + TOTP 2FA + OAuth2/OIDC with PKCE)
 - **Email Operations**: Complete (threading, unsubscribe, templates)
 - **Real-time Updates**: Complete (EventSource push)
 - **UI**: Settings integrated, DnD, context menus, mobile, keyboard, WCAG AA
@@ -160,5 +172,10 @@ All settings are properly wired to their functionality:
 - **Vacation Responder**: Complete (JMAP VacationResponse)
 - **Calendar**: Phase 5 complete (event detail popover, quick notes, drag-create, resize, recurring scope, quick create, duplication, import, notifications)
 - **Email Filters**: Complete (Sieve RFC 9661, visual + raw editor)
-- **Security**: CSP Report-Only + all P0 headers
-- **Testing**: 669 tests passing
+- **Security**: CSP Report-Only + all P0 headers, sandboxed iframe for HTML emails
+- **API Robustness**: Exponential backoff retry (`lib/jmap/retry.ts`) for transient JMAP failures
+- **Sidebar**: Tag counts section, empty folder (junk/trash), resizable width (`hooks/use-resize-handle.ts`)
+- **Density**: Extra-compact option (28px desktop, 44px touch), persisted in settings
+- **Sender Info**: Expandable panel in email viewer (`components/email/sender-info-panel.tsx`)
+- **Security Tooltips**: Plain-language SPF/DKIM/DMARC explanations on hover
+- **Testing**: 704 tests passing
