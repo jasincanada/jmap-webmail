@@ -18,9 +18,10 @@ export async function GET() {
   return NextResponse.json({
     appName: process.env.APP_NAME || process.env.NEXT_PUBLIC_APP_NAME || 'Webmail',
     jmapServerUrl: process.env.JMAP_SERVER_URL || process.env.NEXT_PUBLIC_JMAP_SERVER_URL || '',
-    oauthEnabled: process.env.OAUTH_ENABLED === 'true',
+    oauthEnabled: process.env.OAUTH_ENABLED === 'true' || process.env.OAUTH_ONLY === 'true',
     oauthClientId: process.env.OAUTH_CLIENT_ID || '',
     oauthIssuerUrl: process.env.OAUTH_ISSUER_URL || '',
+    oauthOnly: process.env.OAUTH_ONLY === 'true',
     rememberMeEnabled: !!process.env.SESSION_SECRET,
   });
 }

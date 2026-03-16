@@ -19,7 +19,7 @@ export default function LoginPage() {
   const t = useTranslations("login");
   const params = useParams();
   const { login, isLoading, error, clearError, isAuthenticated } = useAuthStore();
-  const { appName, jmapServerUrl: serverUrl, oauthEnabled, oauthClientId, oauthIssuerUrl, rememberMeEnabled, isLoading: configLoading, error: configError } = useConfig();
+  const { appName, jmapServerUrl: serverUrl, oauthEnabled, oauthClientId, oauthIssuerUrl, oauthOnly, rememberMeEnabled, isLoading: configLoading, error: configError } = useConfig();
 
   const [formData, setFormData] = useState({
     username: "",
@@ -39,6 +39,7 @@ export default function LoginPage() {
   const [oauthMetadata, setOauthMetadata] = useState<OAuthMetadata | null>(null);
   const [oauthDiscoveryDone, setOauthDiscoveryDone] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
+  const [oauthRetryCount, setOauthRetryCount] = useState(0);
 
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -139,7 +140,7 @@ export default function LoginPage() {
         setOauthMetadata(null);
         setOauthDiscoveryDone(true);
       });
-  }, [oauthEnabled, serverUrl, oauthIssuerUrl]);
+  }, [oauthEnabled, serverUrl, oauthIssuerUrl, oauthRetryCount]);
 
   if (configLoading) {
     return (
@@ -280,6 +281,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (oauthOnly) return;
 
     const success = await login(
       serverUrl,
@@ -347,6 +349,7 @@ export default function LoginPage() {
           onSubmit={handleSubmit}
           className={cn("space-y-4", shakeError && "animate-shake")}
         >
+          {!oauthOnly && (<>
           <fieldset disabled={isLoading} className="space-y-4">
             <div className="relative">
               <Input
@@ -487,24 +490,31 @@ export default function LoginPage() {
               t("sign_in")
             )}
           </Button>
+          </>)}
 
           {oauthMetadata && (
             <>
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border" />
+              {!oauthOnly && (
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">{t("or")}</span>
+                  </div>
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">{t("or")}</span>
-                </div>
-              </div>
+              )}
 
               <Button
                 type="button"
-                variant="outline"
-                className="w-full h-12 font-medium text-base"
+                variant={oauthOnly ? "default" : "outline"}
+                className={cn(
+                  "w-full h-12 font-medium text-base",
+                  oauthOnly && "bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+                )}
                 onClick={handleOAuthLogin}
                 disabled={oauthLoading || isLoading}
+                autoFocus={oauthOnly}
               >
                 {oauthLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -519,9 +529,21 @@ export default function LoginPage() {
           {oauthEnabled && oauthDiscoveryDone && !oauthMetadata && (
             <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-amber-700 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-amber-700 dark:text-amber-400">
-                {t("error.oauth_discovery_failed")}
-              </p>
+              <div className="flex-1">
+                <p className="text-sm text-amber-700 dark:text-amber-400">
+                  {t("error.oauth_discovery_failed")}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOauthDiscoveryDone(false);
+                    setOauthRetryCount((c) => c + 1);
+                  }}
+                  className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-400 underline hover:no-underline"
+                >
+                  {t("retry")}
+                </button>
+              </div>
             </div>
           )}
         </form>
