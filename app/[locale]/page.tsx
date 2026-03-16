@@ -989,8 +989,8 @@ export default function Home() {
           </div>
           </div>
 
-          {/* Mobile Bottom Navigation */}
-          {isMobile && (
+          {/* Mobile/Tablet Bottom Navigation */}
+          {(isMobile || isTablet) && (
             <NavigationRail orientation="horizontal" />
           )}
         </div>
