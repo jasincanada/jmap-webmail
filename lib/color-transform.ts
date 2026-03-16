@@ -233,6 +233,7 @@ export function generateIframeStylesheet(): string {
         line-height: 1.6;
         word-wrap: break-word;
         overflow-wrap: break-word;
+        overflow-x: auto;
         color: #1e293b;
         background: #ffffff;
       }

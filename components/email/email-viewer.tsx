@@ -219,6 +219,7 @@ export function EmailViewer({
   const [isSendingQuickReply, setIsSendingQuickReply] = useState(false);
   const [showSourceModal, setShowSourceModal] = useState(false);
   const [showSenderInfo, setShowSenderInfo] = useState(false);
+  const [showMoreActions, setShowMoreActions] = useState(false);
   const currentColor = getCurrentColor(email?.keywords);
   const [dismissedUnsubBanners, setDismissedUnsubBanners] = useState<Set<string>>(
     () => {
@@ -246,6 +247,7 @@ export function EmailViewer({
     setIsQuickReplyFocused(false);
     setShowSourceModal(false);
     setShowSenderInfo(false);
+    setShowMoreActions(false);
   }, [email?.id, externalContentPolicy]);
 
   // Generate email source for viewing
@@ -869,25 +871,29 @@ export function EmailViewer({
               </div>
 
               {/* More Actions Dropdown */}
-              <div className="relative group">
+              <div className="relative">
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-10 w-10 lg:h-8 lg:w-8 hover:bg-muted"
                   title={t('more_actions')}
+                  onClick={() => setShowMoreActions(prev => !prev)}
                 >
                   <MoreVertical className="w-4 h-4 text-muted-foreground" />
                 </Button>
-                <div className="absolute right-0 top-full mt-1 w-44 bg-background rounded-md shadow-lg border border-border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                {showMoreActions && (
+                  <>
+                    <div className="fixed inset-0 z-[9]" onClick={() => setShowMoreActions(false)} onKeyDown={(e) => e.key === 'Escape' && setShowMoreActions(false)} role="presentation" />
+                    <div className="absolute right-0 top-full mt-1 w-44 bg-background rounded-md shadow-lg border border-border z-10" role="menu">
                   <button
-                    onClick={() => setShowSourceModal(true)}
+                    onClick={() => { setShowSourceModal(true); setShowMoreActions(false); }}
                     className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
                   >
                     <Code className="w-4 h-4" />
                     {t('view_source')}
                   </button>
                   <button
-                    onClick={() => window.print()}
+                    onClick={() => { window.print(); setShowMoreActions(false); }}
                     className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
                   >
                     <Printer className="w-4 h-4" />
@@ -895,7 +901,7 @@ export function EmailViewer({
                   </button>
                   {onShowShortcuts && (
                     <button
-                      onClick={onShowShortcuts}
+                      onClick={() => { onShowShortcuts(); setShowMoreActions(false); }}
                       className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
                     >
                       <Keyboard className="w-4 h-4" />
@@ -907,7 +913,7 @@ export function EmailViewer({
                   {/* Spam action - contextual */}
                   {(onMarkAsSpam || onUndoSpam) && (
                     <button
-                      onClick={isInJunkFolder ? onUndoSpam : onMarkAsSpam}
+                      onClick={() => { (isInJunkFolder ? onUndoSpam : onMarkAsSpam)?.(); setShowMoreActions(false); }}
                       className={cn(
                         "w-full px-3 py-2 text-sm text-left hover:bg-muted flex items-center gap-2",
                         isInJunkFolder ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"
@@ -926,7 +932,9 @@ export function EmailViewer({
                       )}
                     </button>
                   )}
-                </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
