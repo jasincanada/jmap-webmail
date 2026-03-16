@@ -1,5 +1,6 @@
 import type { Email, Mailbox, StateChange, AccountStates, Thread, Identity, EmailAddress, ContactCard, AddressBook, VacationResponse, Calendar, CalendarEvent, CalendarEventFilter } from "./types";
 import type { SieveScript, SieveCapabilities } from "./sieve-types";
+import { retryWithBackoff } from './retry';
 
 // JMAP protocol types - these are intentionally flexible due to server variations
 interface JMAPSession {
@@ -141,9 +142,22 @@ export class JMAPClient {
     this.authHeader = `Bearer ${token}`;
   }
 
-  private async authenticatedFetch(url: string, init?: Parameters<typeof fetch>[1]): Promise<Response> {
+  private async authenticatedFetch(
+    url: string,
+    init?: Parameters<typeof fetch>[1],
+    options?: { retry?: boolean }
+  ): Promise<Response> {
     const headers = { ...init?.headers as Record<string, string>, 'Authorization': this.authHeader };
-    let response = await fetch(url, { ...init, headers });
+    const doFetch = () => fetch(url, { ...init, headers });
+
+    let response: Response;
+    if (options?.retry !== false) {
+      response = await retryWithBackoff(doFetch, {
+        signal: init?.signal as AbortSignal | undefined,
+      });
+    } else {
+      response = await doFetch();
+    }
 
     if (response.status === 401 && this.authMode === 'bearer' && this.onTokenRefresh) {
       const newToken = await this.onTokenRefresh();
@@ -670,6 +684,51 @@ export class JMAPClient {
         destroy: emailIds,
       }, "0"],
     ]);
+  }
+
+  async queryTagCounts(tags: string[]): Promise<Record<string, number>> {
+    if (tags.length === 0) return {};
+
+    const methodCalls: JMAPMethodCall[] = tags.map((tag, i) => [
+      "Email/query",
+      {
+        accountId: this.accountId,
+        filter: { hasKeyword: `$color:${tag}` },
+        calculateTotal: true,
+        limit: 0,
+      },
+      `tag-${i}`,
+    ]);
+
+    const response = await this.request(methodCalls);
+    const counts: Record<string, number> = {};
+
+    response.methodResponses?.forEach(([method, result], i) => {
+      if (method === "Email/query" && result?.total > 0) {
+        counts[tags[i]] = result.total;
+      }
+    });
+
+    return counts;
+  }
+
+  async queryMailboxEmailIds(mailboxId: string, limit: number = 500, position: number = 0): Promise<{ ids: string[]; total: number }> {
+    const response = await this.request([
+      ["Email/query", {
+        accountId: this.accountId,
+        filter: { inMailbox: mailboxId },
+        sort: [{ property: "receivedAt", isAscending: false }],
+        calculateTotal: true,
+        limit,
+        position,
+      }, "0"],
+    ]);
+
+    const queryResult = response.methodResponses?.[0]?.[1];
+    return {
+      ids: queryResult?.ids || [],
+      total: queryResult?.total || 0,
+    };
   }
 
   async batchMoveEmails(emailIds: string[], toMailboxId: string): Promise<void> {
@@ -1258,7 +1317,7 @@ export class JMAPClient {
       method: 'POST',
       headers: { 'Content-Type': file.type || 'application/octet-stream' },
       body: file,
-    });
+    }, { retry: false });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -2087,7 +2146,7 @@ export class JMAPClient {
 
   async downloadBlob(blobId: string, name?: string, type?: string): Promise<void> {
     const url = this.getBlobDownloadUrl(blobId, name, type);
-    const response = await this.authenticatedFetch(url, {});
+    const response = await this.authenticatedFetch(url, {}, { retry: false });
 
     if (!response.ok) {
       throw new Error(`Failed to download attachment: ${response.status}`);
@@ -2158,7 +2217,7 @@ export class JMAPClient {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ using, methodCalls }),
-      });
+      }, { retry: false });
 
       if (response.ok) {
         const data = await response.json();
@@ -2181,7 +2240,7 @@ export class JMAPClient {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ using, methodCalls }),
-      });
+      }, { retry: false });
 
       if (response.ok) {
         const data = await response.json();

@@ -88,7 +88,19 @@
     "compose_hint": "Verfassen (c)",
     "search_placeholder_hint": "E-Mails suchen... (drücke /)",
     "mail": "E-Mail",
-    "nav_label": "Navigation"
+    "nav_label": "Navigation",
+    "tags": {
+      "title": "Tags",
+      "no_tags": "Keine Tags"
+    },
+    "empty_folder": {
+      "title": "Ordner leeren",
+      "confirm": "Möchten Sie wirklich alle {count} E-Mails in {folder} dauerhaft löschen?",
+      "success": "Ordner erfolgreich geleert",
+      "progress": "Lösche... {deleted}/{total}",
+      "error": "Es konnten nicht alle E-Mails gelöscht werden. {deleted} von {total} wurden entfernt.",
+      "cancel": "Abbrechen"
+    }
   },
   "email_list": {
     "no_emails": "Keine E-Mails",
@@ -161,6 +173,26 @@
     "more_options": "Weitere Optionen",
     "sending": "Wird gesendet...",
     "security_authentication": "Sicherheit & Authentifizierung",
+    "security": {
+      "tooltip": {
+        "spf_pass": "Der sendende Server ist berechtigt, im Namen dieser Domain zu senden",
+        "spf_fail": "Der sendende Server ist NICHT berechtigt, von dieser Domain zu senden — diese E-Mail könnte gefälscht sein",
+        "spf_softfail": "Der sendende Server ist wahrscheinlich nicht berechtigt — mit Vorsicht behandeln",
+        "spf_neutral": "Der Domaininhaber hat nicht angegeben, ob dieser Server berechtigt ist",
+        "spf_temperror": "Bei der Überprüfung des Absenders ist ein vorübergehender Fehler aufgetreten",
+        "spf_permerror": "Der SPF-Eintrag der Domain ist fehlerhaft konfiguriert",
+        "spf_none": "Kein SPF-Eintrag für diese Domain gefunden",
+        "dkim_pass": "Der Inhalt dieser E-Mail wurde während der Übertragung nicht verändert",
+        "dkim_fail": "Der Inhalt dieser E-Mail wurde möglicherweise während der Übertragung verändert",
+        "dkim_policy": "Die DKIM-Signatur erfüllt nicht die Richtlinienanforderungen der Domain",
+        "dkim_neutral": "Die DKIM-Prüfung war nicht schlüssig",
+        "dkim_temperror": "Bei der Überprüfung der Signatur ist ein vorübergehender Fehler aufgetreten",
+        "dkim_permerror": "Die DKIM-Signatur ist fehlerhaft oder der Schlüssel fehlt",
+        "dmarc_pass": "Die Domain des Absenders hat die Echtheit dieser E-Mail bestätigt",
+        "dmarc_fail": "Die Domain des Absenders konnte die Echtheit dieser E-Mail nicht bestätigen",
+        "dmarc_none": "Die Domain des Absenders hat keine DMARC-Richtlinie konfiguriert"
+      }
+    },
     "technical_details": "Technische Details",
     "message_id_label": "Nachrichten-ID:",
     "reply_to_label": "Antwort an:",
@@ -270,7 +302,24 @@
       "select_calendar": "Kalender auswählen",
       "already_in_calendar": "Bereits in deinem Kalender"
     },
-    "keyboard_shortcuts": "Tastaturkürzel (?)"
+    "keyboard_shortcuts": "Tastaturkürzel (?)",
+    "mobile_actions": {
+      "reply": "Antworten",
+      "reply_all": "Allen antworten",
+      "archive": "Archivieren",
+      "delete": "Löschen",
+      "more": "Mehr",
+      "forward": "Weiterleiten",
+      "move_to": "Verschieben nach...",
+      "star": "Markieren",
+      "mark_unread": "Als ungelesen markieren",
+      "spam": "Als Spam melden"
+    },
+    "sender_info": {
+      "add_to_contacts": "Zu Kontakten hinzufügen",
+      "view_all_emails": "Alle E-Mails dieses Absenders anzeigen",
+      "no_contact": "Nicht in Ihren Kontakten"
+    }
   },
   "email_composer": {
     "new_message": "Neue Nachricht",
@@ -469,6 +518,7 @@
       "list_density": {
         "label": "Listendichte",
         "description": "Abstand in E-Mail-Listen steuern",
+        "extra_compact": "Extra kompakt",
         "compact": "Kompakt",
         "regular": "Normal",
         "comfortable": "Komfortabel"

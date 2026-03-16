@@ -88,7 +88,19 @@
     "clear_search": "Clear search",
     "vacation_active": "Vacation responder is active",
     "mail": "Mail",
-    "nav_label": "Navigation"
+    "nav_label": "Navigation",
+    "tags": {
+      "title": "Tags",
+      "no_tags": "No tags"
+    },
+    "empty_folder": {
+      "title": "Empty folder",
+      "confirm": "Are you sure you want to permanently delete all {count} emails in {folder}?",
+      "success": "Folder emptied successfully",
+      "progress": "Deleting... {deleted}/{total}",
+      "error": "Failed to delete all emails. {deleted} of {total} were removed.",
+      "cancel": "Cancel"
+    }
   },
   "email_list": {
     "no_emails": "No emails",
@@ -162,6 +174,26 @@
     "more_options": "More options",
     "sending": "Sending...",
     "security_authentication": "Security & Authentication",
+    "security": {
+      "tooltip": {
+        "spf_pass": "The sending server is authorized to send on behalf of this domain",
+        "spf_fail": "The sending server is NOT authorized to send from this domain — this email may be spoofed",
+        "spf_softfail": "The sending server is probably not authorized — treat with caution",
+        "spf_neutral": "The domain owner has not stated whether this server is authorized",
+        "spf_temperror": "A temporary error occurred checking the sender — try again later",
+        "spf_permerror": "The domain's SPF record is misconfigured",
+        "spf_none": "No SPF record found for this domain",
+        "dkim_pass": "This email's content has not been tampered with in transit",
+        "dkim_fail": "This email's content may have been altered in transit",
+        "dkim_policy": "DKIM signature did not meet the domain's policy requirements",
+        "dkim_neutral": "DKIM check was inconclusive",
+        "dkim_temperror": "A temporary error occurred verifying the signature",
+        "dkim_permerror": "The DKIM signature is malformed or the key is missing",
+        "dmarc_pass": "The sender's domain has verified this email is authentic",
+        "dmarc_fail": "The sender's domain could not verify this email's authenticity",
+        "dmarc_none": "The sender's domain has no DMARC policy configured"
+      }
+    },
     "technical_details": "Technical Details",
     "message_id_label": "Message-ID:",
     "reply_to_label": "Reply-To:",
@@ -270,6 +302,23 @@
       "no_calendar": "Calendar not available",
       "select_calendar": "Select calendar",
       "already_in_calendar": "Already in your calendar"
+    },
+    "mobile_actions": {
+      "reply": "Reply",
+      "reply_all": "Reply All",
+      "archive": "Archive",
+      "delete": "Delete",
+      "more": "More",
+      "forward": "Forward",
+      "move_to": "Move to...",
+      "star": "Star",
+      "mark_unread": "Mark as unread",
+      "spam": "Report spam"
+    },
+    "sender_info": {
+      "add_to_contacts": "Add to contacts",
+      "view_all_emails": "View all emails from this sender",
+      "no_contact": "Not in your contacts"
     }
   },
   "email_composer": {
@@ -477,6 +526,7 @@
       "list_density": {
         "label": "List Density",
         "description": "Control spacing in email lists",
+        "extra_compact": "Extra compact",
         "compact": "Compact",
         "regular": "Regular",
         "comfortable": "Comfortable"

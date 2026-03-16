@@ -49,9 +49,10 @@ export function AppearanceSettings() {
         <RadioGroup
           value={listDensity}
           onChange={(value) =>
-            updateSetting('listDensity', value as 'compact' | 'regular' | 'comfortable')
+            updateSetting('listDensity', value as 'extra-compact' | 'compact' | 'regular' | 'comfortable')
           }
           options={[
+            { value: 'extra-compact', label: t('list_density.extra_compact') },
             { value: 'compact', label: t('list_density.compact') },
             { value: 'regular', label: t('list_density.regular') },
             { value: 'comfortable', label: t('list_density.comfortable') },

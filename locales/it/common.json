@@ -88,7 +88,19 @@
     "compose_hint": "Scrivi (c)",
     "search_placeholder_hint": "Cerca posta... (premi /)",
     "mail": "Posta",
-    "nav_label": "Navigazione"
+    "nav_label": "Navigazione",
+    "tags": {
+      "title": "Etichette",
+      "no_tags": "Nessuna etichetta"
+    },
+    "empty_folder": {
+      "title": "Svuota cartella",
+      "confirm": "Sei sicuro di voler eliminare definitivamente tutte le {count} email in {folder}?",
+      "success": "Cartella svuotata con successo",
+      "progress": "Eliminazione... {deleted}/{total}",
+      "error": "Impossibile eliminare tutte le email. {deleted} su {total} sono state rimosse.",
+      "cancel": "Annulla"
+    }
   },
   "email_list": {
     "no_emails": "Nessun messaggio",
@@ -161,6 +173,26 @@
     "more_options": "Più opzioni",
     "sending": "Invio in corso...",
     "security_authentication": "Sicurezza e autenticazione",
+    "security": {
+      "tooltip": {
+        "spf_pass": "Il server di invio è autorizzato a inviare per conto di questo dominio",
+        "spf_fail": "Il server di invio NON è autorizzato a inviare da questo dominio — questa email potrebbe essere contraffatta",
+        "spf_softfail": "Il server di invio probabilmente non è autorizzato — trattare con cautela",
+        "spf_neutral": "Il proprietario del dominio non ha dichiarato se questo server è autorizzato",
+        "spf_temperror": "Si è verificato un errore temporaneo durante la verifica del mittente",
+        "spf_permerror": "Il record SPF del dominio è configurato in modo errato",
+        "spf_none": "Nessun record SPF trovato per questo dominio",
+        "dkim_pass": "Il contenuto di questa email non è stato manomesso durante il transito",
+        "dkim_fail": "Il contenuto di questa email potrebbe essere stato alterato durante il transito",
+        "dkim_policy": "La firma DKIM non soddisfa i requisiti della politica del dominio",
+        "dkim_neutral": "La verifica DKIM non è stata conclusiva",
+        "dkim_temperror": "Si è verificato un errore temporaneo durante la verifica della firma",
+        "dkim_permerror": "La firma DKIM è malformata o la chiave è mancante",
+        "dmarc_pass": "Il dominio del mittente ha verificato che questa email è autentica",
+        "dmarc_fail": "Il dominio del mittente non ha potuto verificare l'autenticità di questa email",
+        "dmarc_none": "Il dominio del mittente non ha una politica DMARC configurata"
+      }
+    },
     "technical_details": "Dettagli tecnici",
     "message_id_label": "ID messaggio:",
     "reply_to_label": "Rispondi a:",
@@ -270,7 +302,24 @@
       "select_calendar": "Seleziona calendario",
       "already_in_calendar": "Già nel tuo calendario"
     },
-    "keyboard_shortcuts": "Scorciatoie da tastiera (?)"
+    "keyboard_shortcuts": "Scorciatoie da tastiera (?)",
+    "mobile_actions": {
+      "reply": "Rispondi",
+      "reply_all": "Rispondi a tutti",
+      "archive": "Archivia",
+      "delete": "Elimina",
+      "more": "Altro",
+      "forward": "Inoltra",
+      "move_to": "Sposta in...",
+      "star": "Preferito",
+      "mark_unread": "Segna come non letto",
+      "spam": "Segnala come spam"
+    },
+    "sender_info": {
+      "add_to_contacts": "Aggiungi ai contatti",
+      "view_all_emails": "Visualizza tutte le email di questo mittente",
+      "no_contact": "Non presente nei tuoi contatti"
+    }
   },
   "email_composer": {
     "new_message": "Nuovo messaggio",
@@ -469,6 +518,7 @@
       "list_density": {
         "label": "Densità elenco",
         "description": "Controlla la spaziatura negli elenchi email",
+        "extra_compact": "Extra compatto",
         "compact": "Compatto",
         "regular": "Normale",
         "comfortable": "Comodo"

@@ -16,6 +16,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useIdentityStore } from "@/stores/identity-store";
 import { useUIStore } from "@/stores/ui-store";
+import { useContactStore } from "@/stores/contact-store";
 import { useDeviceDetection } from "@/hooks/use-media-query";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { debug } from "@/lib/debug";
@@ -91,7 +92,10 @@ export default function Home() {
     clearSearchFilters,
     toggleAdvancedSearch,
     advancedSearch,
+    fetchTagCounts,
   } = useEmailStore();
+
+  const contactStore = useContactStore();
 
   // Keyboard shortcuts handlers
   const keyboardHandlers = useMemo(() => ({
@@ -267,6 +271,9 @@ export default function Home() {
             await fetchEmails(client);
           }
 
+          // Fetch tag counts in the background
+          fetchTagCounts(client);
+
           // Setup push notifications after successful data load
           try {
             // Register state change callback
@@ -298,7 +305,7 @@ export default function Home() {
         client.closePushNotifications();
       }
     };
-  }, [isAuthenticated, client, mailboxes.length, fetchMailboxes, fetchEmails, fetchQuota, handleStateChange, setPushConnected]);
+  }, [isAuthenticated, client, mailboxes.length, fetchMailboxes, fetchEmails, fetchQuota, fetchTagCounts, handleStateChange, setPushConnected]);
 
   // Handle mark-as-read with delay based on settings
   useEffect(() => {
@@ -943,6 +950,30 @@ export default function Home() {
                       selectEmail(null);
                     }}
                     onShowShortcuts={() => setShowShortcutsModal(true)}
+                    onSearchSender={(email) => {
+                      const query = `from:${email}`;
+                      setSearchQuery(query);
+                      if (client) {
+                        searchEmails(client, query);
+                      }
+                    }}
+                    onAddContact={(name, email) => {
+                      if (client && contactStore.supportsSync) {
+                        contactStore.createContact(client, {
+                          kind: 'individual',
+                          name: name ? { components: [{ kind: 'given', value: name }], isOrdered: true } : undefined,
+                          emails: { email0: { address: email } },
+                        });
+                      } else {
+                        contactStore.addLocalContact({
+                          id: `local-${crypto.randomUUID()}`,
+                          addressBookIds: {},
+                          kind: 'individual',
+                          name: name ? { components: [{ kind: 'given', value: name }], isOrdered: true } : undefined,
+                          emails: { email0: { address: email } },
+                        });
+                      }
+                    }}
                     currentUserEmail={client?.["username"]}
                     currentUserName={client?.["username"]?.split("@")[0]}
                     currentMailboxRole={mailboxes.find(m => m.id === selectedMailbox)?.role}

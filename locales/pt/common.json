@@ -88,7 +88,19 @@
     "compose_hint": "Compor (c)",
     "search_placeholder_hint": "Pesquisar e-mail... (pressione /)",
     "mail": "E-mail",
-    "nav_label": "Navegação"
+    "nav_label": "Navegação",
+    "tags": {
+      "title": "Etiquetas",
+      "no_tags": "Sem etiquetas"
+    },
+    "empty_folder": {
+      "title": "Esvaziar pasta",
+      "confirm": "Tem certeza de que deseja excluir permanentemente todos os {count} e-mails em {folder}?",
+      "success": "Pasta esvaziada com sucesso",
+      "progress": "Excluindo... {deleted}/{total}",
+      "error": "Não foi possível excluir todos os e-mails. {deleted} de {total} foram removidos.",
+      "cancel": "Cancelar"
+    }
   },
   "email_list": {
     "no_emails": "Nenhum e-mail",
@@ -161,6 +173,26 @@
     "more_options": "Mais opções",
     "sending": "Enviando...",
     "security_authentication": "Segurança & Autenticação",
+    "security": {
+      "tooltip": {
+        "spf_pass": "O servidor de envio está autorizado a enviar em nome deste domínio",
+        "spf_fail": "O servidor de envio NÃO está autorizado a enviar deste domínio — este e-mail pode ser falsificado",
+        "spf_softfail": "O servidor de envio provavelmente não está autorizado — trate com cuidado",
+        "spf_neutral": "O proprietário do domínio não declarou se este servidor está autorizado",
+        "spf_temperror": "Ocorreu um erro temporário ao verificar o remetente",
+        "spf_permerror": "O registro SPF do domínio está mal configurado",
+        "spf_none": "Nenhum registro SPF encontrado para este domínio",
+        "dkim_pass": "O conteúdo deste e-mail não foi adulterado durante o trânsito",
+        "dkim_fail": "O conteúdo deste e-mail pode ter sido alterado durante o trânsito",
+        "dkim_policy": "A assinatura DKIM não atendeu aos requisitos da política do domínio",
+        "dkim_neutral": "A verificação DKIM foi inconclusiva",
+        "dkim_temperror": "Ocorreu um erro temporário ao verificar a assinatura",
+        "dkim_permerror": "A assinatura DKIM está malformada ou a chave está ausente",
+        "dmarc_pass": "O domínio do remetente verificou que este e-mail é autêntico",
+        "dmarc_fail": "O domínio do remetente não conseguiu verificar a autenticidade deste e-mail",
+        "dmarc_none": "O domínio do remetente não tem política DMARC configurada"
+      }
+    },
     "technical_details": "Detalhes Técnicos",
     "message_id_label": "Message-ID:",
     "reply_to_label": "Responder para:",
@@ -270,7 +302,24 @@
       "select_calendar": "Selecionar calendário",
       "already_in_calendar": "Já está no seu calendário"
     },
-    "keyboard_shortcuts": "Atalhos de teclado (?)"
+    "keyboard_shortcuts": "Atalhos de teclado (?)",
+    "mobile_actions": {
+      "reply": "Responder",
+      "reply_all": "Responder a todos",
+      "archive": "Arquivar",
+      "delete": "Excluir",
+      "more": "Mais",
+      "forward": "Encaminhar",
+      "move_to": "Mover para...",
+      "star": "Favoritar",
+      "mark_unread": "Marcar como não lido",
+      "spam": "Denunciar spam"
+    },
+    "sender_info": {
+      "add_to_contacts": "Adicionar aos contatos",
+      "view_all_emails": "Ver todos os e-mails deste remetente",
+      "no_contact": "Não está nos seus contatos"
+    }
   },
   "email_composer": {
     "new_message": "Nova Mensagem",
@@ -469,6 +518,7 @@
       "list_density": {
         "label": "Densidade da Lista",
         "description": "Controle o espaçamento nas listas de e-mail",
+        "extra_compact": "Extra compacto",
         "compact": "Compacto",
         "regular": "Regular",
         "comfortable": "Confortável"

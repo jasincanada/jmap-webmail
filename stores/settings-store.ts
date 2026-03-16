@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type FontSize = 'small' | 'medium' | 'large';
-export type ListDensity = 'compact' | 'regular' | 'comfortable';
+export type ListDensity = 'extra-compact' | 'compact' | 'regular' | 'comfortable';
 export type DeleteAction = 'trash' | 'permanent';
 export type ReplyMode = 'reply' | 'replyAll';
 export type DateFormat = 'regional' | 'iso' | 'custom';
@@ -40,6 +40,9 @@ interface SettingsState {
   // Calendar Notifications
   calendarNotificationsEnabled: boolean;
   calendarNotificationSound: boolean;
+
+  // Layout
+  sidebarWidth: number;
 
   // Advanced
   debugMode: boolean;
@@ -90,6 +93,9 @@ const DEFAULT_SETTINGS = {
   calendarNotificationsEnabled: true,
   calendarNotificationSound: true,
 
+  // Layout
+  sidebarWidth: 256,
+
   // Advanced
   debugMode: false,
 };
@@ -116,6 +122,11 @@ export const useSettingsStore = create<SettingsState>()(
         if (key === 'animationsEnabled') {
           applyAnimations(value as boolean);
         }
+
+        // Apply sidebar width to document root
+        if (key === 'sidebarWidth') {
+          applySidebarWidth(value as number);
+        }
       },
 
       resetToDefaults: () => {
@@ -123,6 +134,7 @@ export const useSettingsStore = create<SettingsState>()(
         applyFontSize(DEFAULT_SETTINGS.fontSize);
         applyListDensity(DEFAULT_SETTINGS.listDensity);
         applyAnimations(DEFAULT_SETTINGS.animationsEnabled);
+        applySidebarWidth(DEFAULT_SETTINGS.sidebarWidth);
       },
 
       exportSettings: () => {
@@ -146,6 +158,7 @@ export const useSettingsStore = create<SettingsState>()(
           sessionTimeout: state.sessionTimeout,
           calendarNotificationsEnabled: state.calendarNotificationsEnabled,
           calendarNotificationSound: state.calendarNotificationSound,
+          sidebarWidth: state.sidebarWidth,
           debugMode: state.debugMode,
         };
         return JSON.stringify(settings, null, 2);
@@ -171,6 +184,7 @@ export const useSettingsStore = create<SettingsState>()(
           applyFontSize(get().fontSize);
           applyListDensity(get().listDensity);
           applyAnimations(get().animationsEnabled);
+          applySidebarWidth(get().sidebarWidth);
 
           return true;
         } catch (error) {
@@ -224,12 +238,20 @@ function applyListDensity(density: ListDensity) {
   if (typeof document === 'undefined') return;
 
   const root = document.documentElement;
-  const densityMap = {
+  const densityMap: Record<ListDensity, string> = {
+    'extra-compact': '28px',
     compact: '32px',
     regular: '48px',
     comfortable: '64px',
   };
   root.style.setProperty('--list-item-height', densityMap[density]);
+  root.dataset.density = density;
+}
+
+function applySidebarWidth(width: number) {
+  if (typeof document === 'undefined') return;
+
+  document.documentElement.style.setProperty('--sidebar-width', `${width}px`);
 }
 
 function applyAnimations(enabled: boolean) {
@@ -249,4 +271,5 @@ if (typeof window !== 'undefined') {
   applyFontSize(store.fontSize);
   applyListDensity(store.listDensity);
   applyAnimations(store.animationsEnabled);
+  applySidebarWidth(store.sidebarWidth);
 }

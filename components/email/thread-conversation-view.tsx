@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import DOMPurify from "dompurify";
 import { Email, ThreadGroup } from "@/lib/jmap/types";
-import { hasRichFormatting, EMAIL_SANITIZE_CONFIG, collapseBlockedImageContainers } from "@/lib/email-sanitization";
+import { hasRichFormatting, needsIframeRendering, EMAIL_SANITIZE_CONFIG, collapseBlockedImageContainers } from "@/lib/email-sanitization";
+import { SandboxedEmailFrame } from "./sandboxed-email-frame";
 import { transformInlineStyles, transformColorForDarkMode, transformBgColorForDarkMode } from "@/lib/color-transform";
 import { useThemeStore } from "@/stores/theme-store";
 import { Avatar } from "@/components/ui/avatar";
@@ -332,7 +333,7 @@ function EmailCard({
           finalHtml = collapseBlockedImageContainers(sanitized);
         }
 
-        return { html: finalHtml, isHtml: true };
+        return { html: finalHtml, isHtml: true, useIframe: needsIframeRendering(htmlContent) };
       }
 
       // Plain text fallback
@@ -447,16 +448,20 @@ function EmailCard({
 
           {/* Email Body */}
           <div className="px-4 py-4">
-            <div
-              className={cn(
-                "prose prose-sm max-w-none dark:prose-invert",
-                "prose-p:my-2 prose-headings:my-3",
-                "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
-                "[&_table]:border-collapse [&_td]:p-2 [&_th]:p-2",
-                "[&_img]:max-w-full [&_img]:h-auto"
-              )}
-              dangerouslySetInnerHTML={{ __html: emailContent.html }}
-            />
+            {emailContent.isHtml && emailContent.useIframe ? (
+              <SandboxedEmailFrame html={emailContent.html} className="w-full" />
+            ) : (
+              <div
+                className={cn(
+                  "prose prose-sm max-w-none dark:prose-invert",
+                  "prose-p:my-2 prose-headings:my-3",
+                  "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
+                  "[&_table]:border-collapse [&_td]:p-2 [&_th]:p-2",
+                  "[&_img]:max-w-full [&_img]:h-auto"
+                )}
+                dangerouslySetInnerHTML={{ __html: emailContent.html }}
+              />
+            )}
           </div>
 
           {/* Attachments */}

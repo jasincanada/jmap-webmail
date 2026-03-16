@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import DOMPurify from "dompurify";
 import { Email } from "@/lib/jmap/types";
-import { hasRichFormatting, EMAIL_SANITIZE_CONFIG, collapseBlockedImageContainers } from "@/lib/email-sanitization";
+import { hasRichFormatting, needsIframeRendering, EMAIL_SANITIZE_CONFIG, collapseBlockedImageContainers } from "@/lib/email-sanitization";
+import { SandboxedEmailFrame } from "./sandboxed-email-frame";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { formatFileSize, cn } from "@/lib/utils";
@@ -57,9 +58,11 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useThemeStore } from "@/stores/theme-store";
 import { transformInlineStyles, transformColorForDarkMode, transformBgColorForDarkMode } from "@/lib/color-transform";
 import { EmailIdentityBadge } from "./email-identity-badge";
+import { MobileActionBar } from "./mobile-action-bar";
 import { UnsubscribeBanner } from "./unsubscribe-banner";
 import { CalendarInvitationBanner } from "./calendar-invitation-banner";
 import { findCalendarAttachment } from "@/lib/calendar-invitation";
+import { SenderInfoPanel } from "./sender-info-panel";
 
 interface EmailViewerProps {
   email: Email | null;
@@ -78,6 +81,8 @@ interface EmailViewerProps {
   onUndoSpam?: () => void;
   onBack?: () => void;
   onShowShortcuts?: () => void;
+  onSearchSender?: (email: string) => void;
+  onAddContact?: (name: string, email: string) => void;
   currentUserEmail?: string;
   currentUserName?: string;
   currentMailboxRole?: string;
@@ -173,6 +178,8 @@ export function EmailViewer({
   onUndoSpam,
   onBack,
   onShowShortcuts,
+  onSearchSender,
+  onAddContact,
   currentUserEmail,
   currentUserName,
   currentMailboxRole,
@@ -200,7 +207,7 @@ export function EmailViewer({
   ];
 
   // Tablet list visibility
-  const { isTablet } = useDeviceDetection();
+  const { isMobile, isTablet } = useDeviceDetection();
   const { tabletListVisible } = useUIStore();
   const { identities } = useAuthStore();
   const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
@@ -211,6 +218,7 @@ export function EmailViewer({
   const [isQuickReplyFocused, setIsQuickReplyFocused] = useState(false);
   const [isSendingQuickReply, setIsSendingQuickReply] = useState(false);
   const [showSourceModal, setShowSourceModal] = useState(false);
+  const [showSenderInfo, setShowSenderInfo] = useState(false);
   const currentColor = getCurrentColor(email?.keywords);
   const [dismissedUnsubBanners, setDismissedUnsubBanners] = useState<Set<string>>(
     () => {
@@ -237,6 +245,7 @@ export function EmailViewer({
     setQuickReplyText("");
     setIsQuickReplyFocused(false);
     setShowSourceModal(false);
+    setShowSenderInfo(false);
   }, [email?.id, externalContentPolicy]);
 
   // Generate email source for viewing
@@ -503,7 +512,8 @@ export function EmailViewer({
 
         return {
           html: cleanHtml,
-          isHtml: true
+          isHtml: true,
+          useIframe: needsIframeRendering(htmlContent),
         };
       }
 
@@ -924,21 +934,31 @@ export function EmailViewer({
       </div>
 
       {/* Sender Info - Desktop only (hidden on mobile/tablet, they see it in scrollable content) */}
-      <div className="hidden lg:block bg-background border-b border-border px-6 py-4">
-          <div className="flex items-start gap-4">
-            <Avatar
-              name={sender?.name}
-              email={sender?.email}
-              size="lg"
-              className="shadow-sm w-12 h-12"
-            />
+      <div className="hidden lg:block bg-background border-b border-border">
+          <div className="flex items-start gap-4 px-6 py-4">
+            <button
+              type="button"
+              onClick={() => setShowSenderInfo(!showSenderInfo)}
+              className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
+            >
+              <Avatar
+                name={sender?.name}
+                email={sender?.email}
+                size="lg"
+                className="shadow-sm w-12 h-12"
+              />
+            </button>
 
             <div className="flex-1 min-w-0">
               {/* Sender line with compact badges */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-foreground">
+                <button
+                  type="button"
+                  onClick={() => setShowSenderInfo(!showSenderInfo)}
+                  className="font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
+                >
                   {sender?.name || sender?.email || t('unknown_sender')}
-                </span>
+                </button>
                 <EmailIdentityBadge email={email} identities={identities} />
               </div>
 
@@ -1008,94 +1028,109 @@ export function EmailViewer({
                           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                             {/* SPF Check */}
                             {email.authenticationResults.spf && (
-                              <div className={cn(
-                                "px-3 py-2 rounded-md",
-                                getSecurityStatus(email.authenticationResults.spf.result).bgColor,
-                                getSecurityStatus(email.authenticationResults.spf.result).borderColor
-                              )}>
-                                <div className="flex items-center gap-2">
-                                  {getSecurityStatus(email.authenticationResults.spf.result).icon === 'check' &&
-                                    <Check className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.spf.result).color)} />}
-                                  {getSecurityStatus(email.authenticationResults.spf.result).icon === 'x' &&
-                                    <X className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.spf.result).color)} />}
-                                  {getSecurityStatus(email.authenticationResults.spf.result).icon === 'alert' &&
-                                    <AlertTriangle className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.spf.result).color)} />}
-                                  {getSecurityStatus(email.authenticationResults.spf.result).icon === 'minus' &&
-                                    <Minus className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.spf.result).color)} />}
-                                  <div>
-                                    <div className="text-xs font-medium text-gray-900 dark:text-gray-100">SPF</div>
-                                    <div className={cn("text-xs capitalize", getSecurityStatus(email.authenticationResults.spf.result).color)}>
-                                      {email.authenticationResults.spf.result}
+                              <div className="group/spf relative">
+                                <div className={cn(
+                                  "px-3 py-2 rounded-md",
+                                  getSecurityStatus(email.authenticationResults.spf.result).bgColor,
+                                  getSecurityStatus(email.authenticationResults.spf.result).borderColor
+                                )}>
+                                  <div className="flex items-center gap-2">
+                                    {getSecurityStatus(email.authenticationResults.spf.result).icon === 'check' &&
+                                      <Check className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.spf.result).color)} />}
+                                    {getSecurityStatus(email.authenticationResults.spf.result).icon === 'x' &&
+                                      <X className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.spf.result).color)} />}
+                                    {getSecurityStatus(email.authenticationResults.spf.result).icon === 'alert' &&
+                                      <AlertTriangle className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.spf.result).color)} />}
+                                    {getSecurityStatus(email.authenticationResults.spf.result).icon === 'minus' &&
+                                      <Minus className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.spf.result).color)} />}
+                                    <div>
+                                      <div className="text-xs font-medium text-gray-900 dark:text-gray-100">SPF</div>
+                                      <div className={cn("text-xs capitalize", getSecurityStatus(email.authenticationResults.spf.result).color)}>
+                                        {email.authenticationResults.spf.result}
+                                      </div>
                                     </div>
                                   </div>
+                                  {email.authenticationResults.spf.domain && (
+                                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate" title={email.authenticationResults.spf.domain}>
+                                      {email.authenticationResults.spf.domain}
+                                    </div>
+                                  )}
                                 </div>
-                                {email.authenticationResults.spf.domain && (
-                                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate" title={email.authenticationResults.spf.domain}>
-                                    {email.authenticationResults.spf.domain}
-                                  </div>
-                                )}
+                                <div className="absolute invisible group-hover/spf:visible bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-900 dark:bg-gray-100 dark:text-gray-900 rounded-lg shadow-lg max-w-xs z-50 whitespace-normal pointer-events-none">
+                                  {t(`security.tooltip.spf_${email.authenticationResults.spf.result}`)}
+                                </div>
                               </div>
                             )}
 
                             {/* DKIM Check */}
                             {email.authenticationResults.dkim && (
-                              <div className={cn(
-                                "px-3 py-2 rounded-md",
-                                getSecurityStatus(email.authenticationResults.dkim.result).bgColor,
-                                getSecurityStatus(email.authenticationResults.dkim.result).borderColor
-                              )}>
-                                <div className="flex items-center gap-2">
-                                  {getSecurityStatus(email.authenticationResults.dkim.result).icon === 'check' &&
-                                    <Check className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dkim.result).color)} />}
-                                  {getSecurityStatus(email.authenticationResults.dkim.result).icon === 'x' &&
-                                    <X className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dkim.result).color)} />}
-                                  {getSecurityStatus(email.authenticationResults.dkim.result).icon === 'alert' &&
-                                    <AlertTriangle className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dkim.result).color)} />}
-                                  {getSecurityStatus(email.authenticationResults.dkim.result).icon === 'minus' &&
-                                    <Minus className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dkim.result).color)} />}
-                                  <div>
-                                    <div className="text-xs font-medium text-gray-900 dark:text-gray-100">DKIM</div>
-                                    <div className={cn("text-xs capitalize", getSecurityStatus(email.authenticationResults.dkim.result).color)}>
-                                      {email.authenticationResults.dkim.result}
+                              <div className="group/dkim relative">
+                                <div className={cn(
+                                  "px-3 py-2 rounded-md",
+                                  getSecurityStatus(email.authenticationResults.dkim.result).bgColor,
+                                  getSecurityStatus(email.authenticationResults.dkim.result).borderColor
+                                )}>
+                                  <div className="flex items-center gap-2">
+                                    {getSecurityStatus(email.authenticationResults.dkim.result).icon === 'check' &&
+                                      <Check className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dkim.result).color)} />}
+                                    {getSecurityStatus(email.authenticationResults.dkim.result).icon === 'x' &&
+                                      <X className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dkim.result).color)} />}
+                                    {getSecurityStatus(email.authenticationResults.dkim.result).icon === 'alert' &&
+                                      <AlertTriangle className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dkim.result).color)} />}
+                                    {getSecurityStatus(email.authenticationResults.dkim.result).icon === 'minus' &&
+                                      <Minus className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dkim.result).color)} />}
+                                    <div>
+                                      <div className="text-xs font-medium text-gray-900 dark:text-gray-100">DKIM</div>
+                                      <div className={cn("text-xs capitalize", getSecurityStatus(email.authenticationResults.dkim.result).color)}>
+                                        {email.authenticationResults.dkim.result}
+                                      </div>
                                     </div>
                                   </div>
+                                  {email.authenticationResults.dkim.domain && (
+                                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate" title={email.authenticationResults.dkim.domain}>
+                                      {email.authenticationResults.dkim.domain}
+                                    </div>
+                                  )}
                                 </div>
-                                {email.authenticationResults.dkim.domain && (
-                                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate" title={email.authenticationResults.dkim.domain}>
-                                    {email.authenticationResults.dkim.domain}
-                                  </div>
-                                )}
+                                <div className="absolute invisible group-hover/dkim:visible bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-900 dark:bg-gray-100 dark:text-gray-900 rounded-lg shadow-lg max-w-xs z-50 whitespace-normal pointer-events-none">
+                                  {t(`security.tooltip.dkim_${email.authenticationResults.dkim.result}`)}
+                                </div>
                               </div>
                             )}
 
                             {/* DMARC Check */}
                             {email.authenticationResults.dmarc && (
-                              <div className={cn(
-                                "px-3 py-2 rounded-md",
-                                getSecurityStatus(email.authenticationResults.dmarc.result).bgColor,
-                                getSecurityStatus(email.authenticationResults.dmarc.result).borderColor
-                              )}>
-                                <div className="flex items-center gap-2">
-                                  {getSecurityStatus(email.authenticationResults.dmarc.result).icon === 'check' &&
-                                    <Check className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dmarc.result).color)} />}
-                                  {getSecurityStatus(email.authenticationResults.dmarc.result).icon === 'x' &&
-                                    <X className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dmarc.result).color)} />}
-                                  {getSecurityStatus(email.authenticationResults.dmarc.result).icon === 'alert' &&
-                                    <AlertTriangle className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dmarc.result).color)} />}
-                                  {getSecurityStatus(email.authenticationResults.dmarc.result).icon === 'minus' &&
-                                    <Minus className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dmarc.result).color)} />}
-                                  <div>
-                                    <div className="text-xs font-medium text-gray-900 dark:text-gray-100">DMARC</div>
-                                    <div className={cn("text-xs capitalize", getSecurityStatus(email.authenticationResults.dmarc.result).color)}>
-                                      {email.authenticationResults.dmarc.result}
+                              <div className="group/dmarc relative">
+                                <div className={cn(
+                                  "px-3 py-2 rounded-md",
+                                  getSecurityStatus(email.authenticationResults.dmarc.result).bgColor,
+                                  getSecurityStatus(email.authenticationResults.dmarc.result).borderColor
+                                )}>
+                                  <div className="flex items-center gap-2">
+                                    {getSecurityStatus(email.authenticationResults.dmarc.result).icon === 'check' &&
+                                      <Check className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dmarc.result).color)} />}
+                                    {getSecurityStatus(email.authenticationResults.dmarc.result).icon === 'x' &&
+                                      <X className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dmarc.result).color)} />}
+                                    {getSecurityStatus(email.authenticationResults.dmarc.result).icon === 'alert' &&
+                                      <AlertTriangle className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dmarc.result).color)} />}
+                                    {getSecurityStatus(email.authenticationResults.dmarc.result).icon === 'minus' &&
+                                      <Minus className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dmarc.result).color)} />}
+                                    <div>
+                                      <div className="text-xs font-medium text-gray-900 dark:text-gray-100">DMARC</div>
+                                      <div className={cn("text-xs capitalize", getSecurityStatus(email.authenticationResults.dmarc.result).color)}>
+                                        {email.authenticationResults.dmarc.result}
+                                      </div>
                                     </div>
                                   </div>
+                                  {email.authenticationResults.dmarc.policy && (
+                                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                      Policy: {email.authenticationResults.dmarc.policy}
+                                    </div>
+                                  )}
                                 </div>
-                                {email.authenticationResults.dmarc.policy && (
-                                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                    Policy: {email.authenticationResults.dmarc.policy}
-                                  </div>
-                                )}
+                                <div className="absolute invisible group-hover/dmarc:visible bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-900 dark:bg-gray-100 dark:text-gray-900 rounded-lg shadow-lg max-w-xs z-50 whitespace-normal pointer-events-none">
+                                  {t(`security.tooltip.dmarc_${email.authenticationResults.dmarc.result}`)}
+                                </div>
                               </div>
                             )}
 
@@ -1274,6 +1309,13 @@ export function EmailViewer({
 
             </div>
           </div>
+          {showSenderInfo && sender && (
+            <SenderInfoPanel
+              sender={sender}
+              onSearch={(email) => onSearchSender?.(email)}
+              onAddContact={(name, email) => onAddContact?.(name, email)}
+            />
+          )}
       </div>
 
       {/* Email Content Area */}
@@ -1281,18 +1323,28 @@ export function EmailViewer({
         {/* Mobile/Tablet Sender Info - scrolls with content */}
         <div className="lg:hidden bg-background border-b border-border px-4 py-3">
           <div className="flex items-start gap-3">
-            <Avatar
-              name={sender?.name}
-              email={sender?.email}
-              size="lg"
-              className="shadow-sm w-10 h-10"
-            />
+            <button
+              type="button"
+              onClick={() => setShowSenderInfo(!showSenderInfo)}
+              className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
+            >
+              <Avatar
+                name={sender?.name}
+                email={sender?.email}
+                size="lg"
+                className="shadow-sm w-10 h-10"
+              />
+            </button>
             <div className="flex-1 min-w-0">
               {/* Mobile 2-line layout */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-semibold text-foreground">
+                <button
+                  type="button"
+                  onClick={() => setShowSenderInfo(!showSenderInfo)}
+                  className="text-sm font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
+                >
                   {sender?.name || sender?.email || t('unknown_sender')}
-                </span>
+                </button>
                 <EmailIdentityBadge email={email} identities={identities} />
               </div>
               <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground flex-wrap">
@@ -1323,6 +1375,13 @@ export function EmailViewer({
               )}
             </div>
           </div>
+          {showSenderInfo && sender && (
+            <SenderInfoPanel
+              sender={sender}
+              onSearch={(email) => onSearchSender?.(email)}
+              onAddContact={(name, email) => onAddContact?.(name, email)}
+            />
+          )}
         </div>
 
         {/* Unified Notification Banner - External Content + Unsubscribe + Calendar Invitation */}
@@ -1476,7 +1535,9 @@ export function EmailViewer({
           {/* Email Body */}
           <div className="bg-background rounded-lg shadow-sm border border-border overflow-x-auto">
             <div className="email-content-wrapper p-6">
-              {emailContent.isHtml ? (
+              {emailContent.isHtml && emailContent.useIframe ? (
+                <SandboxedEmailFrame html={emailContent.html} className="w-full" />
+              ) : emailContent.isHtml ? (
                 <div
                   className="email-content prose dark:prose-invert max-w-none"
                   dangerouslySetInnerHTML={{ __html: emailContent.html }}
@@ -1599,6 +1660,20 @@ export function EmailViewer({
           </div>
         </div>
       </div>
+
+      {/* Mobile bottom action bar */}
+      {email && (isMobile || isTablet) && (
+        <MobileActionBar
+          onReply={() => onReply?.()}
+          onReplyAll={() => onReplyAll?.()}
+          onArchive={() => onArchive?.()}
+          onDelete={() => onDelete?.()}
+          onForward={() => onForward?.()}
+          onStar={() => onToggleStar?.()}
+          onMarkUnread={() => email && onMarkAsRead?.(email.id, false)}
+          onSpam={() => onMarkAsSpam?.()}
+        />
+      )}
 
       {/* Email Source Modal */}
       {showSourceModal && email && (

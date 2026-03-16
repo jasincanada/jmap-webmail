@@ -77,6 +77,27 @@ export function hasRichFormatting(html: string): boolean {
 }
 
 /**
+ * Detect if HTML content needs iframe rendering for CSS isolation.
+ * More narrow than hasRichFormatting() — only triggers on patterns
+ * that can cause CSS bleed into the host app:
+ * - table layouts (newsletter-style)
+ * - style blocks (global CSS rules)
+ * - link tags (external stylesheets)
+ * - background/background-image in inline styles (complex rendering)
+ */
+export function needsIframeRendering(html: string): boolean {
+  if (!html) return false;
+  const doc = parseHtmlSafely(html);
+  if (doc.querySelector('table, style, link[rel="stylesheet"]')) return true;
+  const allElements = doc.querySelectorAll('[style]');
+  for (const el of allElements) {
+    const styleAttr = el.getAttribute('style') || '';
+    if (/background(?:-image)?\s*:.*url\s*\(/i.test(styleAttr)) return true;
+  }
+  return false;
+}
+
+/**
  * Collapse empty containers left behind when external images are blocked.
  * Walks up from each blocked img to find the nearest table cell or wrapper div
  * and hides it if it contains no meaningful visible content.

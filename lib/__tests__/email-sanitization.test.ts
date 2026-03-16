@@ -4,6 +4,7 @@ import {
   sanitizeSignatureHtml,
   parseHtmlSafely,
   hasRichFormatting,
+  needsIframeRendering,
 } from '../email-sanitization';
 
 describe('email-sanitization', () => {
@@ -190,6 +191,56 @@ describe('email-sanitization', () => {
     it('should handle empty HTML', () => {
       expect(hasRichFormatting('')).toBe(false);
       expect(hasRichFormatting('   ')).toBe(false);
+    });
+  });
+
+  describe('needsIframeRendering', () => {
+    it('returns true for HTML with table tags', () => {
+      expect(needsIframeRendering('<table><tr><td>Cell</td></tr></table>')).toBe(true);
+    });
+
+    it('returns true for HTML with style tags', () => {
+      expect(needsIframeRendering('<style>body { color: red; }</style><p>Text</p>')).toBe(true);
+    });
+
+    it('returns true for HTML with background in inline styles', () => {
+      expect(needsIframeRendering('<div style="background: url(img.png)">Content</div>')).toBe(true);
+    });
+
+    it('returns true for HTML with background-image in inline styles', () => {
+      expect(needsIframeRendering('<div style="background-image: url(bg.jpg)">Cell</div>')).toBe(true);
+    });
+
+    it('returns true for HTML with link tags', () => {
+      expect(needsIframeRendering('<link rel="stylesheet" href="style.css"><p>Text</p>')).toBe(true);
+    });
+
+    it('returns false for plain text converted to HTML', () => {
+      expect(needsIframeRendering('<br>Hello world<br>How are you?')).toBe(false);
+    });
+
+    it('returns false for simple formatting tags', () => {
+      expect(needsIframeRendering('<p><b>Bold</b> and <i>italic</i> text</p>')).toBe(false);
+    });
+
+    it('returns false for blockquotes', () => {
+      expect(needsIframeRendering('<blockquote>Quoted text</blockquote>')).toBe(false);
+    });
+
+    it('returns false for lists', () => {
+      expect(needsIframeRendering('<ul><li>Item 1</li><li>Item 2</li></ul>')).toBe(false);
+    });
+
+    it('returns false for headings', () => {
+      expect(needsIframeRendering('<h1>Title</h1><p>Body</p>')).toBe(false);
+    });
+
+    it('returns false for simple inline styles without background', () => {
+      expect(needsIframeRendering('<p style="color: red; font-size: 14px">Text</p>')).toBe(false);
+    });
+
+    it('returns false for empty string', () => {
+      expect(needsIframeRendering('')).toBe(false);
     });
   });
 });

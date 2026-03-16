@@ -21,7 +21,7 @@ export function proxy(request: NextRequest) {
     `img-src 'self' data: https:`,
     `font-src 'self'`,
     `connect-src ${connectSrc}`,
-    `frame-src 'none'`,
+    `frame-src 'self'`,
     `object-src 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,

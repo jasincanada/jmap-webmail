@@ -387,6 +387,13 @@ body {
   animation: slide-in-from-left 0.3s ease-out;
 }
 
+/* Extra-compact density: enforce minimum touch target on touch devices */
+@media (pointer: coarse) {
+  [data-density="extra-compact"] .email-list-item {
+    min-height: 44px;
+  }
+}
+
 /* Reduced motion: respect user OS preference */
 @media (prefers-reduced-motion: reduce) {
   *,

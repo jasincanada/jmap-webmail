@@ -88,7 +88,19 @@
     "clear_search": "検索をクリア",
     "vacation_active": "不在応答が有効です",
     "mail": "メール",
-    "nav_label": "ナビゲーション"
+    "nav_label": "ナビゲーション",
+    "tags": {
+      "title": "タグ",
+      "no_tags": "タグなし"
+    },
+    "empty_folder": {
+      "title": "フォルダを空にする",
+      "confirm": "{folder}内の{count}件のメールをすべて完全に削除しますか？",
+      "success": "フォルダを空にしました",
+      "progress": "削除中... {deleted}/{total}",
+      "error": "すべてのメールを削除できませんでした。{total}件中{deleted}件が削除されました。",
+      "cancel": "キャンセル"
+    }
   },
   "email_list": {
     "no_emails": "メールがありません",
@@ -161,6 +173,26 @@
     "more_options": "その他のオプション",
     "sending": "送信中...",
     "security_authentication": "セキュリティと認証",
+    "security": {
+      "tooltip": {
+        "spf_pass": "送信サーバーはこのドメインの代理として送信する権限があります",
+        "spf_fail": "送信サーバーはこのドメインからの送信を許可されていません — なりすましの可能性があります",
+        "spf_softfail": "送信サーバーはおそらく許可されていません — 注意が必要です",
+        "spf_neutral": "ドメイン所有者はこのサーバーが許可されているかどうかを明示していません",
+        "spf_temperror": "送信者の確認中に一時的なエラーが発生しました",
+        "spf_permerror": "ドメインのSPFレコードの設定に誤りがあります",
+        "spf_none": "このドメインのSPFレコードが見つかりません",
+        "dkim_pass": "このメールの内容は送信中に改ざんされていません",
+        "dkim_fail": "このメールの内容は送信中に改ざんされた可能性があります",
+        "dkim_policy": "DKIM署名がドメインのポリシー要件を満たしていません",
+        "dkim_neutral": "DKIM検証は結論が出ませんでした",
+        "dkim_temperror": "署名の検証中に一時的なエラーが発生しました",
+        "dkim_permerror": "DKIM署名が不正か、鍵が見つかりません",
+        "dmarc_pass": "送信者のドメインがこのメールの真正性を確認しました",
+        "dmarc_fail": "送信者のドメインがこのメールの真正性を確認できませんでした",
+        "dmarc_none": "送信者のドメインにDMARCポリシーが設定されていません"
+      }
+    },
     "technical_details": "技術的な詳細",
     "message_id_label": "メッセージID:",
     "reply_to_label": "返信先:",
@@ -270,7 +302,24 @@
       "select_calendar": "カレンダーを選択",
       "already_in_calendar": "カレンダーに登録済み"
     },
-    "keyboard_shortcuts": "キーボードショートカット (?)"
+    "keyboard_shortcuts": "キーボードショートカット (?)",
+    "mobile_actions": {
+      "reply": "返信",
+      "reply_all": "全員に返信",
+      "archive": "アーカイブ",
+      "delete": "削除",
+      "more": "その他",
+      "forward": "転送",
+      "move_to": "移動先...",
+      "star": "スター",
+      "mark_unread": "未読にする",
+      "spam": "迷惑メールとして報告"
+    },
+    "sender_info": {
+      "add_to_contacts": "連絡先に追加",
+      "view_all_emails": "この送信者のすべてのメールを表示",
+      "no_contact": "連絡先に登録されていません"
+    }
   },
   "email_composer": {
     "new_message": "新規メッセージ",
@@ -469,6 +518,7 @@
       "list_density": {
         "label": "リストの密度",
         "description": "メールリストの間隔を調整",
+        "extra_compact": "超コンパクト",
         "compact": "コンパクト",
         "regular": "標準",
         "comfortable": "ゆったり"

@@ -89,6 +89,13 @@ interface EmailStore {
   collapseAllThreads: () => void;
   updateThreadCache: (threadId: string, emails: Email[]) => void;
 
+  // Tag counts
+  tagCounts: Record<string, number>;
+  fetchTagCounts: (client: JMAPClient) => Promise<void>;
+
+  // Empty folder
+  emptyFolder: (client: JMAPClient, mailboxId: string, onProgress?: (deleted: number, total: number) => void) => Promise<void>;
+
   // Mock data for demo
   loadMockData: () => void;
 }
@@ -121,6 +128,9 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   searchFilters: { ...DEFAULT_SEARCH_FILTERS },
   isAdvancedSearchOpen: false,
   searchAbortController: null,
+
+  // Tag counts
+  tagCounts: {},
 
   // Spam undo cache
   spamUndoCache: new Map(),
@@ -990,6 +1000,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       // Handle Email state changes - refresh current mailbox
       if (accountChanges.Email) {
         await get().refreshCurrentMailbox(client);
+        get().fetchTagCounts(client);
       }
 
       // Handle Mailbox state changes - refresh mailbox list
@@ -1155,6 +1166,53 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
     const newCache = new Map(get().threadEmailsCache);
     newCache.set(threadId, emails);
     set({ threadEmailsCache: newCache });
+  },
+
+  fetchTagCounts: async (client) => {
+    try {
+      const tags = ["red", "orange", "yellow", "green", "blue", "purple", "pink"];
+      const tagCounts = await client.queryTagCounts(tags);
+      set({ tagCounts });
+    } catch (error) {
+      console.error("Failed to fetch tag counts:", error);
+    }
+  },
+
+  emptyFolder: async (client, mailboxId, onProgress) => {
+    const mailboxes = get().mailboxes;
+    const mailbox = mailboxes.find(mb => mb.id === mailboxId);
+    const jmapMailboxId = mailbox?.originalId || mailboxId;
+
+    let totalDeleted = 0;
+    let totalEmails = 0;
+
+    const firstBatch = await client.queryMailboxEmailIds(jmapMailboxId, 500, 0);
+    totalEmails = firstBatch.total;
+
+    if (totalEmails === 0) return;
+
+    let ids = firstBatch.ids;
+
+    while (ids.length > 0) {
+      try {
+        await client.batchDeleteEmails(ids);
+        totalDeleted += ids.length;
+        onProgress?.(totalDeleted, totalEmails);
+      } catch (error) {
+        throw new Error(`Deleted ${totalDeleted} of ${totalEmails} emails before failure`);
+      }
+
+      if (totalDeleted >= totalEmails) break;
+
+      const nextBatch = await client.queryMailboxEmailIds(jmapMailboxId, 500, 0);
+      ids = nextBatch.ids;
+      if (ids.length === 0) break;
+    }
+
+    await get().fetchMailboxes(client);
+    if (get().selectedMailbox === mailboxId) {
+      set({ emails: [], totalEmails: 0, hasMoreEmails: false });
+    }
   },
 
   loadMockData: () => {

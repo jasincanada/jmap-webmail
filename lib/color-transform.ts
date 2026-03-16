@@ -215,3 +215,39 @@ export function transformInlineStyles(cssText: string, theme: 'light' | 'dark'):
 
   return transformedProps.join('; ');
 }
+
+/**
+ * Generate a style block for iframe-rendered emails.
+ * Uses prefers-color-scheme for native dark mode adaptation
+ * instead of inline style transforms.
+ */
+export function generateIframeStylesheet(): string {
+  return `
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 8px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        color: #1e293b;
+        background: #ffffff;
+      }
+      img { max-width: 100%; height: auto; }
+      table { max-width: 100%; }
+      a { color: #3b82f6; }
+      pre, code { white-space: pre-wrap; word-wrap: break-word; }
+      @media (prefers-color-scheme: dark) {
+        body {
+          color: #e2e8f0;
+          background: #1e1f26;
+        }
+        a { color: #60a5fa; }
+        img { opacity: 0.9; }
+      }
+    </style>
+  `;
+}

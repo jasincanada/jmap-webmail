@@ -88,7 +88,19 @@
     "compose_hint": "Opstellen (c)",
     "search_placeholder_hint": "E-mail zoeken... (druk /)",
     "mail": "E-mail",
-    "nav_label": "Navigatie"
+    "nav_label": "Navigatie",
+    "tags": {
+      "title": "Tags",
+      "no_tags": "Geen tags"
+    },
+    "empty_folder": {
+      "title": "Map leegmaken",
+      "confirm": "Weet u zeker dat u alle {count} e-mails in {folder} permanent wilt verwijderen?",
+      "success": "Map succesvol geleegd",
+      "progress": "Verwijderen... {deleted}/{total}",
+      "error": "Niet alle e-mails konden worden verwijderd. {deleted} van {total} zijn verwijderd.",
+      "cancel": "Annuleren"
+    }
   },
   "email_list": {
     "no_emails": "Geen e-mails",
@@ -161,6 +173,26 @@
     "more_options": "Meer opties",
     "sending": "Verzenden...",
     "security_authentication": "Beveiliging & Authenticatie",
+    "security": {
+      "tooltip": {
+        "spf_pass": "De verzendende server is geautoriseerd om namens dit domein te verzenden",
+        "spf_fail": "De verzendende server is NIET geautoriseerd om vanaf dit domein te verzenden — deze e-mail kan vervalst zijn",
+        "spf_softfail": "De verzendende server is waarschijnlijk niet geautoriseerd — wees voorzichtig",
+        "spf_neutral": "De domeineigenaar heeft niet aangegeven of deze server geautoriseerd is",
+        "spf_temperror": "Er is een tijdelijke fout opgetreden bij het controleren van de afzender",
+        "spf_permerror": "Het SPF-record van het domein is onjuist geconfigureerd",
+        "spf_none": "Geen SPF-record gevonden voor dit domein",
+        "dkim_pass": "De inhoud van deze e-mail is niet gewijzigd tijdens het transport",
+        "dkim_fail": "De inhoud van deze e-mail is mogelijk gewijzigd tijdens het transport",
+        "dkim_policy": "De DKIM-handtekening voldeed niet aan de beleidsvereisten van het domein",
+        "dkim_neutral": "De DKIM-controle was niet overtuigend",
+        "dkim_temperror": "Er is een tijdelijke fout opgetreden bij het verifiëren van de handtekening",
+        "dkim_permerror": "De DKIM-handtekening is ongeldig of de sleutel ontbreekt",
+        "dmarc_pass": "Het domein van de afzender heeft geverifieerd dat deze e-mail authentiek is",
+        "dmarc_fail": "Het domein van de afzender kon de authenticiteit van deze e-mail niet verifiëren",
+        "dmarc_none": "Het domein van de afzender heeft geen DMARC-beleid geconfigureerd"
+      }
+    },
     "technical_details": "Technische details",
     "message_id_label": "Bericht-ID:",
     "reply_to_label": "Antwoord naar:",
@@ -270,7 +302,24 @@
       "select_calendar": "Agenda selecteren",
       "already_in_calendar": "Staat al in je agenda"
     },
-    "keyboard_shortcuts": "Sneltoetsen (?)"
+    "keyboard_shortcuts": "Sneltoetsen (?)",
+    "mobile_actions": {
+      "reply": "Beantwoorden",
+      "reply_all": "Allen beantwoorden",
+      "archive": "Archiveren",
+      "delete": "Verwijderen",
+      "more": "Meer",
+      "forward": "Doorsturen",
+      "move_to": "Verplaatsen naar...",
+      "star": "Ster",
+      "mark_unread": "Markeren als ongelezen",
+      "spam": "Melden als spam"
+    },
+    "sender_info": {
+      "add_to_contacts": "Toevoegen aan contacten",
+      "view_all_emails": "Alle e-mails van deze afzender bekijken",
+      "no_contact": "Niet in uw contacten"
+    }
   },
   "email_composer": {
     "new_message": "Nieuw bericht",
@@ -469,6 +518,7 @@
       "list_density": {
         "label": "Lijstdichtheid",
         "description": "Regeleer de ruimte in e-maillijsten",
+        "extra_compact": "Extra compact",
         "compact": "Compact",
         "regular": "Normaal",
         "comfortable": "Comfortabel"

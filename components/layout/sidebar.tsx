@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
@@ -26,14 +26,18 @@ import {
   SlidersHorizontal,
   Settings,
   X,
+  Tag,
 } from "lucide-react";
 import { cn, buildMailboxTree, MailboxNode, formatFileSize } from "@/lib/utils";
 import { Mailbox } from "@/lib/jmap/types";
 import { useDragDropContext } from "@/contexts/drag-drop-context";
 import { useMailboxDrop } from "@/hooks/use-mailbox-drop";
 import { useEmailStore } from "@/stores/email-store";
+import { useAuthStore } from "@/stores/auth-store";
 import { activeFilterCount } from "@/lib/jmap/search-utils";
+import { useSettingsStore } from "@/stores/settings-store";
 import { useVacationStore } from "@/stores/vacation-store";
+import { useResizeHandle } from "@/hooks/use-resize-handle";
 import { toast } from "@/stores/toast-store";
 import { debug } from "@/lib/debug";
 
@@ -86,6 +90,7 @@ function MailboxTreeItem({
   expandedFolders,
   onMailboxSelect,
   onToggleExpand,
+  onMailboxContextMenu,
   isCollapsed,
 }: {
   node: MailboxNode;
@@ -93,6 +98,7 @@ function MailboxTreeItem({
   expandedFolders: Set<string>;
   onMailboxSelect?: (id: string) => void;
   onToggleExpand: (id: string) => void;
+  onMailboxContextMenu?: (e: React.MouseEvent, mailbox: Mailbox) => void;
   isCollapsed: boolean;
 }) {
   const t = useTranslations('sidebar');
@@ -128,6 +134,7 @@ function MailboxTreeItem({
     <>
       <div
         {...(globalDragging ? dropHandlers : {})}
+        onContextMenu={(e) => onMailboxContextMenu?.(e, node)}
         className={cn(
           "group w-full flex items-center px-2 py-1 lg:py-1 max-lg:py-3 max-lg:min-h-[44px] text-sm transition-all duration-200",
           isVirtualNode
@@ -209,6 +216,7 @@ function MailboxTreeItem({
               expandedFolders={expandedFolders}
               onMailboxSelect={onMailboxSelect}
               onToggleExpand={onToggleExpand}
+              onMailboxContextMenu={onMailboxContextMenu}
               isCollapsed={isCollapsed}
             />
           ))}
@@ -268,6 +276,115 @@ function AdvancedSearchToggle() {
   );
 }
 
+const tagDotColors: Record<string, string> = {
+  red: "bg-red-500",
+  orange: "bg-orange-500",
+  yellow: "bg-yellow-500",
+  green: "bg-green-500",
+  blue: "bg-blue-500",
+  purple: "bg-purple-500",
+  pink: "bg-pink-500",
+};
+
+function TagsSection({
+  isCollapsed,
+  onSearch,
+}: {
+  isCollapsed: boolean;
+  onSearch?: (query: string) => void;
+}) {
+  const t = useTranslations("sidebar");
+  const { tagCounts } = useEmailStore();
+  const [expanded, setExpanded] = useState(true);
+
+  const tags = Object.entries(tagCounts);
+  if (tags.length === 0 || isCollapsed) return null;
+
+  return (
+    <div className="border-t border-border">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center w-full px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:bg-muted transition-colors"
+      >
+        <Tag className="w-3 h-3 mr-2" />
+        <span className="flex-1 text-left">{t("tags.title")}</span>
+        {expanded ? (
+          <ChevronDown className="w-3 h-3" />
+        ) : (
+          <ChevronRight className="w-3 h-3" />
+        )}
+      </button>
+      {expanded && (
+        <div className="py-1">
+          {tags.map(([color, count]) => (
+            <button
+              key={color}
+              onClick={() => onSearch?.(`keyword:$color:${color}`)}
+              className="flex items-center w-full px-4 py-1.5 text-sm hover:bg-muted transition-colors text-foreground"
+            >
+              <span
+                className={cn(
+                  "w-2.5 h-2.5 rounded-full mr-2.5 flex-shrink-0",
+                  tagDotColors[color] || "bg-gray-500"
+                )}
+              />
+              <span className="flex-1 text-left capitalize">{color}</span>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {count}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EmptyFolderConfirmDialog({
+  mailbox,
+  onConfirm,
+  onCancel,
+}: {
+  mailbox: { name: string; totalEmails: number };
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const t = useTranslations("sidebar");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={onCancel}
+        onKeyDown={(e) => e.key === "Escape" && onCancel()}
+      />
+      <div className="relative bg-background rounded-lg shadow-xl p-6 max-w-sm mx-4 border border-border">
+        <h3 className="text-lg font-semibold mb-2">{t("empty_folder.title")}</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          {t("empty_folder.confirm", {
+            count: mailbox.totalEmails,
+            folder: mailbox.name,
+          })}
+        </p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-sm rounded-md border border-border hover:bg-muted transition-colors"
+          >
+            {t("empty_folder.cancel")}
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 text-sm rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+          >
+            {t("empty_folder.title")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function StorageQuota({ quota, isCollapsed }: { quota: { used: number; total: number } | null; isCollapsed: boolean }) {
   const t = useTranslations('sidebar');
 
@@ -322,7 +439,28 @@ export function Sidebar({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; mailbox: Mailbox } | null>(null);
+  const [emptyFolderTarget, setEmptyFolderTarget] = useState<Mailbox | null>(null);
   const t = useTranslations('sidebar');
+  const { client } = useAuthStore();
+  const { emptyFolder } = useEmailStore();
+  const { sidebarWidth, updateSetting } = useSettingsStore();
+
+  const handleSidebarResize = useCallback((width: number) => {
+    document.documentElement.style.setProperty('--sidebar-width', `${width}px`);
+  }, []);
+
+  const handleSidebarResizeEnd = useCallback((width: number) => {
+    updateSetting('sidebarWidth', width);
+  }, [updateSetting]);
+
+  const resizeHandle = useResizeHandle({
+    min: 180,
+    max: 400,
+    initial: sidebarWidth,
+    onResize: handleSidebarResize,
+    onResizeEnd: handleSidebarResizeEnd,
+  });
 
   useEffect(() => {
     setSearchQuery(activeSearchQuery);
@@ -368,6 +506,32 @@ export function Sidebar({
     }
   };
 
+  const handleMailboxContextMenu = useCallback((e: React.MouseEvent, mailbox: Mailbox) => {
+    if (mailbox.role !== "trash" && mailbox.role !== "junk") return;
+    if (!mailbox.totalEmails || mailbox.totalEmails <= 0) return;
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, mailbox });
+  }, []);
+
+  const handleEmptyFolder = useCallback(async () => {
+    if (!emptyFolderTarget || !client) return;
+    const folderName = emptyFolderTarget.name;
+    const totalCount = emptyFolderTarget.totalEmails || 0;
+    const targetId = emptyFolderTarget.id;
+    setEmptyFolderTarget(null);
+
+    toast.info(t("empty_folder.title"), t("empty_folder.progress", { deleted: 0, total: totalCount }));
+
+    try {
+      await emptyFolder(client, targetId);
+      toast.success(t("empty_folder.title"), t("empty_folder.success"));
+    } catch (error) {
+      const match = error instanceof Error && error.message.match(/Deleted (\d+) of (\d+)/);
+      const deleted = match ? parseInt(match[1], 10) : 0;
+      toast.error(t("empty_folder.title"), t("empty_folder.error", { deleted, total: totalCount, folder: folderName }));
+    }
+  }, [emptyFolderTarget, client, emptyFolder, t]);
+
   const mailboxTree = buildMailboxTree(mailboxes);
 
   useEffect(() => {
@@ -407,9 +571,10 @@ export function Sidebar({
         "relative flex flex-col h-full border-r transition-all duration-300 overflow-hidden",
         "bg-secondary border-border",
         "max-lg:w-full",
-        isCollapsed ? "lg:w-16" : "lg:w-64",
+        isCollapsed && "lg:w-16",
         className
       )}
+      style={!isCollapsed ? { width: `var(--sidebar-width, ${sidebarWidth}px)` } : undefined}
     >
       {/* Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
@@ -493,13 +658,55 @@ export function Sidebar({
                   expandedFolders={expandedFolders}
                   onMailboxSelect={onMailboxSelect}
                   onToggleExpand={handleToggleExpand}
+                  onMailboxContextMenu={handleMailboxContextMenu}
                   isCollapsed={isCollapsed}
                 />
               ))}
             </>
           )}
         </div>
+
+        {/* Tags Section */}
+        <TagsSection isCollapsed={isCollapsed} onSearch={onSearch} />
       </div>
+
+      {/* Mailbox Context Menu */}
+      {contextMenu && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setContextMenu(null)}
+            onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }}
+          />
+          <div
+            className="fixed z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[160px]"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <button
+              onClick={() => {
+                setEmptyFolderTarget(contextMenu.mailbox);
+                setContextMenu(null);
+              }}
+              className="flex items-center w-full px-3 py-2 text-sm text-destructive hover:bg-muted transition-colors"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              {t("empty_folder.title")}
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Empty Folder Confirmation Dialog */}
+      {emptyFolderTarget && (
+        <EmptyFolderConfirmDialog
+          mailbox={{
+            name: emptyFolderTarget.name,
+            totalEmails: emptyFolderTarget.totalEmails || 0,
+          }}
+          onConfirm={handleEmptyFolder}
+          onCancel={() => setEmptyFolderTarget(null)}
+        />
+      )}
 
       {/* Footer: Storage Quota + Sign Out + Push Status */}
       <div className="border-t border-border">
@@ -546,6 +753,23 @@ export function Sidebar({
           )}
         </div>
       </div>
+
+      {/* Resize Handle */}
+      {!isCollapsed && (
+        <div
+          className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hidden lg:block hover:bg-primary/20 active:bg-primary/30 transition-colors z-10"
+          onMouseDown={resizeHandle.handleMouseDown}
+          onTouchStart={resizeHandle.handleTouchStart}
+          onKeyDown={resizeHandle.handleKeyDown}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize sidebar"
+          aria-valuemin={180}
+          aria-valuemax={400}
+          aria-valuenow={sidebarWidth}
+          tabIndex={0}
+        />
+      )}
     </div>
   );
 }

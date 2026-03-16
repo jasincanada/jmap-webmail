@@ -88,7 +88,19 @@
     "clear_search": "Effacer la recherche",
     "vacation_active": "Répondeur d'absence activé",
     "mail": "Messagerie",
-    "nav_label": "Navigation"
+    "nav_label": "Navigation",
+    "tags": {
+      "title": "Étiquettes",
+      "no_tags": "Aucune étiquette"
+    },
+    "empty_folder": {
+      "title": "Vider le dossier",
+      "confirm": "Êtes-vous sûr de vouloir supprimer définitivement les {count} emails dans {folder} ?",
+      "success": "Dossier vidé avec succès",
+      "progress": "Suppression... {deleted}/{total}",
+      "error": "Échec de la suppression de tous les emails. {deleted} sur {total} ont été supprimés.",
+      "cancel": "Annuler"
+    }
   },
   "email_list": {
     "no_emails": "Aucun email",
@@ -161,6 +173,26 @@
     "more_options": "Plus d'options",
     "sending": "Envoi en cours...",
     "security_authentication": "Sécurité et authentification",
+    "security": {
+      "tooltip": {
+        "spf_pass": "Le serveur d'envoi est autorisé à envoyer pour le compte de ce domaine",
+        "spf_fail": "Le serveur d'envoi n'est PAS autorisé à envoyer depuis ce domaine — cet email peut être usurpé",
+        "spf_softfail": "Le serveur d'envoi n'est probablement pas autorisé — à traiter avec prudence",
+        "spf_neutral": "Le propriétaire du domaine n'a pas indiqué si ce serveur est autorisé",
+        "spf_temperror": "Une erreur temporaire s'est produite lors de la vérification de l'expéditeur",
+        "spf_permerror": "L'enregistrement SPF du domaine est mal configuré",
+        "spf_none": "Aucun enregistrement SPF trouvé pour ce domaine",
+        "dkim_pass": "Le contenu de cet email n'a pas été altéré durant le transit",
+        "dkim_fail": "Le contenu de cet email a peut-être été modifié durant le transit",
+        "dkim_policy": "La signature DKIM ne respecte pas les exigences de la politique du domaine",
+        "dkim_neutral": "La vérification DKIM n'est pas concluante",
+        "dkim_temperror": "Une erreur temporaire s'est produite lors de la vérification de la signature",
+        "dkim_permerror": "La signature DKIM est malformée ou la clé est manquante",
+        "dmarc_pass": "Le domaine de l'expéditeur a vérifié l'authenticité de cet email",
+        "dmarc_fail": "Le domaine de l'expéditeur n'a pas pu vérifier l'authenticité de cet email",
+        "dmarc_none": "Le domaine de l'expéditeur n'a pas de politique DMARC configurée"
+      }
+    },
     "technical_details": "Détails techniques",
     "message_id_label": "ID du message :",
     "reply_to_label": "Répondre à :",
@@ -270,7 +302,24 @@
       "select_calendar": "Choisir un calendrier",
       "already_in_calendar": "Déjà dans votre calendrier"
     },
-    "keyboard_shortcuts": "Raccourcis clavier (?)"
+    "keyboard_shortcuts": "Raccourcis clavier (?)",
+    "mobile_actions": {
+      "reply": "Répondre",
+      "reply_all": "Répondre à tous",
+      "archive": "Archiver",
+      "delete": "Supprimer",
+      "more": "Plus",
+      "forward": "Transférer",
+      "move_to": "Déplacer vers...",
+      "star": "Marquer",
+      "mark_unread": "Marquer comme non lu",
+      "spam": "Signaler comme spam"
+    },
+    "sender_info": {
+      "add_to_contacts": "Ajouter aux contacts",
+      "view_all_emails": "Voir tous les e-mails de cet expéditeur",
+      "no_contact": "Pas dans vos contacts"
+    }
   },
   "email_composer": {
     "new_message": "Nouveau message",
@@ -469,6 +518,7 @@
       "list_density": {
         "label": "Densité de la liste",
         "description": "Contrôlez l'espacement dans les listes d'emails",
+        "extra_compact": "Très compacte",
         "compact": "Compacte",
         "regular": "Normale",
         "comfortable": "Confortable"

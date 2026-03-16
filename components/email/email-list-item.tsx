@@ -10,6 +10,7 @@ import { useEmailStore } from "@/stores/email-store";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useEmailDrag } from "@/hooks/use-email-drag";
+import { useLongPress } from "@/hooks/use-long-press";
 import { EmailIdentityBadge } from "./email-identity-badge";
 
 interface EmailListItemProps {
@@ -45,6 +46,8 @@ export function EmailListItem({ email, selected, onClick, onContextMenu }: Email
   const t = useTranslations('email_viewer');
   const { selectedEmailIds, toggleEmailSelection, selectedMailbox } = useEmailStore();
   const showPreview = useSettingsStore((state) => state.showPreview);
+  const listDensity = useSettingsStore((state) => state.listDensity);
+  const isExtraCompact = listDensity === 'extra-compact';
   const { identities } = useAuthStore();
   const isChecked = selectedEmailIds.has(email.id);
   const isUnread = !email.keywords?.$seen;
@@ -68,11 +71,28 @@ export function EmailListItem({ email, selected, onClick, onContextMenu }: Email
     onContextMenu?.(e, email);
   };
 
+  const longPressHandlers = useLongPress({
+    onLongPress: (e) => {
+      if (onContextMenu) {
+        const touch = e.touches?.[0] || e.changedTouches?.[0];
+        if (touch) {
+          const syntheticEvent = {
+            preventDefault: () => {},
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+          } as unknown as React.MouseEvent;
+          onContextMenu(syntheticEvent, email);
+        }
+      }
+    },
+  });
+
   return (
     <div
       {...dragHandlers}
+      {...longPressHandlers}
       className={cn(
-        "relative group cursor-pointer transition-all duration-200 border-b border-border",
+        "email-list-item relative group cursor-pointer transition-all duration-200 border-b border-border",
         // Apply color tag as background, with selected and unread states
         colorTag ? colorTag : (
           selected
@@ -121,12 +141,14 @@ export function EmailListItem({ email, selected, onClick, onContextMenu }: Email
         )}
 
         {/* Avatar */}
-        <Avatar
-          name={sender?.name}
-          email={sender?.email}
-          size="md"
-          className="flex-shrink-0 shadow-sm"
-        />
+        {!isExtraCompact && (
+          <Avatar
+            name={sender?.name}
+            email={sender?.email}
+            size="md"
+            className="flex-shrink-0 shadow-sm"
+          />
+        )}
 
         {/* Content */}
         <div className="flex-1 min-w-0">
@@ -151,7 +173,7 @@ export function EmailListItem({ email, selected, onClick, onContextMenu }: Email
                   </span>
                 )}
                 <EmailIdentityBadge email={email} identities={identities} compact={true} />
-                {email.hasAttachment && (
+                {!isExtraCompact && email.hasAttachment && (
                   <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
                 )}
               </div>
@@ -176,8 +198,8 @@ export function EmailListItem({ email, selected, onClick, onContextMenu }: Email
             {email.subject || t('no_subject')}
           </div>
 
-          {/* Third Line: Preview (controlled by showPreview setting) */}
-          {showPreview && (
+          {/* Third Line: Preview (controlled by showPreview setting, hidden in extra-compact) */}
+          {showPreview && !isExtraCompact && (
             <p className={cn(
               "text-sm leading-relaxed line-clamp-2",
               isUnread
