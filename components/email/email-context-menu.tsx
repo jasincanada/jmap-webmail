@@ -28,7 +28,7 @@ import {
   ShieldAlert,
   ShieldCheck,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, buildMailboxTree, flattenMailboxTree } from "@/lib/utils";
 
 interface Position {
   x: number;
@@ -142,8 +142,7 @@ export function EmailContextMenu({
     { name: tColor("pink"), value: "pink", color: "bg-pink-500" },
   ];
 
-  // Filter mailboxes for move-to submenu (exclude current, drafts, virtual nodes)
-  const moveTargets = mailboxes.filter(
+  const moveTargets = flattenMailboxTree(buildMailboxTree(mailboxes)).filter(
     (m) =>
       m.id !== selectedMailbox &&
       m.role !== "drafts" &&
@@ -230,6 +229,7 @@ export function EmailContextMenu({
                 key={mailbox.id}
                 icon={Icon}
                 label={mailbox.name}
+                style={mailbox.depth > 0 ? { paddingLeft: `${12 + mailbox.depth * 12}px` } : undefined}
                 onClick={() =>
                   handleAction(() =>
                     showBatchActions

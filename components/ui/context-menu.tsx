@@ -59,6 +59,7 @@ interface ContextMenuItemProps {
   disabled?: boolean;
   destructive?: boolean;
   shortcut?: string;
+  style?: React.CSSProperties;
 }
 
 export function ContextMenuItem({
@@ -68,11 +69,13 @@ export function ContextMenuItem({
   disabled = false,
   destructive = false,
   shortcut,
+  style,
 }: ContextMenuItemProps) {
   return (
     <button
       role="menuitem"
       disabled={disabled}
+      style={style}
       className={cn(
         "w-full px-3 py-2 text-sm text-left flex items-center gap-2",
         "transition-colors duration-100",
