@@ -312,7 +312,7 @@ export interface CalendarEvent {
   updated: string;
   sequence: number;
   start: string;
-  duration: string;
+  duration?: string;
   timeZone: string | null;
   showWithoutTime: boolean;
   status: 'tentative' | 'confirmed' | 'cancelled';
