@@ -13,7 +13,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useIdentityStore } from "@/stores/identity-store";
 import { toast } from "@/stores/toast-store";
-import { useIsMobile } from "@/hooks/use-media-query";
+import { useIsMobile, useIsTablet } from "@/hooks/use-media-query";
 import { CalendarToolbar } from "@/components/calendar/calendar-toolbar";
 import { CalendarMonthView } from "@/components/calendar/calendar-month-view";
 import { CalendarWeekView } from "@/components/calendar/calendar-week-view";
@@ -42,6 +42,7 @@ export default function CalendarPage() {
   const router = useRouter();
   const t = useTranslations("calendar");
   const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
   const { client, isAuthenticated } = useAuthStore();
   const {
     calendars, events, selectedDate, viewMode, selectedCalendarIds,
@@ -644,8 +645,8 @@ export default function CalendarPage() {
           {renderView()}
         </div>
 
-        {/* Mobile Bottom Navigation */}
-        {isMobile && (
+        {/* Mobile/Tablet Bottom Navigation */}
+        {(isMobile || isTablet) && (
           <NavigationRail orientation="horizontal" />
         )}
       </div>

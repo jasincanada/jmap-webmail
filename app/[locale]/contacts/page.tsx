@@ -20,7 +20,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { toast } from "@/stores/toast-store";
 import { cn } from "@/lib/utils";
 import { NavigationRail } from "@/components/layout/navigation-rail";
-import { useIsMobile } from "@/hooks/use-media-query";
+import { useIsMobile, useIsTablet } from "@/hooks/use-media-query";
 import type { ContactCard } from "@/lib/jmap/types";
 
 type View =
@@ -74,6 +74,7 @@ export default function ContactsPage() {
   const hasFetched = useRef(false);
   const { dialogProps: confirmDialogProps, confirm: confirmDialog } = useConfirmDialog();
   const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -545,7 +546,7 @@ export default function ContactsPage() {
           </div>
         </div>
 
-        {isMobile && (
+        {(isMobile || isTablet) && (
           <NavigationRail orientation="horizontal" />
         )}
       </div>
