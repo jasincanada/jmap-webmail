@@ -4,7 +4,7 @@ import { useMemo, useState, useCallback, type DragEvent } from "react";
 import { useTranslations, useFormatter } from "next-intl";
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
-  eachDayOfInterval, isSameDay, isSameMonth, isToday, format, parseISO,
+  eachDayOfInterval, isSameDay, isSameMonth, isToday, format, parseISO, getWeek,
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { EventCard } from "./event-card";
@@ -34,6 +34,7 @@ export function CalendarMonthView({
   const t = useTranslations("calendar");
   const intlFormatter = useFormatter();
   const weekStart = (firstDayOfWeek === 0 ? 0 : 1) as 0 | 1;
+  const firstWeekContainsDate = weekStart === 1 ? 4 : 1;
 
   const days = useMemo(() => {
     const monthStart = startOfMonth(selectedDate);
@@ -123,9 +124,13 @@ export function CalendarMonthView({
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden" role="grid" aria-label={intlFormatter.dateTime(selectedDate, { month: "long", year: "numeric" })}>
-      <div className="grid grid-cols-7 border-b border-border" role="row">
+      <div className="grid grid-cols-[2.25rem_repeat(7,minmax(0,1fr))] border-b border-border" role="row">
         {dayHeaders.map((d) => (
-          <div key={d} role="columnheader" className="text-center text-xs font-medium text-muted-foreground py-2 border-r border-border last:border-r-0">
+          <div
+            key={d}
+            role="columnheader"
+            className="text-center text-xs font-medium text-muted-foreground py-2 border-r border-border last:border-r-0 first:col-start-2"
+          >
             {t(`days.${d}`)}
           </div>
         ))}
@@ -133,7 +138,12 @@ export function CalendarMonthView({
 
       <div className="flex-1 flex flex-col overflow-y-auto">
         {weeks.map((week, wi) => (
-          <div key={wi} className="grid grid-cols-7 flex-1 min-h-[100px] border-b border-border last:border-b-0" role="row">
+          <div key={wi} className="grid grid-cols-[2.25rem_repeat(7,minmax(0,1fr))] flex-1 min-h-[100px] border-b border-border last:border-b-0" role="row">
+            <div className="border-r border-border bg-muted/30 px-1 py-1 flex items-start justify-center">
+              <span className="text-[10px] text-muted-foreground font-medium leading-5">
+                {getWeek(week[0], { weekStartsOn: weekStart, firstWeekContainsDate })}
+              </span>
+            </div>
             {week.map((day) => {
               const inMonth = isSameMonth(day, selectedDate);
               const selected = isSameDay(day, selectedDate);
