@@ -89,8 +89,8 @@ describe('ContactList', () => {
 
   it('shows bulk action bar when contacts are selected', () => {
     render(<ContactList {...defaultProps} selectedContactIds={new Set(['1'])} />);
-    expect(screen.getByText('bulk.delete')).toBeInTheDocument();
-    expect(screen.getByText('bulk.export')).toBeInTheDocument();
+    expect(screen.getByText('bulk.selected')).toBeInTheDocument();
+    expect(screen.getByTestId('contact-bulk-actions-trigger')).toBeInTheDocument();
   });
 
   it('excludes groups from the list', () => {

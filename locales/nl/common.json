@@ -1189,6 +1189,7 @@
     },
     "bulk": {
       "selected": "{count, plural, one {1 geselecteerd} other {# geselecteerd}}",
+      "actions": "Bulk acties",
       "select_all": "Alles selecteren",
       "delete": "Verwijderen",
       "delete_confirm": "{count, plural, one {1 contact} other {# contacten}} verwijderen?",

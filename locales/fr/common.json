@@ -1189,6 +1189,7 @@
     },
     "bulk": {
       "selected": "{count, plural, one {1 sélectionné} other {# sélectionnés}}",
+      "actions": "Actions groupées",
       "select_all": "Tout sélectionner",
       "delete": "Supprimer",
       "delete_confirm": "Supprimer {count, plural, one {1 contact} other {# contacts}} ?",

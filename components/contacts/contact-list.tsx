@@ -2,10 +2,11 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { Search, Plus, BookUser, Info, Check, Trash2, Users, Download, X, UserPlus, Upload } from "lucide-react";
+import { Search, Plus, BookUser, Info, Check, X, UserPlus, Upload } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ContactListItem } from "./contact-list-item";
+import { ContactBulkActionsMenu } from "./contact-bulk-actions-menu";
 import { cn } from "@/lib/utils";
 import type { ContactCard } from "@/lib/jmap/types";
 import { getContactDisplayName } from "@/stores/contact-store";
@@ -105,28 +106,16 @@ export function ContactList({
       </div>
 
       {hasSelection && (
-        <div className="px-3 py-2 border-b border-border bg-muted/50 flex items-center gap-2 flex-wrap">
+        <div className="px-3 py-2 border-b border-border bg-muted/50 flex items-center gap-2">
           <span className="text-xs font-medium text-muted-foreground">
             {t("bulk.selected", { count: selectedContactIds.size })}
           </span>
           <div className="flex-1" />
-          <Button variant="ghost" size="sm" onClick={onBulkAddToGroup} className="h-7 text-xs">
-            <Users className="w-3.5 h-3.5 mr-1" />
-            {t("bulk.add_to_group")}
-          </Button>
-          <Button variant="ghost" size="sm" onClick={onBulkExport} className="h-7 text-xs">
-            <Download className="w-3.5 h-3.5 mr-1" />
-            {t("bulk.export")}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onBulkDelete}
-            className="h-7 text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-          >
-            <Trash2 className="w-3.5 h-3.5 mr-1" />
-            {t("bulk.delete")}
-          </Button>
+          <ContactBulkActionsMenu
+            onBulkAddToGroup={onBulkAddToGroup}
+            onBulkExport={onBulkExport}
+            onBulkDelete={onBulkDelete}
+          />
           <Button variant="ghost" size="icon" onClick={onClearSelection} className="h-7 w-7">
             <X className="w-3.5 h-3.5" />
           </Button>

@@ -1189,6 +1189,7 @@
     },
     "bulk": {
       "selected": "{count, plural, other {#件選択中}}",
+      "actions": "一括操作",
       "select_all": "すべて選択",
       "delete": "削除",
       "delete_confirm": "{count, plural, other {#件の連絡先}}を削除しますか？",
