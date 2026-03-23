@@ -92,6 +92,16 @@ export function EmailList({
     advancedSearch,
   } = useEmailStore();
 
+  const [showRefreshOverlay, setShowRefreshOverlay] = useState(false);
+  useEffect(() => {
+    if (!isLoading || emails.length === 0) {
+      setShowRefreshOverlay(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowRefreshOverlay(true), 300);
+    return () => clearTimeout(timer);
+  }, [isLoading, emails.length]);
+
   const threadGroups = useMemo(() => {
     const groups = groupEmailsByThread(emails);
     return sortThreadGroups(groups);
@@ -385,7 +395,7 @@ export function EmailList({
       {/* Email List */}
       <div ref={parentRef} className="flex-1 overflow-y-auto bg-background relative" tabIndex={0}>
         {/* Loading overlay */}
-        {isLoading && emails.length > 0 && (
+        {showRefreshOverlay && (
           <div className="absolute inset-0 bg-background/50 z-10 flex items-center justify-center animate-in fade-in duration-150">
             <div className="flex items-center gap-2 text-sm text-muted-foreground bg-background/90 px-4 py-2 rounded-full shadow-sm border border-border">
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -405,7 +415,7 @@ export function EmailList({
         ) : (
           <>
             <div
-              className={cn("transition-opacity duration-200", isLoading && "opacity-50")}
+              className="w-full"
               style={{
                 height: `${virtualizer.getTotalSize()}px`,
                 width: '100%',

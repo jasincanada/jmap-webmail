@@ -229,7 +229,9 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
   // JMAP operations
   fetchMailboxes: async (client) => {
-    set({ isLoading: true, error: null });
+    if (get().mailboxes.length === 0) {
+      set({ isLoading: true, error: null });
+    }
     try {
       const mailboxes = await client.getAllMailboxes();
 
@@ -377,15 +379,12 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   },
 
   sendEmail: async (client, to, subject, body, cc, bcc, identityId, fromEmail, draftId, fromName) => {
-    set({ isLoading: true, error: null });
+    set({ error: null });
     try {
       await client.sendEmail(to, subject, body, cc, bcc, identityId, fromEmail, draftId, fromName);
-      // Refresh handled by UI layer for immediate feedback
-      set({ isLoading: false });
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : "Failed to send email",
-        isLoading: false
       });
       throw error;
     }
@@ -779,7 +778,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
     const { selectedEmailIds, emails, mailboxes } = get();
     if (selectedEmailIds.size === 0) return;
 
-    set({ isLoading: true, error: null });
+    set({ error: null });
     try {
       const emailIdsArray = Array.from(selectedEmailIds);
       await client.batchMarkAsRead(emailIdsArray, read);
@@ -815,12 +814,10 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         emails: updatedEmails,
         mailboxes: updatedMailboxes,
         selectedEmailIds: new Set(),
-        isLoading: false
       });
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : "Failed to update emails",
-        isLoading: false
       });
     }
   },
@@ -829,7 +826,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
     const { selectedEmailIds, emails, mailboxes } = get();
     if (selectedEmailIds.size === 0) return;
 
-    set({ isLoading: true, error: null });
+    set({ error: null });
     try {
       const emailIdsArray = Array.from(selectedEmailIds);
       await client.batchDeleteEmails(emailIdsArray);
@@ -866,12 +863,10 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         mailboxes: updatedMailboxes,
         selectedEmailIds: new Set(),
         selectedEmail: null,
-        isLoading: false
       });
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : "Failed to delete emails",
-        isLoading: false
       });
     }
   },
@@ -880,7 +875,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
     const { selectedEmailIds, emails } = get();
     if (selectedEmailIds.size === 0) return;
 
-    set({ isLoading: true, error: null });
+    set({ error: null });
     try {
       const emailIdsArray = Array.from(selectedEmailIds);
       await client.batchMoveEmails(emailIdsArray, toMailboxId);
@@ -891,15 +886,13 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       set({
         emails: remainingEmails,
         selectedEmailIds: new Set(),
-        isLoading: false
       });
 
-      // Refresh emails to get updated list
-      await get().fetchEmails(client, get().selectedMailbox);
+      // Silent refresh to sync with server
+      await get().refreshCurrentMailbox(client);
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : "Failed to move emails",
-        isLoading: false
       });
     }
   },

@@ -83,6 +83,7 @@ export default function Home() {
     setLoadingEmail,
     setPushConnected,
     handleStateChange,
+    refreshCurrentMailbox,
     clearNewEmailNotification,
     markAsSpam,
     undoSpam,
@@ -392,8 +393,8 @@ export default function Home() {
       await sendEmail(client, data.to, data.subject, data.body, data.cc, data.bcc, data.identityId, data.fromEmail, data.draftId, data.fromName);
       setShowComposer(false);
 
-      // Refresh the current mailbox to update the UI
-      await fetchEmails(client, selectedMailbox);
+      // Silent refresh — no loading indicator flash
+      await refreshCurrentMailbox(client);
     } catch {
       return;
     }
@@ -541,8 +542,8 @@ export default function Home() {
       // Update local state
       selectEmail(email.id === selectedEmail?.id ? { ...email, keywords } : selectedEmail);
 
-      // Refresh emails list to show color in list
-      await fetchEmails(client, selectedMailbox);
+      // Silent refresh to show color in list
+      await refreshCurrentMailbox(client);
     } catch {
       return;
     }
@@ -635,8 +636,8 @@ export default function Home() {
       primaryIdentity?.name || undefined
     );
 
-    // Refresh emails to show the sent reply
-    await fetchEmails(client, selectedMailbox);
+    // Silent refresh to show the sent reply
+    await refreshCurrentMailbox(client);
   };
 
   // Show loading state while checking auth
