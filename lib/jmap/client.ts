@@ -963,13 +963,17 @@ export class JMAPClient {
     }
   }
 
+  private submissionUsing(): string[] {
+    return ["urn:ietf:params:jmap:core", "urn:ietf:params:jmap:mail", "urn:ietf:params:jmap:submission"];
+  }
+
   async getIdentities(): Promise<Identity[]> {
     try {
       const response = await this.request([
         ["Identity/get", {
           accountId: this.accountId,
         }, "0"]
-      ]);
+      ], this.submissionUsing());
 
       if (response.methodResponses?.[0]?.[0] === "Identity/get") {
         return (response.methodResponses[0][1].list || []) as Identity[];
@@ -1004,7 +1008,7 @@ export class JMAPClient {
           }
         }
       }, "0"]
-    ]);
+    ], this.submissionUsing());
 
     if (response.methodResponses?.[0]?.[0] === "Identity/set") {
       const result = response.methodResponses[0][1];
@@ -1045,7 +1049,7 @@ export class JMAPClient {
           [identityId]: updates
         }
       }, "0"]
-    ]);
+    ], this.submissionUsing());
 
     if (response.methodResponses?.[0]?.[0] === "Identity/set") {
       const result = response.methodResponses[0][1];
@@ -1072,7 +1076,7 @@ export class JMAPClient {
         accountId: this.accountId,
         destroy: [identityId]
       }, "0"]
-    ]);
+    ], this.submissionUsing());
 
     if (response.methodResponses?.[0]?.[0] === "Identity/set") {
       const result = response.methodResponses[0][1];
@@ -1260,7 +1264,7 @@ export class JMAPClient {
     if (!finalIdentityId) {
       const identityResponse = await this.request([
         ["Identity/get", { accountId: this.accountId }, "0"]
-      ]);
+      ], this.submissionUsing());
 
       finalIdentityId = this.accountId;
       if (identityResponse.methodResponses?.[0]?.[0] === "Identity/get") {
@@ -1312,7 +1316,7 @@ export class JMAPClient {
       }, "1"]);
     }
 
-    const response = await this.request(methodCalls);
+    const response = await this.request(methodCalls, this.submissionUsing());
 
     if (response.methodResponses) {
       for (const [methodName, result] of response.methodResponses) {
