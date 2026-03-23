@@ -122,7 +122,26 @@
       "mark_read": "Markeren als gelezen",
       "mark_unread": "Markeren als ongelezen",
       "delete": "Verwijderen",
-      "clear_selection": "Selectie wissen"
+      "clear_selection": "Selectie wissen",
+      "move_to": "Verplaatsen naar...",
+      "move_success": "{count} e-mails verplaatst naar {folder}",
+      "move_error": "E-mails verplaatsen mislukt",
+      "selected_count": "{count, plural, one {# e-mail} other {# e-mails}} geselecteerd"
+    },
+    "select_criteria": {
+      "label": "Selectiecriteria",
+      "all": "Alle",
+      "none": "Geen",
+      "read": "Gelezen",
+      "unread": "Ongelezen",
+      "starred": "Met ster",
+      "unstarred": "Zonder ster"
+    },
+    "move_to": {
+      "search_placeholder": "Mappen zoeken...",
+      "no_results": "Geen mappen gevonden",
+      "no_other_folders": "Geen andere mappen beschikbaar",
+      "custom_folders": "Aangepaste mappen"
     }
   },
   "email_viewer": {

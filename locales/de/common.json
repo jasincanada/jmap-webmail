@@ -122,7 +122,26 @@
       "mark_read": "Als gelesen markieren",
       "mark_unread": "Als ungelesen markieren",
       "delete": "Löschen",
-      "clear_selection": "Auswahl aufheben"
+      "clear_selection": "Auswahl aufheben",
+      "move_to": "Verschieben nach...",
+      "move_success": "{count} E-Mails nach {folder} verschoben",
+      "move_error": "E-Mails konnten nicht verschoben werden",
+      "selected_count": "{count, plural, one {# E-Mail} other {# E-Mails}} ausgewählt"
+    },
+    "select_criteria": {
+      "label": "Auswahlkriterien",
+      "all": "Alle",
+      "none": "Keine",
+      "read": "Gelesen",
+      "unread": "Ungelesen",
+      "starred": "Markiert",
+      "unstarred": "Nicht markiert"
+    },
+    "move_to": {
+      "search_placeholder": "Ordner suchen...",
+      "no_results": "Keine Ordner gefunden",
+      "no_other_folders": "Keine weiteren Ordner verfügbar",
+      "custom_folders": "Benutzerdefinierte Ordner"
     }
   },
   "email_viewer": {

@@ -122,7 +122,26 @@
       "mark_read": "既読にする",
       "mark_unread": "未読にする",
       "delete": "削除",
-      "clear_selection": "選択を解除"
+      "clear_selection": "選択を解除",
+      "move_to": "移動先...",
+      "move_success": "{count}件のメールを{folder}に移動しました",
+      "move_error": "メールの移動に失敗しました",
+      "selected_count": "{count}件選択中"
+    },
+    "select_criteria": {
+      "label": "選択条件",
+      "all": "すべて",
+      "none": "なし",
+      "read": "既読",
+      "unread": "未読",
+      "starred": "スター付き",
+      "unstarred": "スターなし"
+    },
+    "move_to": {
+      "search_placeholder": "フォルダを検索...",
+      "no_results": "フォルダが見つかりません",
+      "no_other_folders": "他のフォルダがありません",
+      "custom_folders": "カスタムフォルダ"
     }
   },
   "email_viewer": {

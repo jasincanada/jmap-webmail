@@ -122,7 +122,26 @@
       "mark_read": "Mark as read",
       "mark_unread": "Mark as unread",
       "delete": "Delete",
-      "clear_selection": "Clear selection"
+      "clear_selection": "Clear selection",
+      "move_to": "Move to...",
+      "move_success": "Moved {count} emails to {folder}",
+      "move_error": "Failed to move emails",
+      "selected_count": "{count, plural, one {# email} other {# emails}} selected"
+    },
+    "select_criteria": {
+      "label": "Selection criteria",
+      "all": "All",
+      "none": "None",
+      "read": "Read",
+      "unread": "Unread",
+      "starred": "Starred",
+      "unstarred": "Unstarred"
+    },
+    "move_to": {
+      "search_placeholder": "Search folders...",
+      "no_results": "No folders found",
+      "no_other_folders": "No other folders available",
+      "custom_folders": "Custom Folders"
     }
   },
   "email_viewer": {

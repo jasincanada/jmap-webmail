@@ -122,7 +122,26 @@
       "mark_read": "Marcar como lido",
       "mark_unread": "Marcar como não lido",
       "delete": "Excluir",
-      "clear_selection": "Limpar seleção"
+      "clear_selection": "Limpar seleção",
+      "move_to": "Mover para...",
+      "move_success": "{count} emails movidos para {folder}",
+      "move_error": "Falha ao mover emails",
+      "selected_count": "{count, plural, one {# email} other {# emails}} selecionados"
+    },
+    "select_criteria": {
+      "label": "Critérios de seleção",
+      "all": "Todos",
+      "none": "Nenhum",
+      "read": "Lidos",
+      "unread": "Não lidos",
+      "starred": "Com estrela",
+      "unstarred": "Sem estrela"
+    },
+    "move_to": {
+      "search_placeholder": "Pesquisar pastas...",
+      "no_results": "Nenhuma pasta encontrada",
+      "no_other_folders": "Nenhuma outra pasta disponível",
+      "custom_folders": "Pastas personalizadas"
     }
   },
   "email_viewer": {

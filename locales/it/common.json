@@ -122,7 +122,26 @@
       "mark_read": "Segna come letto",
       "mark_unread": "Segna come non letto",
       "delete": "Elimina",
-      "clear_selection": "Cancella selezione"
+      "clear_selection": "Cancella selezione",
+      "move_to": "Sposta in...",
+      "move_success": "{count} email spostate in {folder}",
+      "move_error": "Spostamento email non riuscito",
+      "selected_count": "{count, plural, one {# email} other {# email}} selezionate"
+    },
+    "select_criteria": {
+      "label": "Criteri di selezione",
+      "all": "Tutte",
+      "none": "Nessuna",
+      "read": "Lette",
+      "unread": "Non lette",
+      "starred": "Contrassegnate",
+      "unstarred": "Non contrassegnate"
+    },
+    "move_to": {
+      "search_placeholder": "Cerca cartelle...",
+      "no_results": "Nessuna cartella trovata",
+      "no_other_folders": "Nessun'altra cartella disponibile",
+      "custom_folders": "Cartelle personalizzate"
     }
   },
   "email_viewer": {
