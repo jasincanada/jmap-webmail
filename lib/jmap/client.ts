@@ -56,6 +56,17 @@ interface JMAPResponse {
   methodResponses: Array<[string, JMAPResponseResult, string]>;
 }
 
+export class JMAPSetError extends Error {
+  type: string;
+  description?: string;
+  constructor(type: string, description?: string) {
+    super(description || `Mailbox/set error: ${type}`);
+    this.name = 'JMAPSetError';
+    this.type = type;
+    this.description = description;
+  }
+}
+
 const DEFAULT_MAILBOX_RIGHTS = {
   mayReadItems: true,
   mayAddItems: true,
@@ -760,6 +771,59 @@ export class JMAPClient {
     await this.request([
       ["Email/set", { accountId: this.accountId, update: updates }, "0"],
     ]);
+  }
+
+  async createMailbox(name: string, parentId?: string): Promise<string> {
+    const create: Record<string, unknown> = { name };
+    if (parentId) create.parentId = parentId;
+
+    const response = await this.request([
+      ["Mailbox/set", {
+        accountId: this.accountId,
+        create: { "new-mailbox": create },
+      }, "0"],
+    ]);
+
+    const result = response.methodResponses?.[0]?.[1];
+    if (result?.notCreated?.["new-mailbox"]) {
+      const err = result.notCreated["new-mailbox"];
+      throw new JMAPSetError(err.type || "unknown", err.description);
+    }
+
+    const realId = result?.created?.["new-mailbox"]?.id;
+    if (!realId) throw new JMAPSetError("unknown", "Server did not return created mailbox ID");
+    return realId;
+  }
+
+  async updateMailbox(id: string, changes: { name?: string; parentId?: string | null }): Promise<void> {
+    const response = await this.request([
+      ["Mailbox/set", {
+        accountId: this.accountId,
+        update: { [id]: changes },
+      }, "0"],
+    ]);
+
+    const result = response.methodResponses?.[0]?.[1];
+    if (result?.notUpdated?.[id]) {
+      const err = result.notUpdated[id];
+      throw new JMAPSetError(err.type || "unknown", err.description);
+    }
+  }
+
+  async destroyMailbox(id: string): Promise<void> {
+    const response = await this.request([
+      ["Mailbox/set", {
+        accountId: this.accountId,
+        destroy: [id],
+        onDestroyRemoveEmails: false,
+      }, "0"],
+    ]);
+
+    const result = response.methodResponses?.[0]?.[1];
+    if (result?.notDestroyed?.[id]) {
+      const err = result.notDestroyed[id];
+      throw new JMAPSetError(err.type || "unknown", err.description);
+    }
   }
 
   async moveEmail(emailId: string, toMailboxId: string, accountId?: string): Promise<void> {
