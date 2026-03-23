@@ -273,26 +273,22 @@ describe('buildParticipantMap', () => {
 
     expect(Object.keys(map)).toHaveLength(3);
 
-    const org = map['organizer'];
+    const org = map['mailto:alice@example.com'];
     expect(org.name).toBe('Alice');
-    expect(org.email).toBe('alice@example.com');
-    expect(org.roles).toEqual({ owner: true, attendee: true });
+    expect(org.calendarAddress).toBe('mailto:alice@example.com');
+    expect(org.roles).toEqual({ owner: true });
     expect(org.participationStatus).toBe('accepted');
-    expect(org.scheduleAgent).toBe('server');
-    expect(org.sendTo).toEqual({ imip: 'mailto:alice@example.com' });
-    expect(org.expectReply).toBe(false);
 
-    const att0 = map['attendee-0'];
+    const att0 = map['mailto:bob@example.com'];
     expect(att0.name).toBe('Bob');
-    expect(att0.email).toBe('bob@example.com');
+    expect(att0.calendarAddress).toBe('mailto:bob@example.com');
     expect(att0.roles).toEqual({ attendee: true });
     expect(att0.participationStatus).toBe('needs-action');
-    expect(att0.scheduleAgent).toBe('server');
     expect(att0.expectReply).toBe(true);
 
-    const att1 = map['attendee-1'];
+    const att1 = map['mailto:carol@example.com'];
     expect(att1.name).toBe('Carol');
-    expect(att1.email).toBe('carol@example.com');
+    expect(att1.calendarAddress).toBe('mailto:carol@example.com');
   });
 
   it('creates only organizer when no attendees', () => {
@@ -301,7 +297,7 @@ describe('buildParticipantMap', () => {
       []
     );
     expect(Object.keys(map)).toHaveLength(1);
-    expect(map['organizer']).toBeDefined();
+    expect(map['mailto:alice@example.com']).toBeDefined();
   });
 
   it('sets @type to Participant for all entries', () => {

@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
+import { getHeapStatistics } from 'v8';
 import { logger } from '@/lib/logger';
 
-// Health check thresholds
-const MEMORY_WARNING_THRESHOLD = 0.85; // 85% heap usage
-const MEMORY_CRITICAL_THRESHOLD = 0.95; // 95% heap usage
+const MEMORY_WARNING_THRESHOLD = 0.85;
+const MEMORY_CRITICAL_THRESHOLD = 0.95;
 
 interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -14,6 +14,7 @@ interface HealthStatus {
   memory?: {
     heapUsed: number;
     heapTotal: number;
+    heapLimit: number;
     rss: number;
     external: number;
     heapUsagePercent: number;
@@ -24,18 +25,6 @@ interface HealthStatus {
   reason?: string;
 }
 
-/**
- * Health check endpoint for container orchestration
- *
- * GET /api/health - Basic health check (returns 200 OK or 503 Service Unavailable)
- * GET /api/health?detailed=true - Detailed diagnostics with memory stats
- * HEAD /api/health - Lightweight health check (status code only)
- *
- * Health status based on Node.js heap usage:
- * - Healthy (200): < 85% heap usage
- * - Degraded (200): 85-95% heap usage (warnings in detailed mode)
- * - Unhealthy (503): > 95% heap usage
- */
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const detailed = searchParams.get('detailed') === 'true';
@@ -43,9 +32,9 @@ export async function GET(request: NextRequest) {
   try {
     const timestamp = new Date().toISOString();
     const memUsage = process.memoryUsage();
-    const heapUsagePercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
+    const heapLimit = getHeapStatistics().heap_size_limit;
+    const heapUsagePercent = (memUsage.heapUsed / heapLimit) * 100;
 
-    // Determine health status based on memory usage
     let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
     const warnings: string[] = [];
     let httpStatus = 200;
@@ -58,7 +47,6 @@ export async function GET(request: NextRequest) {
       warnings.push(`Memory usage high: ${heapUsagePercent.toFixed(1)}%`);
     }
 
-    // Build response
     const response: HealthStatus = {
       status,
       timestamp,
@@ -68,13 +56,13 @@ export async function GET(request: NextRequest) {
       response.reason = `Memory usage critical: ${heapUsagePercent.toFixed(1)}%`;
     }
 
-    // Add detailed information if requested
     if (detailed) {
       response.uptime = process.uptime();
       response.version = process.env.npm_package_version || '0.1.0';
       response.memory = {
         heapUsed: memUsage.heapUsed,
         heapTotal: memUsage.heapTotal,
+        heapLimit,
         rss: memUsage.rss,
         external: memUsage.external,
         heapUsagePercent: Number(heapUsagePercent.toFixed(2)),
@@ -111,13 +99,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * HEAD method for ultra-lightweight health checks
- */
 export async function HEAD() {
   try {
     const memUsage = process.memoryUsage();
-    const heapUsagePercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
+    const heapLimit = getHeapStatistics().heap_size_limit;
+    const heapUsagePercent = (memUsage.heapUsed / heapLimit) * 100;
 
     if (heapUsagePercent >= MEMORY_CRITICAL_THRESHOLD * 100) {
       return new Response(null, { status: 503 });
