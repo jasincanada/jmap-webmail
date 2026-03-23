@@ -208,7 +208,7 @@ export function EmailViewer({
   // Tablet list visibility
   const { isMobile, isTablet } = useDeviceDetection();
   const { tabletListVisible } = useUIStore();
-  const { identities } = useAuthStore();
+  const { identities, client } = useAuthStore();
   const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
   const [showFullHeaders, setShowFullHeaders] = useState(false);
   const [allowExternalContent, setAllowExternalContent] = useState(false);
@@ -227,6 +227,43 @@ export function EmailViewer({
       return saved ? new Set(JSON.parse(saved)) : new Set();
     }
   );
+
+  const [cidUrls, setCidUrls] = useState<Map<string, string>>(new Map());
+  useEffect(() => {
+    if (!email?.attachments || !client) {
+      setCidUrls(new Map());
+      return;
+    }
+    const inlineAtts = email.attachments.filter(a => a.cid && a.blobId);
+    if (inlineAtts.length === 0) {
+      setCidUrls(new Map());
+      return;
+    }
+    let cancelled = false;
+    const objectUrls: string[] = [];
+    Promise.all(
+      inlineAtts.map(async (att) => {
+        try {
+          const objectUrl = await client.fetchBlobAsObjectUrl(att.blobId, att.name, att.type);
+          objectUrls.push(objectUrl);
+          return [att.cid!, objectUrl] as const;
+        } catch {
+          return null;
+        }
+      })
+    ).then((results) => {
+      if (cancelled) return;
+      const map = new Map<string, string>();
+      for (const r of results) {
+        if (r) map.set(r[0], r[1]);
+      }
+      setCidUrls(map);
+    });
+    return () => {
+      cancelled = true;
+      objectUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [email?.id, email?.attachments, client]);
 
   useEffect(() => {
     // Mark as read when email is viewed
@@ -510,6 +547,14 @@ export function EmailViewer({
           setHasBlockedContent(true);
         }
 
+        // Replace cid: references with pre-fetched object URLs
+        if (cidUrls.size > 0) {
+          cleanHtml = cleanHtml.replace(/src="cid:([^"]+)"/gi, (match, cid) => {
+            const url = cidUrls.get(cid);
+            return url ? `src="${url}"` : match;
+          });
+        }
+
         return {
           html: cleanHtml,
           isHtml: true,
@@ -559,7 +604,7 @@ export function EmailViewer({
       html: '<p style="color: var(--color-muted-foreground);">No content available</p>',
       isHtml: false
     };
-  }, [email, allowExternalContent, hasBlockedContent, externalContentPolicy, isSenderTrusted, resolvedTheme]);
+  }, [email, allowExternalContent, hasBlockedContent, externalContentPolicy, isSenderTrusted, resolvedTheme, cidUrls]);
 
   // Detect List-Unsubscribe header for newsletter banners
   const listHeaders = useMemo(() => {
@@ -1455,20 +1500,22 @@ export function EmailViewer({
 
         <div className="max-w-4xl mx-auto p-6">
 
-          {/* Inline Attachments */}
-          {email.attachments && email.attachments.length > 0 && (
+          {/* Attachments (excluding inline/CID images already rendered in the body) */}
+          {email.attachments && email.attachments.filter(a => !a.cid).length > 0 && (
             <div className="mb-4">
               {/* Image attachments as thumbnails */}
               {email.attachments.filter(a =>
+                !a.cid && (
                 a.type?.startsWith('image/') ||
-                ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(a.name?.split('.').pop()?.toLowerCase() || '')
+                ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(a.name?.split('.').pop()?.toLowerCase() || ''))
               ).length > 0 && (
                 <div className="mb-3">
                   <div className="flex flex-wrap gap-2">
                     {email.attachments
                       .filter(a =>
+                        !a.cid && (
                         a.type?.startsWith('image/') ||
-                        ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(a.name?.split('.').pop()?.toLowerCase() || '')
+                        ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(a.name?.split('.').pop()?.toLowerCase() || ''))
                       )
                       .map((attachment, i) => (
                         <div
@@ -1500,6 +1547,7 @@ export function EmailViewer({
 
               {/* Non-image attachments in a compact list */}
               {email.attachments.filter(a =>
+                !a.cid &&
                 !a.type?.startsWith('image/') &&
                 !['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(a.name?.split('.').pop()?.toLowerCase() || '')
               ).length > 0 && (
@@ -1507,6 +1555,7 @@ export function EmailViewer({
                   <Paperclip className="w-4 h-4 text-muted-foreground" />
                   {email.attachments
                     .filter(a =>
+                      !a.cid &&
                       !a.type?.startsWith('image/') &&
                       !['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(a.name?.split('.').pop()?.toLowerCase() || '')
                     )

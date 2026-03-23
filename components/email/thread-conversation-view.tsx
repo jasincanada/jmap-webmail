@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSettingsStore } from "@/stores/settings-store";
+import { useAuthStore } from "@/stores/auth-store";
 
 interface ThreadConversationViewProps {
   thread: ThreadGroup;
@@ -225,6 +226,44 @@ function EmailCard({
   const isUnread = !email.keywords?.$seen;
   const isStarred = email.keywords?.$flagged;
   const [hasBlockedContent, setHasBlockedContent] = useState(false);
+  const { client } = useAuthStore();
+
+  const [cidUrls, setCidUrls] = useState<Map<string, string>>(new Map());
+  useEffect(() => {
+    if (!email?.attachments || !client) {
+      setCidUrls(new Map());
+      return;
+    }
+    const inlineAtts = email.attachments.filter(a => a.cid && a.blobId);
+    if (inlineAtts.length === 0) {
+      setCidUrls(new Map());
+      return;
+    }
+    let cancelled = false;
+    const objectUrls: string[] = [];
+    Promise.all(
+      inlineAtts.map(async (att) => {
+        try {
+          const objectUrl = await client.fetchBlobAsObjectUrl(att.blobId, att.name, att.type);
+          objectUrls.push(objectUrl);
+          return [att.cid!, objectUrl] as const;
+        } catch {
+          return null;
+        }
+      })
+    ).then((results) => {
+      if (cancelled) return;
+      const map = new Map<string, string>();
+      for (const r of results) {
+        if (r) map.set(r[0], r[1]);
+      }
+      setCidUrls(map);
+    });
+    return () => {
+      cancelled = true;
+      objectUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [email?.id, email?.attachments, client]);
 
   // Mark as read when email is expanded
   useEffect(() => {
@@ -333,6 +372,14 @@ function EmailCard({
           finalHtml = collapseBlockedImageContainers(sanitized);
         }
 
+        // Replace cid: references with pre-fetched object URLs
+        if (cidUrls.size > 0) {
+          finalHtml = finalHtml.replace(/src="cid:([^"]+)"/gi, (match, cid) => {
+            const url = cidUrls.get(cid);
+            return url ? `src="${url}"` : match;
+          });
+        }
+
         return { html: finalHtml, isHtml: true, useIframe: needsIframeRendering(htmlContent) };
       }
 
@@ -355,7 +402,7 @@ function EmailCard({
     }
 
     return { html: "", isHtml: false };
-  }, [email, allowExternal, resolvedTheme]);
+  }, [email, allowExternal, resolvedTheme, cidUrls]);
 
   return (
     <div className={cn(
@@ -464,11 +511,11 @@ function EmailCard({
             )}
           </div>
 
-          {/* Attachments */}
-          {email.attachments && email.attachments.length > 0 && (
+          {/* Attachments (excluding inline/CID images rendered in the body) */}
+          {email.attachments && email.attachments.filter(a => !a.cid).length > 0 && (
             <div className="px-4 pb-4">
               <div className="flex flex-wrap gap-2">
-                {email.attachments.map((attachment, idx) => {
+                {email.attachments.filter(a => !a.cid).map((attachment, idx) => {
                   const Icon = getFileIcon(attachment.name, attachment.type);
                   return (
                     <button
