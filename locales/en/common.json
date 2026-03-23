@@ -190,6 +190,7 @@
     "forward": "Forward",
     "delete": "Delete",
     "archive": "Archive",
+    "send": "Send",
     "star": "Star",
     "unstar": "Unstar",
     "mark_unread": "Mark as unread",
