@@ -61,7 +61,7 @@ function OAuthCallbackInner() {
       .catch(() => {
         setError("token_exchange_failed");
       });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- OAuth callback must run exactly once on mount
 
   if (error) {
     return (

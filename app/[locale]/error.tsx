@@ -21,7 +21,6 @@ export default function LocaleError({
   const router = useRouter();
 
   useEffect(() => {
-    console.error("Route error:", error);
   }, [error]);
 
   return (

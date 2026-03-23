@@ -136,9 +136,6 @@ export function useMailboxDrop({ mailbox, onDropComplete, onSuccess, onError }: 
 
       onDropComplete?.();
     } catch (error) {
-      console.error("Failed to move emails:", error);
-
-      // Call error callback if provided, otherwise use fallback
       if (onError) {
         onError(error instanceof Error ? error.message : 'Unknown error');
       } else {

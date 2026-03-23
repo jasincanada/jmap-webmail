@@ -92,8 +92,7 @@ export const useContactStore = create<ContactStore>()(
         try {
           const contacts = await client.getContacts();
           set({ contacts, isLoading: false });
-        } catch (error) {
-          console.error('Failed to fetch contacts:', error);
+        } catch {
           set({ error: 'Failed to fetch contacts', isLoading: false });
         }
       },
@@ -102,8 +101,7 @@ export const useContactStore = create<ContactStore>()(
         try {
           const addressBooks = await client.getAddressBooks();
           set({ addressBooks });
-        } catch (error) {
-          console.error('Failed to fetch address books:', error);
+        } catch {
           set({ error: 'Failed to fetch address books' });
         }
       },
@@ -351,8 +349,7 @@ export const useContactStore = create<ContactStore>()(
           for (const id of ids) {
             try {
               await client.deleteContact(id);
-            } catch (error) {
-              console.error(`Failed to delete contact ${id}:`, error);
+            } catch {
               deletedIds.delete(id);
             }
           }
@@ -391,8 +388,8 @@ export const useContactStore = create<ContactStore>()(
               set((state) => ({ contacts: [...state.contacts, localContact] }));
             }
             imported++;
-          } catch (error) {
-            console.error('Failed to import contact:', error);
+          } catch {
+            continue;
           }
         }
 

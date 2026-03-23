@@ -381,8 +381,7 @@ export function EmailComposer({
       setTimeout(() => setSaveStatus('idle'), 2000);
 
       return savedDraftId;
-    } catch (error) {
-      console.error('Failed to save draft:', error);
+    } catch {
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 3000);
       return null;

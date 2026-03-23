@@ -186,7 +186,6 @@ export function EmailViewer({
   className,
 }: EmailViewerProps) {
   const t = useTranslations('email_viewer');
-  const tNotifications = useTranslations('notifications');
   const tCommon = useTranslations('common');
   const externalContentPolicy = useSettingsStore((state) => state.externalContentPolicy);
   const addTrustedSender = useSettingsStore((state) => state.addTrustedSender);
@@ -396,9 +395,8 @@ export function EmailViewer({
       const source = generateEmailSource(email);
       await navigator.clipboard.writeText(source);
       // Could add a toast notification here
-      console.log(tNotifications('source_copied'));
-    } catch (err) {
-      console.error('Failed to copy source:', err);
+    } catch {
+      return;
     }
   };
 
@@ -1639,8 +1637,8 @@ export function EmailViewer({
                               await onQuickReply(quickReplyText);
                               setQuickReplyText("");
                               setIsQuickReplyFocused(false);
-                            } catch (error) {
-                              console.error("Failed to send quick reply:", error);
+                            } catch {
+                              return;
                             } finally {
                               setIsSendingQuickReply(false);
                             }

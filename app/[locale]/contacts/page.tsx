@@ -129,8 +129,7 @@ export default function ContactsPage() {
       }
       toast.success(t("toast.deleted"));
       setView("list");
-    } catch (error) {
-      console.error('Failed to delete contact:', error);
+    } catch {
       toast.error(t("toast.error_delete"));
     }
   };
@@ -206,8 +205,7 @@ export default function ContactsPage() {
       toast.success(t("toast.deleted"));
       setSelectedGroupId(null);
       setView("list");
-    } catch (error) {
-      console.error('Failed to delete group:', error);
+    } catch {
       toast.error(t("toast.error_delete"));
     }
   };
@@ -241,8 +239,7 @@ export default function ContactsPage() {
         [memberId]
       );
       toast.success(t("toast.updated"));
-    } catch (error) {
-      console.error('Failed to remove group member:', error);
+    } catch {
       toast.error(t("toast.error_update"));
     }
   };
@@ -265,8 +262,7 @@ export default function ContactsPage() {
       );
       toast.success(t("bulk.deleted", { count: selectedContactIds.size }));
       setView("list");
-    } catch (error) {
-      console.error('Failed to bulk delete contacts:', error);
+    } catch {
       toast.error(t("toast.error_delete"));
     }
   };
@@ -298,8 +294,7 @@ export default function ContactsPage() {
       );
       toast.success(t("bulk.added_to_group"));
       setView("list");
-    } catch (error) {
-      console.error('Failed to add contacts to group:', error);
+    } catch {
       toast.error(t("toast.error_update"));
     }
   };

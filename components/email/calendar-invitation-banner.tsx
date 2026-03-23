@@ -87,7 +87,7 @@ export function CalendarInvitationBanner({ email }: CalendarInvitationBannerProp
     if (attachment) {
       parseEvent();
     }
-  }, [email.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [email.id]); // eslint-disable-line react-hooks/exhaustive-deps -- only re-parse when viewing a different email
 
   useEffect(() => {
     if (calendars.length > 0 && !selectedCalendarId) {

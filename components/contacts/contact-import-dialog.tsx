@@ -59,8 +59,7 @@ export function ContactImportDialog({
         if (!dupes.has(idx)) initialSelected.add(idx);
       });
       setSelected(initialSelected);
-    } catch (error) {
-      console.error('Failed to parse vCard:', error);
+    } catch {
       setError(t("import.parse_error"));
     }
   }, [existingContacts, t]);
@@ -91,8 +90,7 @@ export function ContactImportDialog({
     try {
       const count = await onImport(toImport);
       setResult(count);
-    } catch (error) {
-      console.error('Failed to import contacts:', error);
+    } catch {
       setError(t("import.failed"));
     } finally {
       setIsImporting(false);

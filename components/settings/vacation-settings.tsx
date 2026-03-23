@@ -103,8 +103,7 @@ export function VacationSettings() {
         textBody: localTextBody,
       });
       toast.success(tNotifications('vacation_saved'));
-    } catch (error) {
-      console.error('Failed to save vacation response:', error);
+    } catch {
       toast.error(tNotifications('vacation_save_failed'));
     }
   };

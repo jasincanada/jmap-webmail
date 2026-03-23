@@ -186,7 +186,7 @@ export default function Home() {
     onDeselectAll: () => {
       clearSelection();
     },
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- handlers are recreated each render; only rememoize on data/layout changes
   }), [emails, selectedEmail, client, selectedMailbox, isMobile, isTablet]);
 
   // Initialize keyboard shortcuts
@@ -286,8 +286,8 @@ export default function Home() {
             // Push notifications are optional - don't break the app if they fail
             debug.log('[Push] Failed to setup push notifications:', error);
           }
-        } catch (error) {
-          console.error('Error loading email data:', error);
+        } catch {
+          return;
         }
       };
       loadData();
@@ -344,7 +344,7 @@ export default function Home() {
         markAsReadTimeoutRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mark-as-read triggers only on email selection, not on config changes
   }, [selectedEmail?.id]);
 
   // Handle new email notifications - play sound
@@ -394,8 +394,8 @@ export default function Home() {
 
       // Refresh the current mailbox to update the UI
       await fetchEmails(client, selectedMailbox);
-    } catch (error) {
-      console.error("Failed to send email:", error);
+    } catch {
+      return;
     }
   };
 
@@ -404,8 +404,8 @@ export default function Home() {
 
     try {
       await client.deleteEmail(draftId);
-    } catch (error) {
-      console.error("Failed to discard draft:", error);
+    } catch {
+      return;
     }
   };
 
@@ -437,8 +437,8 @@ export default function Home() {
     try {
       await deleteEmail(client, selectedEmail.id);
       dismissViewer();
-    } catch (error) {
-      console.error("Failed to delete email:", error);
+    } catch {
+      return;
     }
   };
 
@@ -451,8 +451,8 @@ export default function Home() {
       try {
         await moveToMailbox(client, selectedEmail.id, archiveMailbox.id);
         dismissViewer();
-      } catch (error) {
-        console.error("Failed to archive email:", error);
+      } catch {
+        return;
       }
     }
   };
@@ -462,8 +462,8 @@ export default function Home() {
 
     try {
       await toggleStar(client, selectedEmail.id);
-    } catch (error) {
-      console.error("Failed to toggle star:", error);
+    } catch {
+      return;
     }
   };
 
@@ -483,16 +483,14 @@ export default function Home() {
             try {
               await undoSpam(client, emailId);
               toastInstance.success(t('notifications.email_moved'));
-            } catch (_error) {
-              console.error("Failed to undo spam:", _error);
+            } catch {
               toastInstance.error(t('email_viewer.spam.error'));
             }
           },
         },
         duration: 5000,
       });
-    } catch (_error) {
-      console.error("Failed to mark as spam:", _error);
+    } catch {
       const toastInstance = (await import('sonner')).toast;
       toastInstance.error(t('email_viewer.spam.error'));
     }
@@ -509,8 +507,7 @@ export default function Home() {
 
       // Deselect email after moving it out of junk
       selectEmail(null);
-    } catch (_error) {
-      console.error("Failed to restore email:", _error);
+    } catch {
       const toastInstance = (await import('sonner')).toast;
       toastInstance.error(t('email_viewer.spam.error_not_spam'));
     }
@@ -546,8 +543,8 @@ export default function Home() {
 
       // Refresh emails list to show color in list
       await fetchEmails(client, selectedMailbox);
-    } catch (error) {
-      console.error("Failed to set color tag:", error);
+    } catch {
+      return;
     }
   };
 
@@ -609,8 +606,8 @@ export default function Home() {
 
     try {
       await client.downloadBlob(blobId, name, type);
-    } catch (error) {
-      console.error("Failed to download attachment:", error);
+    } catch {
+      return;
     }
   };
 
@@ -681,8 +678,8 @@ export default function Home() {
         selectEmail(fullEmail);
         if (isTablet) setTabletListVisible(false);
       }
-    } catch (error) {
-      console.error('Failed to fetch email content:', error);
+    } catch {
+      return;
     } finally {
       setLoadingEmail(false);
     }
@@ -711,8 +708,7 @@ export default function Home() {
       // Fetch complete thread emails
       const emails = await client.getThreadEmails(thread.threadId);
       setConversationEmails(emails);
-    } catch (error) {
-      console.error('Failed to fetch thread emails:', error);
+    } catch {
       // Fall back to thread.emails
       setConversationEmails(thread.emails);
     } finally {

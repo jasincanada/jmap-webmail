@@ -48,6 +48,5 @@ export async function discoverOAuth(serverUrl: string): Promise<OAuthMetadata | 
     }
   }
 
-  console.error(`[OAuth] Discovery failed for ${serverUrl}: ${errors.join('; ')}`);
   return null;
 }

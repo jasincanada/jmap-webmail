@@ -41,9 +41,8 @@ export function IntlProvider({ locale: initialLocale, children }: IntlProviderPr
     try {
       const detectedTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       setTimeZone(detectedTimeZone);
-    } catch (error) {
+    } catch {
       // Fallback to UTC if detection fails
-      console.warn('Failed to detect timezone, using UTC:', error);
       setTimeZone('UTC');
     }
   }, []);
@@ -53,7 +52,7 @@ export function IntlProvider({ locale: initialLocale, children }: IntlProviderPr
     if (!currentLocale) {
       setLocale(initialLocale);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync initial locale to store once on mount
   }, []);
 
   // Switch locale immediately when store changes

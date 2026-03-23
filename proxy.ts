@@ -31,8 +31,8 @@ export function proxy(request: NextRequest) {
   let intlResponse: ReturnType<typeof intlMiddleware> | null = null;
   try {
     intlResponse = intlMiddleware(request);
-  } catch (error) {
-    console.error('Locale middleware error:', error);
+  } catch {
+    intlResponse = null;
   }
   const response = intlResponse ?? NextResponse.next();
 

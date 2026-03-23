@@ -236,13 +236,13 @@ export function EmailList({
     if (index >= 0) {
       virtualizer.scrollToIndex(index, { align: 'auto' });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- scroll only on selection change, not on list re-renders
   }, [selectedEmailId]);
 
   // Re-measure all items when density or preview settings change
   useEffect(() => {
     virtualizer.measure();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- virtualizer ref is stable, only re-measure on setting changes
   }, [listDensity, showPreview]);
 
   useEffect(() => {

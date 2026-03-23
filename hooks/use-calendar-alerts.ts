@@ -103,7 +103,7 @@ export function useCalendarAlerts() {
 
     const timer = setTimeout(() => checkAlerts(), 500);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-run when auth or notification setting changes, not when callback refs update
   }, [isAuthenticated, calendarNotificationsEnabled]);
 
   useEffect(() => {

@@ -79,7 +79,7 @@ export default function LoginPage() {
         const usernames = JSON.parse(saved);
         setSavedUsernames(usernames);
       } catch {
-        console.error("Failed to parse saved usernames");
+        return;
       }
     }
   }, [serverUrl]);
@@ -193,7 +193,7 @@ export default function LoginPage() {
       try {
         usernames = JSON.parse(saved);
       } catch {
-        console.error("Failed to parse saved usernames");
+        usernames = [];
       }
     }
 

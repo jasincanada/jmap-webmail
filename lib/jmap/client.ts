@@ -49,7 +49,7 @@ interface JMAPEmailHeader {
 
 type JMAPMethodCall = [string, Record<string, unknown>, string];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- JMAP responses have schema-variable nested payloads
 type JMAPResponseResult = Record<string, any>;
 
 interface JMAPResponse {
@@ -256,12 +256,11 @@ export class JMAPClient {
     this.pingInterval = setInterval(async () => {
       try {
         await this.ping();
-      } catch (error) {
-        console.error('Keep-alive ping failed:', error);
+      } catch {
         try {
           await this.reconnect();
-        } catch (reconnectError) {
-          console.error('Reconnection failed:', reconnectError);
+        } catch {
+          return;
         }
       }
     }, 30_000);
@@ -347,7 +346,6 @@ export class JMAPClient {
     const responseText = await response.text();
 
     if (!response.ok) {
-      console.error('Request failed:', response.status, responseText);
       throw new Error(`Request failed: ${response.status} - ${responseText.substring(0, 200)}`);
     }
 
@@ -355,7 +353,6 @@ export class JMAPClient {
     try {
       data = JSON.parse(responseText);
     } catch {
-      console.error('Failed to parse response:', responseText);
       throw new Error('Invalid JSON response from server');
     }
 
@@ -417,8 +414,7 @@ export class JMAPClient {
       }
 
       throw new Error('Unexpected response format');
-    } catch (error) {
-      console.error('Failed to get mailboxes:', error);
+    } catch {
       return [{
         id: 'INBOX',
         originalId: undefined,
@@ -481,14 +477,13 @@ export class JMAPClient {
 
             allMailboxes.push(...mailboxes);
           }
-        } catch (error) {
-          console.error(`Failed to fetch mailboxes for account ${accountId}:`, error);
+        } catch {
+          continue;
         }
       }
 
       return allMailboxes;
-    } catch (error) {
-      console.error("Failed to fetch all mailboxes:", error);
+    } catch {
       return this.getMailboxes();
     }
   }
@@ -532,8 +527,7 @@ export class JMAPClient {
       }
 
       return { emails: [], hasMore: false, total: 0 };
-    } catch (error) {
-      console.error('Failed to get emails:', error);
+    } catch {
       return { emails: [], hasMore: false, total: 0 };
     }
   }
@@ -576,8 +570,7 @@ export class JMAPClient {
       }
 
       return email;
-    } catch (error) {
-      console.error('Failed to get email:', error);
+    } catch {
       return null;
     }
   }
@@ -863,8 +856,7 @@ export class JMAPClient {
       const hasMore = computeHasMore(position, emails.length, total, limit);
 
       return { emails, hasMore, total };
-    } catch (error) {
-      console.error('Search failed:', error);
+    } catch {
       return { emails: [], hasMore: false, total: 0 };
     }
   }
@@ -875,34 +867,29 @@ export class JMAPClient {
     limit: number = 50,
     position: number = 0
   ): Promise<{ emails: Email[], hasMore: boolean, total: number }> {
-    try {
-      const targetAccountId = accountId || this.accountId;
+    const targetAccountId = accountId || this.accountId;
 
-      const response = await this.request([
-        ["Email/query", {
-          accountId: targetAccountId,
-          filter,
-          sort: [{ property: "receivedAt", isAscending: false }],
-          limit,
-          position,
-        }, "0"],
-        ["Email/get", {
-          accountId: targetAccountId,
-          "#ids": { resultOf: "0", name: "Email/query", path: "/ids" },
-          properties: [...EMAIL_LIST_PROPERTIES],
-        }, "1"],
-      ]);
+    const response = await this.request([
+      ["Email/query", {
+        accountId: targetAccountId,
+        filter,
+        sort: [{ property: "receivedAt", isAscending: false }],
+        limit,
+        position,
+      }, "0"],
+      ["Email/get", {
+        accountId: targetAccountId,
+        "#ids": { resultOf: "0", name: "Email/query", path: "/ids" },
+        properties: [...EMAIL_LIST_PROPERTIES],
+      }, "1"],
+    ]);
 
-      const queryResponse = response.methodResponses?.[0]?.[1];
-      const emails = response.methodResponses?.[1]?.[1]?.list || [];
-      const total = queryResponse?.total || 0;
-      const hasMore = computeHasMore(position, emails.length, total, limit);
+    const queryResponse = response.methodResponses?.[0]?.[1];
+    const emails = response.methodResponses?.[1]?.[1]?.list || [];
+    const total = queryResponse?.total || 0;
+    const hasMore = computeHasMore(position, emails.length, total, limit);
 
-      return { emails, hasMore, total };
-    } catch (error) {
-      console.error('Advanced search failed:', error);
-      throw error;
-    }
+    return { emails, hasMore, total };
   }
 
   async getThread(threadId: string, accountId?: string): Promise<Thread | null> {
@@ -922,8 +909,7 @@ export class JMAPClient {
       }
 
       return null;
-    } catch (error) {
-      console.error('Failed to get thread:', error);
+    } catch {
       return null;
     }
   }
@@ -957,8 +943,7 @@ export class JMAPClient {
       }
 
       return [];
-    } catch (error) {
-      console.error('Failed to get thread emails:', error);
+    } catch {
       return [];
     }
   }
@@ -980,8 +965,7 @@ export class JMAPClient {
       }
 
       return [];
-    } catch (error) {
-      console.error('Failed to get identities:', error);
+    } catch {
       return [];
     }
   }
@@ -1229,7 +1213,6 @@ export class JMAPClient {
       if (result.notCreated || result.notUpdated) {
         const errors = result.notCreated || result.notUpdated;
         const firstError = Object.values(errors)[0] as { description?: string; type?: string };
-        console.error('Draft save error:', firstError);
         throw new Error(firstError?.description || firstError?.type || 'Failed to save draft');
       }
 
@@ -1238,7 +1221,6 @@ export class JMAPClient {
       }
     }
 
-    console.error('Unexpected draft save response:', response);
     throw new Error('Failed to save draft');
   }
 
@@ -1321,14 +1303,12 @@ export class JMAPClient {
     if (response.methodResponses) {
       for (const [methodName, result] of response.methodResponses) {
         if (methodName.endsWith('/error')) {
-          console.error('JMAP method error:', result);
           throw new Error(result.description || `Failed to send email: ${result.type}`);
         }
 
         if (result.notCreated || result.notUpdated) {
           const errors = result.notCreated || result.notUpdated;
           const firstError = Object.values(errors)[0] as { description?: string; type?: string };
-          console.error('Email send error:', firstError);
           throw new Error(firstError?.description || firstError?.type || 'Failed to send email');
         }
       }
@@ -1703,8 +1683,7 @@ export class JMAPClient {
         return (response.methodResponses[0][1].list || []) as AddressBook[];
       }
       return [];
-    } catch (error) {
-      console.error('Failed to get address books:', error);
+    } catch {
       return [];
     }
   }
@@ -1729,8 +1708,7 @@ export class JMAPClient {
         return (response.methodResponses[1][1].list || []) as ContactCard[];
       }
       return [];
-    } catch (error) {
-      console.error('Failed to get contacts:', error);
+    } catch {
       return [];
     }
   }
@@ -1750,8 +1728,7 @@ export class JMAPClient {
         return list[0] || null;
       }
       return null;
-    } catch (error) {
-      console.error('Failed to get contact:', error);
+    } catch {
       return null;
     }
   }
@@ -1865,8 +1842,7 @@ export class JMAPClient {
         return (response.methodResponses[1][1].list || []) as ContactCard[];
       }
       return [];
-    } catch (error) {
-      console.error('Failed to search contacts:', error);
+    } catch {
       return [];
     }
   }
@@ -1882,8 +1858,7 @@ export class JMAPClient {
         return (response.methodResponses[0][1].list || []) as Calendar[];
       }
       return [];
-    } catch (error) {
-      console.error('Failed to get calendars:', error);
+    } catch {
       return [];
     }
   }
@@ -1989,8 +1964,7 @@ export class JMAPClient {
         return (response.methodResponses[1][1].list || []) as CalendarEvent[];
       }
       return [];
-    } catch (error) {
-      console.error('Failed to get calendar events:', error);
+    } catch {
       return [];
     }
   }
@@ -2025,8 +1999,7 @@ export class JMAPClient {
         return (response.methodResponses[1][1].list || []) as CalendarEvent[];
       }
       return [];
-    } catch (error) {
-      console.error('Failed to query calendar events:', error);
+    } catch {
       return [];
     }
   }
@@ -2047,8 +2020,7 @@ export class JMAPClient {
         return list[0] || null;
       }
       return null;
-    } catch (error) {
-      console.error('Failed to get calendar event:', error);
+    } catch {
       return null;
     }
   }

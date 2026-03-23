@@ -62,8 +62,7 @@ export function UnsubscribeBanner({
         setProcessing(false);
         setTimeout(onDismiss, 3000);
       }
-    } catch (err) {
-      console.error('Unsubscribe error:', err);
+    } catch {
       setError(true);
       setProcessing(false);
     }

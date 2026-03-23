@@ -187,8 +187,7 @@ export const useSettingsStore = create<SettingsState>()(
           applySidebarWidth(get().sidebarWidth);
 
           return true;
-        } catch (error) {
-          console.error('Failed to import settings:', error);
+        } catch {
           return false;
         }
       },
