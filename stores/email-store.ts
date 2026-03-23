@@ -99,6 +99,11 @@ interface EmailStore {
   // Empty folder
   emptyFolder: (client: JMAPClient, mailboxId: string, onProgress?: (deleted: number, total: number) => void) => Promise<void>;
 
+  createMailbox: (client: JMAPClient, name: string, parentId?: string) => Promise<string | null>;
+  renameMailbox: (client: JMAPClient, mailboxId: string, newName: string) => Promise<boolean>;
+  moveMailbox: (client: JMAPClient, mailboxId: string, newParentId: string | null) => Promise<boolean>;
+  deleteMailbox: (client: JMAPClient, mailboxId: string) => Promise<boolean>;
+
   // Mock data for demo
   loadMockData: () => void;
 }
@@ -1228,6 +1233,159 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
     await get().fetchMailboxes(client);
     if (get().selectedMailbox === mailboxId) {
       set({ emails: [], totalEmails: 0, hasMoreEmails: false });
+    }
+  },
+
+  createMailbox: async (client, name, parentId) => {
+    const tempId = `temp-${Date.now()}`;
+    const mailboxes = get().mailboxes;
+
+    const tempMailbox: Mailbox = {
+      id: tempId,
+      name,
+      parentId: parentId || undefined,
+      sortOrder: 999,
+      totalEmails: 0,
+      unreadEmails: 0,
+      totalThreads: 0,
+      unreadThreads: 0,
+      myRights: {
+        mayReadItems: true, mayAddItems: true, mayRemoveItems: true,
+        maySetSeen: true, maySetKeywords: true, mayCreateChild: true,
+        mayRename: true, mayDelete: true, maySubmit: false,
+      },
+      isSubscribed: true,
+    };
+
+    set({ mailboxes: [...mailboxes, tempMailbox] });
+
+    try {
+      const realId = await client.createMailbox(name, parentId);
+
+      set((state) => {
+        const updated = state.mailboxes.map(mb =>
+          mb.id === tempId ? { ...mb, id: realId } : mb
+        );
+        const newState: Partial<EmailStore> = { mailboxes: updated };
+        if (state.selectedMailbox === tempId) {
+          newState.selectedMailbox = realId;
+        }
+        return newState;
+      });
+
+      return realId;
+    } catch (error) {
+      set({ mailboxes: get().mailboxes.filter(mb => mb.id !== tempId) });
+      throw error;
+    }
+  },
+
+  renameMailbox: async (client, mailboxId, newName) => {
+    const mailboxes = get().mailboxes;
+    const mailbox = mailboxes.find(mb => mb.id === mailboxId);
+    if (!mailbox) return false;
+
+    const previousName = mailbox.name;
+    const jmapId = mailbox.originalId || mailboxId;
+
+    set({
+      mailboxes: mailboxes.map(mb =>
+        mb.id === mailboxId ? { ...mb, name: newName } : mb
+      ),
+    });
+
+    try {
+      await client.updateMailbox(jmapId, { name: newName });
+      return true;
+    } catch (error) {
+      set({
+        mailboxes: get().mailboxes.map(mb =>
+          mb.id === mailboxId ? { ...mb, name: previousName } : mb
+        ),
+      });
+      throw error;
+    }
+  },
+
+  moveMailbox: async (client, mailboxId, newParentId) => {
+    const mailboxes = get().mailboxes;
+    const mailbox = mailboxes.find(mb => mb.id === mailboxId);
+    if (!mailbox) return false;
+
+    const previousParentId = mailbox.parentId;
+    const jmapId = mailbox.originalId || mailboxId;
+
+    set({
+      mailboxes: mailboxes.map(mb =>
+        mb.id === mailboxId ? { ...mb, parentId: newParentId || undefined } : mb
+      ),
+    });
+
+    try {
+      await client.updateMailbox(jmapId, { parentId: newParentId });
+      return true;
+    } catch (error) {
+      set({
+        mailboxes: get().mailboxes.map(mb =>
+          mb.id === mailboxId ? { ...mb, parentId: previousParentId } : mb
+        ),
+      });
+      throw error;
+    }
+  },
+
+  deleteMailbox: async (client, mailboxId) => {
+    const mailboxes = get().mailboxes;
+    const mailbox = mailboxes.find(mb => mb.id === mailboxId);
+    if (!mailbox) return false;
+
+    if (get().selectedMailbox === mailboxId) {
+      const inbox = mailboxes.find(mb => mb.role === 'inbox');
+      if (inbox) set({ selectedMailbox: inbox.id });
+    }
+
+    const collectDescendants = (parentId: string): Mailbox[] => {
+      const children = mailboxes.filter(mb => mb.parentId === parentId);
+      const descendants: Mailbox[] = [];
+      for (const child of children) {
+        descendants.push(...collectDescendants(child.id));
+        descendants.push(child);
+      }
+      return descendants;
+    };
+
+    const descendants = collectDescendants(mailboxId);
+    const allToDelete = [...descendants, mailbox];
+    const allIds = new Set(allToDelete.map(mb => mb.id));
+
+    const trashMailbox = mailboxes.find(mb => mb.role === 'trash');
+    const trashId = trashMailbox?.originalId || trashMailbox?.id;
+
+    set({ mailboxes: mailboxes.filter(mb => !allIds.has(mb.id)) });
+
+    try {
+      for (const mb of allToDelete) {
+        const jmapId = mb.originalId || mb.id;
+
+        if (trashId && mb.totalEmails > 0) {
+          let position = 0;
+          while (true) {
+            const batch = await client.queryMailboxEmailIds(jmapId, 500, position);
+            if (batch.ids.length === 0) break;
+            await client.batchMoveEmails(batch.ids, trashId);
+            if (batch.ids.length < 500) break;
+            position = 0;
+          }
+        }
+
+        await client.destroyMailbox(jmapId);
+      }
+
+      await get().fetchMailboxes(client);
+      return true;
+    } catch (error) {
+      await get().fetchMailboxes(client);
+      throw error;
     }
   },
 
