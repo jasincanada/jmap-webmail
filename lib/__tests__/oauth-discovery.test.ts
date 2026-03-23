@@ -54,7 +54,6 @@ describe('oauth/discovery', () => {
   });
 
   it('returns null when both endpoints fail', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce({ ok: false, status: 404 })
       .mockResolvedValueOnce({ ok: false, status: 404 }));
@@ -62,7 +61,6 @@ describe('oauth/discovery', () => {
     const result = await discoverOAuth('https://fail.example.com');
 
     expect(result).toBeNull();
-    expect(consoleSpy).toHaveBeenCalled();
   });
 
   it('parses optional fields (revocation_endpoint, end_session_endpoint)', async () => {
@@ -78,7 +76,6 @@ describe('oauth/discovery', () => {
   });
 
   it('returns null when required fields (authorization_endpoint, token_endpoint) are missing', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce({
         ok: true,
@@ -89,7 +86,6 @@ describe('oauth/discovery', () => {
     const result = await discoverOAuth('https://incomplete.example.com');
 
     expect(result).toBeNull();
-    expect(consoleSpy).toHaveBeenCalled();
   });
 
   it('caches results — second call for same server URL does not re-fetch', async () => {

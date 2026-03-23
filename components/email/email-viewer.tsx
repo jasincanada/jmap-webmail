@@ -1224,7 +1224,7 @@ export function EmailViewer({
                           </div>
                         )}
 
-                        {/* AI Analysis (X-Spam-LLM) - Full width card */}
+                        {/* Spam analysis (X-Spam-LLM header) */}
                         {email.spamLLM && (
                           <div className={cn(
                             "mt-3 px-4 py-3 rounded-lg",
@@ -1257,7 +1257,7 @@ export function EmailViewer({
                                       ? "text-red-700 dark:text-red-400"
                                       : "text-amber-700 dark:text-amber-400"
                                   )}>
-                                    AI Analysis: {email.spamLLM.verdict}
+                                    Spam Analysis: {email.spamLLM.verdict}
                                   </span>
                                 </div>
                                 <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
