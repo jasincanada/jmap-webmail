@@ -919,20 +919,16 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       accountId: currentMailbox.accountId,
     });
 
-    try {
-      await client.markAsSpam(emailId, currentMailbox.accountId);
+    await client.markAsSpam(emailId, currentMailbox.accountId);
 
-      set(state => ({
-        emails: state.emails.filter(e => e.id !== emailId),
-        selectedEmail: state.selectedEmail?.id === emailId ? null : state.selectedEmail,
-      }));
+    set(state => ({
+      emails: state.emails.filter(e => e.id !== emailId),
+      selectedEmail: state.selectedEmail?.id === emailId ? null : state.selectedEmail,
+    }));
 
-      const currentIndex = emails.findIndex(e => e.id === emailId);
-      if (currentIndex >= 0 && currentIndex < emails.length - 1) {
-        set({ selectedEmail: emails[currentIndex + 1] });
-      }
-    } catch (error) {
-      throw error;
+    const currentIndex = emails.findIndex(e => e.id === emailId);
+    if (currentIndex >= 0 && currentIndex < emails.length - 1) {
+      set({ selectedEmail: emails[currentIndex + 1] });
     }
   },
 
@@ -968,12 +964,8 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       targetMailboxId = inboxMailbox.originalId || inboxMailbox.id;
     }
 
-    try {
-      await client.undoSpam(emailId, targetMailboxId, accountId);
-      await get().fetchEmails(client, selectedMailbox);
-    } catch (error) {
-      throw error;
-    }
+    await client.undoSpam(emailId, targetMailboxId, accountId);
+    await get().fetchEmails(client, selectedMailbox);
   },
 
   batchMarkAsSpam: async (client, emailIds) => {
@@ -982,19 +974,15 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
     const currentMailbox = mailboxes.find(m => m.id === selectedMailbox);
     if (!currentMailbox) return;
 
-    try {
-      for (const emailId of emailIds) {
-        await client.markAsSpam(emailId, currentMailbox.accountId);
-      }
-
-      set(state => ({
-        emails: state.emails.filter(e => !emailIds.includes(e.id)),
-        selectedEmail: emailIds.includes(state.selectedEmail?.id || '') ? null : state.selectedEmail,
-        selectedEmailIds: new Set(),
-      }));
-    } catch (error) {
-      throw error;
+    for (const emailId of emailIds) {
+      await client.markAsSpam(emailId, currentMailbox.accountId);
     }
+
+    set(state => ({
+      emails: state.emails.filter(e => !emailIds.includes(e.id)),
+      selectedEmail: emailIds.includes(state.selectedEmail?.id || '') ? null : state.selectedEmail,
+      selectedEmailIds: new Set(),
+    }));
   },
 
   batchUndoSpam: async (client: JMAPClient, emailIds: string[]) => {
@@ -1013,19 +1001,15 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       throw new Error('Inbox not found');
     }
 
-    try {
-      for (const emailId of emailIds) {
-        await client.undoSpam(emailId, inboxMailbox.originalId || inboxMailbox.id, accountId);
-      }
-
-      set(state => ({
-        emails: state.emails.filter(e => !emailIds.includes(e.id)),
-        selectedEmail: emailIds.includes(state.selectedEmail?.id || '') ? null : state.selectedEmail,
-        selectedEmailIds: new Set(),
-      }));
-    } catch (error) {
-      throw error;
+    for (const emailId of emailIds) {
+      await client.undoSpam(emailId, inboxMailbox.originalId || inboxMailbox.id, accountId);
     }
+
+    set(state => ({
+      emails: state.emails.filter(e => !emailIds.includes(e.id)),
+      selectedEmail: emailIds.includes(state.selectedEmail?.id || '') ? null : state.selectedEmail,
+      selectedEmailIds: new Set(),
+    }));
   },
 
   // Push notification handlers
@@ -1133,8 +1117,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
           totalEmails: result.total,
         });
       }
-    } catch {
-    }
+    } catch { /* silent: push refresh is best-effort */ }
   },
 
   handleNewEmailNotification: (email) => {
@@ -1215,8 +1198,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       const tags = ["red", "orange", "yellow", "green", "blue", "purple", "pink"];
       const tagCounts = await client.queryTagCounts(tags);
       set({ tagCounts });
-    } catch {
-    }
+    } catch { /* silent: tag counts are non-critical */ }
   },
 
   emptyFolder: async (client, mailboxId, onProgress) => {

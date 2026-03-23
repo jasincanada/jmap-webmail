@@ -55,9 +55,8 @@ export function MoveToPopover({ mailboxes, currentMailboxId, onMove, disabled }:
     return mailboxes.filter(m => m.id !== currentMailboxId);
   }, [mailboxes, currentMailboxId]);
 
-  const systemRoles = ['inbox', 'sent', 'drafts', 'archive', 'trash', 'junk'];
-
   const filteredMailboxes = useMemo(() => {
+    const systemRoles = ['inbox', 'sent', 'drafts', 'archive', 'trash', 'junk'];
     const query = search.toLowerCase();
     const filtered = availableMailboxes.filter(m =>
       m.name.toLowerCase().includes(query)
