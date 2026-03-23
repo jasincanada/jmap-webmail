@@ -123,6 +123,8 @@
       "mark_unread": "Als ungelesen markieren",
       "delete": "Löschen",
       "clear_selection": "Auswahl aufheben",
+      "delete_confirm_title": "E-Mails löschen?",
+      "delete_confirm_message": "Möchten Sie {count, plural, one {# E-Mail} other {# E-Mails}} wirklich löschen?",
       "move_to": "Verschieben nach...",
       "move_success": "{count} E-Mails nach {folder} verschoben",
       "move_error": "E-Mails konnten nicht verschoben werden",

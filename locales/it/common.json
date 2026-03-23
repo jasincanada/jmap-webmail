@@ -123,6 +123,8 @@
       "mark_unread": "Segna come non letto",
       "delete": "Elimina",
       "clear_selection": "Cancella selezione",
+      "delete_confirm_title": "Eliminare le email?",
+      "delete_confirm_message": "Sei sicuro di voler eliminare {count, plural, one {# email} other {# email}}?",
       "move_to": "Sposta in...",
       "move_success": "{count} email spostate in {folder}",
       "move_error": "Spostamento email non riuscito",

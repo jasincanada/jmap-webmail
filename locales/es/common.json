@@ -123,6 +123,8 @@
       "mark_unread": "Marcar como no leído",
       "delete": "Eliminar",
       "clear_selection": "Limpiar selección",
+      "delete_confirm_title": "¿Eliminar correos?",
+      "delete_confirm_message": "¿Estás seguro de que quieres eliminar {count, plural, one {# correo} other {# correos}}?",
       "move_to": "Mover a...",
       "move_success": "{count} correos movidos a {folder}",
       "move_error": "Error al mover los correos",

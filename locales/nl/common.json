@@ -123,6 +123,8 @@
       "mark_unread": "Markeren als ongelezen",
       "delete": "Verwijderen",
       "clear_selection": "Selectie wissen",
+      "delete_confirm_title": "E-mails verwijderen?",
+      "delete_confirm_message": "Weet u zeker dat u {count, plural, one {# e-mail} other {# e-mails}} wilt verwijderen?",
       "move_to": "Verplaatsen naar...",
       "move_success": "{count} e-mails verplaatst naar {folder}",
       "move_error": "E-mails verplaatsen mislukt",

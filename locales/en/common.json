@@ -123,6 +123,8 @@
       "mark_unread": "Mark as unread",
       "delete": "Delete",
       "clear_selection": "Clear selection",
+      "delete_confirm_title": "Delete emails?",
+      "delete_confirm_message": "Are you sure you want to delete {count, plural, one {# email} other {# emails}}?",
       "move_to": "Move to...",
       "move_success": "Moved {count} emails to {folder}",
       "move_error": "Failed to move emails",

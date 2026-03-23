@@ -123,6 +123,8 @@
       "mark_unread": "未読にする",
       "delete": "削除",
       "clear_selection": "選択を解除",
+      "delete_confirm_title": "メールを削除しますか？",
+      "delete_confirm_message": "{count}件のメールを削除してもよろしいですか？",
       "move_to": "移動先...",
       "move_success": "{count}件のメールを{folder}に移動しました",
       "move_error": "メールの移動に失敗しました",
