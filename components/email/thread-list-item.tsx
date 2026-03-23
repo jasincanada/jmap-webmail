@@ -5,7 +5,7 @@ import { formatDate } from "@/lib/utils";
 import { Email, ThreadGroup } from "@/lib/jmap/types";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
-import { Paperclip, Star, Circle, ChevronRight, ChevronDown, Loader2, MessageSquare } from "lucide-react";
+import { Paperclip, Star, Circle, ChevronRight, ChevronDown, Loader2, MessageSquare, CheckSquare, Square } from "lucide-react";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useUIStore } from "@/stores/ui-store";
 import { getThreadColorTag } from "@/lib/thread-utils";
@@ -22,6 +22,8 @@ interface ThreadListItemProps {
   onEmailSelect: (email: Email) => void;
   onContextMenu?: (e: React.MouseEvent, email: Email) => void;
   onOpenConversation?: (thread: ThreadGroup) => void;
+  isChecked: boolean;
+  onCheckboxClick: (e: React.MouseEvent) => void;
 }
 
 const colorTags = {
@@ -41,10 +43,12 @@ interface SingleEmailItemProps {
   onContextMenu?: (e: React.MouseEvent, email: Email) => void;
   showPreview: boolean;
   colorTag: string | null;
+  isChecked: boolean;
+  onCheckboxClick: (e: React.MouseEvent) => void;
 }
 
 const SingleEmailItem = React.forwardRef<HTMLDivElement, SingleEmailItemProps>(
-  function SingleEmailItem({ email, selected, onClick, onContextMenu, showPreview, colorTag }, ref) {
+  function SingleEmailItem({ email, selected, onClick, onContextMenu, showPreview, colorTag, isChecked, onCheckboxClick }, ref) {
     const isUnread = !email.keywords?.$seen;
     const isStarred = email.keywords?.$flagged;
     const sender = email.from?.[0];
@@ -66,7 +70,8 @@ const SingleEmailItem = React.forwardRef<HTMLDivElement, SingleEmailItemProps>(
           selected && !colorTag && "shadow-sm",
           !colorTag && !selected && "hover:bg-muted hover:shadow-sm",
           colorTag && "hover:brightness-95 dark:hover:brightness-110",
-          isUnread && !colorTag && "bg-accent/30"
+          isUnread && !colorTag && "bg-accent/30",
+          isChecked && "ring-2 ring-primary/20 bg-accent/40"
         )}
         onClick={onClick}
         onContextMenu={handleContextMenu}
@@ -76,7 +81,21 @@ const SingleEmailItem = React.forwardRef<HTMLDivElement, SingleEmailItemProps>(
           paddingTop: 'calc((var(--list-item-height) - 40px) / 2)',
           paddingBottom: 'calc((var(--list-item-height) - 40px) / 2)'
         }}>
-          <div className="w-6 flex-shrink-0" />
+          <button
+            onClick={onCheckboxClick}
+            className={cn(
+              "p-1 rounded mt-2 flex-shrink-0 transition-all duration-200",
+              "hover:bg-muted/50 hover:scale-110",
+              "active:scale-95",
+              isChecked && "text-primary"
+            )}
+          >
+            {isChecked ? (
+              <CheckSquare className="w-4 h-4 animate-in zoom-in-50 duration-200" />
+            ) : (
+              <Square className="w-4 h-4 text-muted-foreground opacity-60 hover:opacity-100 transition-opacity" />
+            )}
+          </button>
 
           {isUnread && (
             <div className="absolute left-1 top-1/2 -translate-y-1/2">
@@ -158,6 +177,8 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
     onEmailSelect,
     onContextMenu,
     onOpenConversation,
+    isChecked,
+    onCheckboxClick,
   }, ref) {
     const t = useTranslations('threads');
     const showPreview = useSettingsStore((state) => state.showPreview);
@@ -180,6 +201,8 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
           onContextMenu={onContextMenu}
           showPreview={showPreview}
           colorTag={colorTag}
+          isChecked={isChecked}
+          onCheckboxClick={onCheckboxClick}
         />
       );
     }
@@ -221,7 +244,8 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
             !colorTag && !isSelected && "hover:bg-muted hover:shadow-sm",
             colorTag && "hover:brightness-95 dark:hover:brightness-110",
             hasUnread && !colorTag && !isSelected && "bg-accent/30",
-            isExpanded && "border-b border-border/50"
+            isExpanded && "border-b border-border/50",
+            isChecked && "ring-2 ring-primary/20 bg-accent/40"
           )}
           onClick={handleHeaderClick}
           onContextMenu={handleContextMenu}
@@ -231,6 +255,24 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
             paddingTop: 'calc((var(--list-item-height) - 40px) / 2)',
             paddingBottom: 'calc((var(--list-item-height) - 40px) / 2)'
           }}>
+            {!isMobile && (
+              <button
+                onClick={onCheckboxClick}
+                className={cn(
+                  "p-1 rounded mt-2 flex-shrink-0 transition-all duration-200",
+                  "hover:bg-muted/50 hover:scale-110",
+                  "active:scale-95",
+                  isChecked && "text-primary"
+                )}
+              >
+                {isChecked ? (
+                  <CheckSquare className="w-4 h-4 animate-in zoom-in-50 duration-200" />
+                ) : (
+                  <Square className="w-4 h-4 text-muted-foreground opacity-60 hover:opacity-100 transition-opacity" />
+                )}
+              </button>
+            )}
+
             {!isMobile && (
               <button
                 data-expand-toggle

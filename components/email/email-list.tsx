@@ -62,6 +62,7 @@ export function EmailList({
   const { client } = useAuthStore();
   const {
     selectedEmailIds,
+    toggleEmailSelection,
     selectAllEmails,
     clearSelection,
     batchMarkAsRead,
@@ -386,6 +387,11 @@ export function EmailList({
                       onEmailSelect={(email) => onEmailSelect?.(email)}
                       onContextMenu={openContextMenu}
                       onOpenConversation={onOpenConversation}
+                      isChecked={thread.emails.some(e => selectedEmailIds.has(e.id))}
+                      onCheckboxClick={(e) => {
+                        e.stopPropagation();
+                        thread.emails.forEach(email => toggleEmailSelection(email.id));
+                      }}
                     />
                   </div>
                 );
