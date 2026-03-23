@@ -170,7 +170,7 @@ export function getSecurityStatus(result?: string): {
 }
 
 /**
- * Parse X-Spam-LLM header to extract AI verdict and explanation
+ * Parse X-Spam-LLM header to extract verdict and explanation
  */
 export function parseSpamLLM(header: string): { verdict: string; explanation: string } | null {
   // Format: "LEGITIMATE (explanation)" or "SPAM (explanation)"
