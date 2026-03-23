@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Email, Mailbox, StateChange } from "@/lib/jmap/types";
+import { Email, Mailbox, StateChange, ThreadGroup } from "@/lib/jmap/types";
 import { JMAPClient } from "@/lib/jmap/client";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useCalendarStore } from "@/stores/calendar-store";
@@ -18,6 +18,7 @@ interface EmailStore {
   quota: { used: number; total: number } | null;
   processingReadStatus: Set<string>; // Track emails being marked as read/unread
   selectedEmailIds: Set<string>; // Track selected emails for batch operations
+  lastSelectedIndex: number | null;
   hasMoreEmails: boolean; // Track if more emails are available to load
   totalEmails: number; // Total number of emails in the current mailbox/query
   isPushConnected: boolean; // Track if push notifications are connected
@@ -43,9 +44,11 @@ interface EmailStore {
   setError: (error: string | null) => void;
   setSearchQuery: (query: string) => void;
   setQuota: (quota: { used: number; total: number } | null) => void;
-  toggleEmailSelection: (emailId: string) => void;
-  selectAllEmails: () => void;
+  toggleEmailSelection: (emailId: string, groupIndex?: number) => void;
+  selectAllEmails: (threadGroups?: ThreadGroup[]) => void;
   clearSelection: () => void;
+  selectRange: (fromIndex: number, toIndex: number, threadGroups: ThreadGroup[]) => void;
+  selectByFilter: (filter: string, threadGroups: ThreadGroup[]) => void;
 
   // JMAP operations
   fetchMailboxes: (client: JMAPClient) => Promise<void>;
@@ -113,6 +116,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   quota: null,
   processingReadStatus: new Set(),
   selectedEmailIds: new Set(),
+  lastSelectedIndex: null,
   hasMoreEmails: false,
   totalEmails: 0,
   isPushConnected: false,
@@ -142,6 +146,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
     selectedMailbox: mailboxId,
     selectedEmail: null,
     selectedEmailIds: new Set(),
+    lastSelectedIndex: null,
     expandedThreadIds: new Set(),
     threadEmailsCache: new Map(),
     isLoadingThread: null,
@@ -152,7 +157,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   setSearchQuery: (query) => set({ searchQuery: query }),
   setQuota: (quota) => set({ quota }),
 
-  toggleEmailSelection: (emailId) => {
+  toggleEmailSelection: (emailId, groupIndex) => {
     const { selectedEmailIds } = get();
     const newSelection = new Set(selectedEmailIds);
     if (newSelection.has(emailId)) {
@@ -160,17 +165,66 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
     } else {
       newSelection.add(emailId);
     }
-    set({ selectedEmailIds: newSelection });
+    set({
+      selectedEmailIds: newSelection,
+      lastSelectedIndex: groupIndex ?? get().lastSelectedIndex,
+    });
   },
 
-  selectAllEmails: () => {
-    const { emails } = get();
-    const allIds = new Set(emails.map(e => e.id));
-    set({ selectedEmailIds: allIds });
+  selectAllEmails: (threadGroups) => {
+    if (threadGroups) {
+      const allIds = new Set(threadGroups.map(g => g.latestEmail.id));
+      set({ selectedEmailIds: allIds, lastSelectedIndex: null });
+    } else {
+      const { emails } = get();
+      const allIds = new Set(emails.map(e => e.id));
+      set({ selectedEmailIds: allIds });
+    }
   },
 
   clearSelection: () => {
-    set({ selectedEmailIds: new Set() });
+    set({ selectedEmailIds: new Set(), lastSelectedIndex: null });
+  },
+
+  selectRange: (fromIndex, toIndex, threadGroups) => {
+    const start = Math.min(fromIndex, toIndex);
+    const end = Math.max(fromIndex, toIndex);
+    const { selectedEmailIds } = get();
+    const newSelection = new Set(selectedEmailIds);
+    for (let i = start; i <= end; i++) {
+      const group = threadGroups[i];
+      if (group) {
+        newSelection.add(group.latestEmail.id);
+      }
+    }
+    set({ selectedEmailIds: newSelection, lastSelectedIndex: toIndex });
+  },
+
+  selectByFilter: (filter, threadGroups) => {
+    if (filter === 'none') {
+      set({ selectedEmailIds: new Set(), lastSelectedIndex: null });
+      return;
+    }
+    if (filter === 'all') {
+      const allIds = new Set(threadGroups.map(g => g.latestEmail.id));
+      set({ selectedEmailIds: allIds, lastSelectedIndex: null });
+      return;
+    }
+    const newSelection = new Set<string>();
+    for (const group of threadGroups) {
+      const email = group.latestEmail;
+      const seen = !!email.keywords?.$seen;
+      const flagged = !!email.keywords?.$flagged;
+      const match =
+        (filter === 'read' && seen) ||
+        (filter === 'unread' && !seen) ||
+        (filter === 'starred' && flagged) ||
+        (filter === 'unstarred' && !flagged);
+      if (match) {
+        newSelection.add(email.id);
+      }
+    }
+    set({ selectedEmailIds: newSelection, lastSelectedIndex: null });
   },
 
   // JMAP operations
@@ -224,7 +278,6 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         isLoading: false
       });
     } catch (error) {
-      console.error('Failed to fetch emails:', error);
       set({
         error: error instanceof Error ? error.message : "Failed to fetch emails",
         isLoading: false,
@@ -283,7 +336,6 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         isLoadingMore: false
       });
     } catch (error) {
-      console.error('Failed to load more emails:', error);
       set({
         error: error instanceof Error ? error.message : "Failed to load more emails",
         isLoadingMore: false
@@ -880,7 +932,6 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         set({ selectedEmail: emails[currentIndex + 1] });
       }
     } catch (error) {
-      console.error('Failed to mark as spam:', error);
       throw error;
     }
   },
@@ -921,7 +972,6 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       await client.undoSpam(emailId, targetMailboxId, accountId);
       await get().fetchEmails(client, selectedMailbox);
     } catch (error) {
-      console.error('Failed to restore email:', error);
       throw error;
     }
   },
@@ -943,7 +993,6 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         selectedEmailIds: new Set(),
       }));
     } catch (error) {
-      console.error('Failed to batch mark as spam:', error);
       throw error;
     }
   },
@@ -975,7 +1024,6 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         selectedEmailIds: new Set(),
       }));
     } catch (error) {
-      console.error('Failed to batch restore emails:', error);
       throw error;
     }
   },
@@ -1025,13 +1073,10 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         const { useFilterStore } = await import('./filter-store');
         const filterStore = useFilterStore.getState();
         if (filterStore.isSupported) {
-          filterStore.fetchFilters(client).catch((err) => {
-            console.error('Failed to refresh filters:', err);
-          });
+          filterStore.fetchFilters(client).catch(() => {});
         }
       }
     } catch (error) {
-      console.error('Failed to handle state change:', error);
       set({
         error: error instanceof Error ? error.message : "Failed to handle push notification"
       });
@@ -1088,9 +1133,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
           totalEmails: result.total,
         });
       }
-    } catch (error) {
-      console.error('Failed to refresh current mailbox:', error);
-      // Don't set error state for background refreshes to avoid disrupting the UI
+    } catch {
     }
   },
 
@@ -1148,8 +1191,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       });
 
       return emails;
-    } catch (error) {
-      console.error('Failed to fetch thread emails:', error);
+    } catch {
       set({ isLoadingThread: null });
       return [];
     }
@@ -1173,8 +1215,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       const tags = ["red", "orange", "yellow", "green", "blue", "purple", "pink"];
       const tagCounts = await client.queryTagCounts(tags);
       set({ tagCounts });
-    } catch (error) {
-      console.error("Failed to fetch tag counts:", error);
+    } catch {
     }
   },
 
