@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
@@ -671,7 +672,7 @@ function MoveToSubmenu({
       </div>
 
       {showSubmenu && (
-        <div className="absolute left-full top-0 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[180px] max-h-[300px] overflow-y-auto z-50">
+        <div className="absolute left-full top-0 bg-background border border-border rounded-md shadow-lg py-1 min-w-[180px] max-h-[300px] overflow-y-auto z-50">
           {canMoveToRoot && (
             <>
               <button
@@ -725,6 +726,7 @@ export function Sidebar({
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; mailbox: Mailbox } | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
   const [emptyFolderTarget, setEmptyFolderTarget] = useState<Mailbox | null>(null);
   const [renamingMailboxId, setRenamingMailboxId] = useState<string | null>(null);
   const [creatingSubfolder, setCreatingSubfolder] = useState<{ parentId: string } | null>(null);
@@ -1095,8 +1097,8 @@ export function Sidebar({
         <TagsSection isCollapsed={isCollapsed} onSearch={onSearch} />
       </div>
 
-      {/* Mailbox Context Menu */}
-      {contextMenu && (
+      {/* Mailbox Context Menu (portal to escape sidebar overflow) */}
+      {contextMenu && createPortal(
         <>
           <div
             className="fixed inset-0 z-40"
@@ -1104,8 +1106,12 @@ export function Sidebar({
             onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }}
           />
           <div
-            className="fixed z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[160px]"
-            style={{ left: contextMenu.x, top: contextMenu.y }}
+            ref={contextMenuRef}
+            className="fixed z-50 bg-background border border-border rounded-md shadow-lg py-1 min-w-[160px]"
+            style={{
+              left: Math.min(contextMenu.x, window.innerWidth - 220),
+              top: Math.min(contextMenu.y, window.innerHeight - 300),
+            }}
           >
             {/* New subfolder */}
             {contextMenu.mailbox.myRights?.mayCreateChild && (
@@ -1197,7 +1203,8 @@ export function Sidebar({
               </>
             )}
           </div>
-        </>
+        </>,
+        document.body
       )}
 
       {/* Empty Folder Confirmation Dialog */}
@@ -1212,8 +1219,8 @@ export function Sidebar({
         />
       )}
 
-      {/* Delete Folder Confirmation Dialog */}
-      {deleteFolderTarget && (() => {
+      {/* Delete Folder Confirmation Dialog (portal to escape sidebar overflow) */}
+      {deleteFolderTarget && createPortal((() => {
         const descendantCount = mailboxes.filter(mb => {
           const isDesc = (parentId: string, checkId: string): boolean => {
             if (parentId === checkId) return true;
@@ -1238,7 +1245,7 @@ export function Sidebar({
             variant="destructive"
           />
         );
-      })()}
+      })(), document.body)}
 
       {/* Footer: Storage Quota + Sign Out + Push Status */}
       <div className="border-t border-border">
