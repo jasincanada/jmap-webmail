@@ -1228,7 +1228,7 @@ export class JMAPClient {
       keywords: Record<string, boolean>;
       mailboxIds: Record<string, boolean>;
       bodyValues: Record<string, { value: string }>;
-      textBody: { partId: string }[];
+      textBody: { partId: string; type: string }[];
       attachments?: { blobId: string; type: string; name: string; disposition: string }[];
     }
 
@@ -1241,7 +1241,7 @@ export class JMAPClient {
       keywords: { "$draft": true },
       mailboxIds: { [draftsMailbox.id]: true },
       bodyValues: { "1": { value: body } },
-      textBody: [{ partId: "1" }],
+      textBody: [{ partId: "1", type: "text/plain" }],
     };
 
     if (attachments?.length) {
@@ -1352,7 +1352,7 @@ export class JMAPClient {
             keywords: { "$seen": true },
             mailboxIds: { [sentMailbox.id]: true },
             bodyValues: { "1": { value: body } },
-            textBody: [{ partId: "1" }],
+            textBody: [{ partId: "1", type: "text/plain" }],
           },
         },
       }, "0"]);
