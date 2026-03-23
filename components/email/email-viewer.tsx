@@ -425,13 +425,15 @@ export function EmailViewer({
     return source;
   };
 
+  const [sourceCopied, setSourceCopied] = useState(false);
   const copySourceToClipboard = async () => {
     if (!email) return;
 
     try {
       const source = generateEmailSource(email);
       await navigator.clipboard.writeText(source);
-      // Could add a toast notification here
+      setSourceCopied(true);
+      setTimeout(() => setSourceCopied(false), 2000);
     } catch {
       return;
     }
@@ -1753,8 +1755,8 @@ export function EmailViewer({
                   onClick={copySourceToClipboard}
                   className="flex items-center gap-1.5"
                 >
-                  <Copy className="w-4 h-4" />
-                  {t('copy_source')}
+                  {sourceCopied ? <Check className="w-4 h-4 text-green-600 dark:text-green-400" /> : <Copy className="w-4 h-4" />}
+                  {sourceCopied ? tCommon('copied') : t('copy_source')}
                 </Button>
                 <Button
                   variant="ghost"

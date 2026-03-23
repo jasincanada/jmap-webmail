@@ -155,7 +155,7 @@ export function transformBgColorForDarkMode(colorString: string): string {
   if (luminance < 0.2) return colorString;
 
   const blendFactor = Math.min(0.9, (luminance - 0.2) * 1.125);
-  const darkR = 30, darkG = 31, darkB = 38;
+  const darkR = 35, darkG = 35, darkB = 35;
 
   const r = Math.max(0, Math.round(rgb.r + (darkR - rgb.r) * blendFactor));
   const g = Math.max(0, Math.round(rgb.g + (darkG - rgb.g) * blendFactor));
@@ -244,7 +244,7 @@ export function generateIframeStylesheet(): string {
       @media (prefers-color-scheme: dark) {
         body {
           color: #e2e8f0;
-          background: #1e1f26;
+          background: #232323;
         }
         a { color: #60a5fa; }
         img { opacity: 0.9; }
