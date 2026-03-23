@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
@@ -27,8 +27,12 @@ import {
   Settings,
   X,
   Tag,
+  Plus,
+  FolderPlus,
+  Edit3,
+  FolderInput,
 } from "lucide-react";
-import { cn, buildMailboxTree, MailboxNode, formatFileSize } from "@/lib/utils";
+import { cn, buildMailboxTree, flattenMailboxTree, MailboxNode, formatFileSize } from "@/lib/utils";
 import { Mailbox } from "@/lib/jmap/types";
 import { useDragDropContext } from "@/contexts/drag-drop-context";
 import { useMailboxDrop } from "@/hooks/use-mailbox-drop";
@@ -40,6 +44,7 @@ import { useVacationStore } from "@/stores/vacation-store";
 import { useResizeHandle } from "@/hooks/use-resize-handle";
 import { toast } from "@/stores/toast-store";
 import { debug } from "@/lib/debug";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface SidebarProps {
   mailboxes: Mailbox[];
@@ -84,6 +89,112 @@ const getIconForMailbox = (role?: string, name?: string, hasChildren?: boolean, 
   return Inbox;
 };
 
+function InlineInput({
+  defaultValue = "",
+  placeholder,
+  hintText,
+  borderColor = "border-green-500",
+  onSubmit,
+  onCancel,
+  depth = 0,
+}: {
+  defaultValue?: string;
+  placeholder?: string;
+  hintText: string;
+  borderColor?: string;
+  onSubmit: (value: string) => void;
+  onCancel: () => void;
+  depth?: number;
+}) {
+  const [value, setValue] = useState(defaultValue);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const cancelledRef = useRef(false);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, []);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      onSubmit(value);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelledRef.current = true;
+      onCancel();
+    }
+  };
+
+  return (
+    <div style={{ paddingLeft: `${depth * 16 + 24}px` }} className="px-2 py-1">
+      <div className="flex items-center gap-1">
+        <Folder className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={() => { if (!cancelledRef.current) onCancel(); }}
+          placeholder={placeholder}
+          maxLength={200}
+          className={cn(
+            "flex-1 bg-background text-foreground text-sm px-1.5 py-0.5 rounded border-2 outline-none",
+            borderColor
+          )}
+        />
+        <button
+          onMouseDown={(e) => { e.preventDefault(); onSubmit(value); }}
+          className="text-green-500 hover:text-green-400 p-0.5"
+          aria-label="Confirm"
+        >
+          <span className="text-sm">&#10003;</span>
+        </button>
+        <button
+          onMouseDown={(e) => { e.preventDefault(); onCancel(); }}
+          className="text-red-500 hover:text-red-400 p-0.5"
+          aria-label="Cancel"
+        >
+          <span className="text-sm">&#10005;</span>
+        </button>
+      </div>
+      <div className="text-xs text-muted-foreground mt-0.5 ml-6">{hintText}</div>
+    </div>
+  );
+}
+
+function RenameInput({ defaultValue, onSubmit, onCancel }: {
+  defaultValue: string;
+  onSubmit: (value: string) => void;
+  onCancel: () => void;
+}) {
+  const cancelledRef = useRef(false);
+  return (
+    <input
+      autoFocus
+      type="text"
+      defaultValue={defaultValue}
+      maxLength={200}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          onSubmit((e.target as HTMLInputElement).value);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          cancelledRef.current = true;
+          onCancel();
+        }
+      }}
+      onBlur={(e) => {
+        if (!cancelledRef.current) onSubmit(e.target.value);
+      }}
+      onClick={(e) => e.stopPropagation()}
+      className="flex-1 bg-background text-foreground text-sm px-1.5 py-0.5 rounded border-2 border-primary outline-none min-w-0"
+    />
+  );
+}
+
 function MailboxTreeItem({
   node,
   selectedMailbox,
@@ -92,6 +203,13 @@ function MailboxTreeItem({
   onToggleExpand,
   onMailboxContextMenu,
   isCollapsed,
+  renamingMailboxId,
+  onRenameSubmit,
+  onRenameCancel,
+  onStartRename,
+  creatingSubfolder,
+  onCreateSubmit,
+  onCreateCancel,
 }: {
   node: MailboxNode;
   selectedMailbox: string;
@@ -100,14 +218,24 @@ function MailboxTreeItem({
   onToggleExpand: (id: string) => void;
   onMailboxContextMenu?: (e: React.MouseEvent, mailbox: Mailbox) => void;
   isCollapsed: boolean;
+  renamingMailboxId: string | null;
+  onRenameSubmit: (value: string) => void;
+  onRenameCancel: () => void;
+  onStartRename: (id: string) => void;
+  creatingSubfolder: { parentId: string } | null;
+  onCreateSubmit: (value: string) => void;
+  onCreateCancel: () => void;
 }) {
   const t = useTranslations('sidebar');
+  const tFolder = useTranslations('sidebar.folder_management');
   const tNotifications = useTranslations('notifications');
   const hasChildren = node.children.length > 0;
   const isExpanded = expandedFolders.has(node.id);
   const Icon = getIconForMailbox(node.role, node.name, hasChildren, isExpanded, node.isShared, node.id);
   const indentPixels = node.depth * 16;
   const isVirtualNode = node.id.startsWith('shared-');
+  const isRenaming = renamingMailboxId === node.id;
+  const isCreatingChild = creatingSubfolder?.parentId === node.id;
 
   const { isDragging: globalDragging } = useDragDropContext();
   const { dropHandlers, isValidDropTarget, isInvalidDropTarget } = useMailboxDrop({
@@ -169,8 +297,8 @@ function MailboxTreeItem({
         )}
 
         <button
-          onClick={() => !isVirtualNode && onMailboxSelect?.(node.id)}
-          disabled={isVirtualNode}
+          onClick={() => !isVirtualNode && !node.id.startsWith('temp-') && onMailboxSelect?.(node.id)}
+          disabled={isVirtualNode || node.id.startsWith('temp-')}
           className={cn(
             "flex-1 flex items-center text-left py-1 lg:py-1 max-lg:py-2 px-1 rounded",
             "transition-colors duration-150",
@@ -190,8 +318,26 @@ function MailboxTreeItem({
           )} />
           {!isCollapsed && (
             <>
-              <span className="flex-1 truncate">{node.name}</span>
-              {node.unreadEmails > 0 && (
+              {isRenaming ? (
+                <RenameInput
+                  defaultValue={node.name}
+                  onSubmit={onRenameSubmit}
+                  onCancel={onRenameCancel}
+                />
+              ) : (
+                <span
+                  className="flex-1 truncate"
+                  onDoubleClick={(e) => {
+                    if (!node.role && !node.isShared && !isVirtualNode) {
+                      e.stopPropagation();
+                      onStartRename(node.id);
+                    }
+                  }}
+                >
+                  {node.name}
+                </span>
+              )}
+              {!isRenaming && node.unreadEmails > 0 && (
                 <span className={cn(
                   "text-xs rounded-full px-2 py-0.5 ml-2 font-medium",
                   selectedMailbox === node.id
@@ -218,9 +364,35 @@ function MailboxTreeItem({
               onToggleExpand={onToggleExpand}
               onMailboxContextMenu={onMailboxContextMenu}
               isCollapsed={isCollapsed}
+              renamingMailboxId={renamingMailboxId}
+              onRenameSubmit={onRenameSubmit}
+              onRenameCancel={onRenameCancel}
+              onStartRename={onStartRename}
+              creatingSubfolder={creatingSubfolder}
+              onCreateSubmit={onCreateSubmit}
+              onCreateCancel={onCreateCancel}
             />
           ))}
+          {isCreatingChild && (
+            <InlineInput
+              placeholder={tFolder('folder_name_placeholder')}
+              hintText={tFolder('enter_to_create')}
+              onSubmit={onCreateSubmit}
+              onCancel={onCreateCancel}
+              depth={node.depth + 1}
+            />
+          )}
         </div>
+      )}
+
+      {!hasChildren && isCreatingChild && !isCollapsed && (
+        <InlineInput
+          placeholder={tFolder('folder_name_placeholder')}
+          hintText={tFolder('enter_to_create')}
+          onSubmit={onCreateSubmit}
+          onCancel={onCreateCancel}
+          depth={node.depth + 1}
+        />
       )}
     </>
   );
@@ -422,6 +594,85 @@ function StorageQuota({ quota, isCollapsed }: { quota: { used: number; total: nu
   );
 }
 
+function MoveToSubmenu({
+  mailbox,
+  allMailboxes,
+  onMove,
+}: {
+  mailbox: Mailbox;
+  allMailboxes: Mailbox[];
+  onMove: (targetId: string | null) => void;
+  onClose: () => void;
+}) {
+  const tFolder = useTranslations('sidebar.folder_management');
+  const [showSubmenu, setShowSubmenu] = useState(false);
+
+  const isDescendant = (parentId: string, checkId: string): boolean => {
+    const children = allMailboxes.filter(mb => mb.parentId === parentId);
+    return children.some(c => c.id === checkId || isDescendant(c.id, checkId));
+  };
+
+  const tree = buildMailboxTree(allMailboxes);
+  const flatTree = flattenMailboxTree(tree);
+  const validTargets = flatTree.filter(mb => {
+    if (mb.id === mailbox.id) return false;
+    if (mb.isShared || mb.id.startsWith('shared-')) return false;
+    if (!mb.myRights?.mayCreateChild) return false;
+    if (isDescendant(mailbox.id, mb.id)) return false;
+    return true;
+  });
+
+  const canMoveToRoot = !!mailbox.parentId;
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setShowSubmenu(true)}
+      onMouseLeave={() => setShowSubmenu(false)}
+    >
+      <div className="flex items-center w-full px-3 py-2 text-sm hover:bg-muted transition-colors cursor-pointer">
+        <FolderInput className="w-4 h-4 mr-2" />
+        {tFolder("move_to")}
+        <ChevronRight className="w-3 h-3 ml-auto" />
+      </div>
+
+      {showSubmenu && (
+        <div className="absolute left-full top-0 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[180px] max-h-[300px] overflow-y-auto z-50">
+          {canMoveToRoot && (
+            <>
+              <button
+                onClick={() => onMove(null)}
+                className="flex items-center w-full px-3 py-1.5 text-sm hover:bg-muted transition-colors font-medium"
+              >
+                <Folder className="w-3.5 h-3.5 mr-2 flex-shrink-0 text-muted-foreground" />
+                {tFolder("move_to_top_level")}
+              </button>
+              <div className="h-px bg-border mx-2 my-1" />
+            </>
+          )}
+          {validTargets.length === 0 && !canMoveToRoot ? (
+            <div className="px-3 py-2 text-sm text-muted-foreground">
+              {tFolder("no_available_targets")}
+            </div>
+          ) : (
+            validTargets.map((target) => (
+              <button
+                key={target.id}
+                onClick={() => onMove(target.id)}
+                className="flex items-center w-full px-3 py-1.5 text-sm hover:bg-muted transition-colors"
+                style={{ paddingLeft: `${12 + target.depth * 12}px` }}
+              >
+                <Folder className="w-3.5 h-3.5 mr-2 flex-shrink-0 text-muted-foreground" />
+                <span className="truncate">{target.name}</span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Sidebar({
   mailboxes = [],
   selectedMailbox = "",
@@ -441,9 +692,15 @@ export function Sidebar({
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; mailbox: Mailbox } | null>(null);
   const [emptyFolderTarget, setEmptyFolderTarget] = useState<Mailbox | null>(null);
+  const [renamingMailboxId, setRenamingMailboxId] = useState<string | null>(null);
+  const [creatingSubfolder, setCreatingSubfolder] = useState<{ parentId: string } | null>(null);
+  const [creatingTopLevel, setCreatingTopLevel] = useState(false);
+  const [deleteFolderTarget, setDeleteFolderTarget] = useState<Mailbox | null>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
   const t = useTranslations('sidebar');
+  const tFolder = useTranslations('sidebar.folder_management');
   const { client } = useAuthStore();
-  const { emptyFolder } = useEmailStore();
+  const { emptyFolder, createMailbox, renameMailbox, moveMailbox, deleteMailbox } = useEmailStore();
   const { sidebarWidth, updateSetting } = useSettingsStore();
 
   const handleSidebarResize = useCallback((width: number) => {
@@ -507,11 +764,77 @@ export function Sidebar({
   };
 
   const handleMailboxContextMenu = useCallback((e: React.MouseEvent, mailbox: Mailbox) => {
-    if (mailbox.role !== "trash" && mailbox.role !== "junk") return;
-    if (!mailbox.totalEmails || mailbox.totalEmails <= 0) return;
+    if (mailbox.isShared || mailbox.id.startsWith('shared-')) return;
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY, mailbox });
   }, []);
+
+  const handleCreateFolder = useCallback(async (name: string, parentId?: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      toast.error(tFolder('folder_name_empty_error'));
+      return;
+    }
+    if (trimmed.includes('/')) {
+      toast.error(tFolder('folder_name_slash_error'));
+      return;
+    }
+    if (!client) return;
+    setCreatingSubfolder(null);
+    setCreatingTopLevel(false);
+    try {
+      await createMailbox(client, trimmed, parentId);
+      toast.success(tFolder('folder_created', { name: trimmed }));
+      if (parentId) {
+        setExpandedFolders(prev => {
+          const next = new Set(prev);
+          next.add(parentId);
+          return next;
+        });
+      }
+    } catch {
+      toast.error(tFolder('create_error'));
+    }
+  }, [client, createMailbox, tFolder]);
+
+  const handleRenameFolder = useCallback(async (newName: string) => {
+    const trimmed = newName.trim();
+    if (!renamingMailboxId || !client) {
+      setRenamingMailboxId(null);
+      return;
+    }
+    const mailbox = mailboxes.find(mb => mb.id === renamingMailboxId);
+    if (!trimmed || trimmed === mailbox?.name) {
+      setRenamingMailboxId(null);
+      return;
+    }
+    if (trimmed.includes('/')) {
+      toast.error(tFolder('folder_name_slash_error'));
+      setRenamingMailboxId(null);
+      return;
+    }
+    const targetId = renamingMailboxId;
+    setRenamingMailboxId(null);
+    try {
+      await renameMailbox(client, targetId, trimmed);
+      toast.success(tFolder('folder_renamed', { name: trimmed }));
+    } catch {
+      toast.error(tFolder('rename_error'));
+    }
+  }, [renamingMailboxId, client, mailboxes, renameMailbox, tFolder]);
+
+  const handleDeleteFolder = useCallback(async () => {
+    if (!deleteFolderTarget || !client) return;
+    const folderName = deleteFolderTarget.name;
+    const targetId = deleteFolderTarget.id;
+    setDeleteFolderTarget(null);
+    try {
+      await deleteMailbox(client, targetId);
+      toast.success(tFolder('folder_deleted', { name: folderName }));
+    } catch {
+      toast.error(tFolder('delete_error'));
+    }
+  }, [deleteFolderTarget, client, deleteMailbox, tFolder]);
 
   const handleEmptyFolder = useCallback(async () => {
     if (!emptyFolderTarget || !client) return;
@@ -565,8 +888,23 @@ export function Sidebar({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedMailbox, isCollapsed, expandedFolders, mailboxTree]);
 
+  useEffect(() => {
+    const handleF2 = (e: KeyboardEvent) => {
+      if (e.key !== 'F2' || !selectedMailbox) return;
+      if (!sidebarRef.current?.contains(document.activeElement) && document.activeElement !== document.body) return;
+      const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
+      if (!mailbox || mailbox.role || mailbox.isShared || mailbox.id.startsWith('shared-')) return;
+      e.preventDefault();
+      setRenamingMailboxId(selectedMailbox);
+    };
+
+    window.addEventListener('keydown', handleF2);
+    return () => window.removeEventListener('keydown', handleF2);
+  }, [selectedMailbox, mailboxes]);
+
   return (
     <div
+      ref={sidebarRef}
       className={cn(
         "relative flex flex-col h-full border-r transition-all duration-300 overflow-hidden",
         "bg-secondary border-border",
@@ -598,10 +936,21 @@ export function Sidebar({
         </Button>
 
         {!isCollapsed && (
-          <Button onClick={onCompose} className="flex-1" title={t("compose_hint")}>
-            <PenSquare className="w-4 h-4 mr-2" />
-            {t("compose")}
-          </Button>
+          <>
+            <Button onClick={onCompose} className="flex-1" title={t("compose_hint")}>
+              <PenSquare className="w-4 h-4 mr-2" />
+              {t("compose")}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCreatingTopLevel(true)}
+              title={tFolder("new_folder")}
+              className="flex-shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </>
         )}
       </div>
 
@@ -660,8 +1009,24 @@ export function Sidebar({
                   onToggleExpand={handleToggleExpand}
                   onMailboxContextMenu={handleMailboxContextMenu}
                   isCollapsed={isCollapsed}
+                  renamingMailboxId={renamingMailboxId}
+                  onRenameSubmit={handleRenameFolder}
+                  onRenameCancel={() => setRenamingMailboxId(null)}
+                  onStartRename={(id) => setRenamingMailboxId(id)}
+                  creatingSubfolder={creatingSubfolder}
+                  onCreateSubmit={(name) => handleCreateFolder(name, creatingSubfolder?.parentId)}
+                  onCreateCancel={() => setCreatingSubfolder(null)}
                 />
               ))}
+              {creatingTopLevel && !isCollapsed && (
+                <InlineInput
+                  placeholder={tFolder('folder_name_placeholder')}
+                  hintText={tFolder('enter_to_create')}
+                  onSubmit={(name) => handleCreateFolder(name)}
+                  onCancel={() => setCreatingTopLevel(false)}
+                  depth={0}
+                />
+              )}
             </>
           )}
         </div>
@@ -682,16 +1047,95 @@ export function Sidebar({
             className="fixed z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[160px]"
             style={{ left: contextMenu.x, top: contextMenu.y }}
           >
-            <button
-              onClick={() => {
-                setEmptyFolderTarget(contextMenu.mailbox);
-                setContextMenu(null);
-              }}
-              className="flex items-center w-full px-3 py-2 text-sm text-destructive hover:bg-muted transition-colors"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              {t("empty_folder.title")}
-            </button>
+            {/* New subfolder */}
+            {contextMenu.mailbox.myRights?.mayCreateChild && (
+              <button
+                onClick={() => {
+                  setCreatingSubfolder({ parentId: contextMenu.mailbox.id });
+                  setExpandedFolders(prev => {
+                    const next = new Set(prev);
+                    next.add(contextMenu.mailbox.id);
+                    return next;
+                  });
+                  setContextMenu(null);
+                }}
+                className="flex items-center w-full px-3 py-2 text-sm hover:bg-muted transition-colors"
+              >
+                <FolderPlus className="w-4 h-4 mr-2" />
+                {tFolder("new_subfolder")}
+              </button>
+            )}
+
+            {/* Rename */}
+            {!contextMenu.mailbox.role && (
+              <button
+                onClick={() => {
+                  setRenamingMailboxId(contextMenu.mailbox.id);
+                  setContextMenu(null);
+                }}
+                className="flex items-center w-full px-3 py-2 text-sm hover:bg-muted transition-colors"
+              >
+                <Edit3 className="w-4 h-4 mr-2" />
+                {tFolder("rename")}
+              </button>
+            )}
+
+            {/* Move to */}
+            {!contextMenu.mailbox.role && (
+              <MoveToSubmenu
+                mailbox={contextMenu.mailbox}
+                allMailboxes={mailboxes}
+                onMove={async (targetId) => {
+                  if (!client) return;
+                  try {
+                    if (targetId === null) {
+                      await moveMailbox(client, contextMenu.mailbox.id, null);
+                      toast.success(tFolder('folder_moved_to_root'));
+                    } else {
+                      const target = mailboxes.find(mb => mb.id === targetId);
+                      await moveMailbox(client, contextMenu.mailbox.id, targetId);
+                      toast.success(tFolder('folder_moved', { destination: target?.name || '' }));
+                    }
+                  } catch {
+                    toast.error(tFolder('move_error'));
+                  }
+                  setContextMenu(null);
+                }}
+                onClose={() => setContextMenu(null)}
+              />
+            )}
+
+            {/* Empty folder (trash/junk only) */}
+            {(contextMenu.mailbox.role === "trash" || contextMenu.mailbox.role === "junk") &&
+              contextMenu.mailbox.totalEmails && contextMenu.mailbox.totalEmails > 0 && (
+              <button
+                onClick={() => {
+                  setEmptyFolderTarget(contextMenu.mailbox);
+                  setContextMenu(null);
+                }}
+                className="flex items-center w-full px-3 py-2 text-sm text-destructive hover:bg-muted transition-colors"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {t("empty_folder.title")}
+              </button>
+            )}
+
+            {/* Delete folder */}
+            {!contextMenu.mailbox.role && (
+              <>
+                <div className="h-px bg-border mx-2 my-1" />
+                <button
+                  onClick={() => {
+                    setDeleteFolderTarget(contextMenu.mailbox);
+                    setContextMenu(null);
+                  }}
+                  className="flex items-center w-full px-3 py-2 text-sm text-destructive hover:bg-muted transition-colors"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {tFolder("delete_folder")}
+                </button>
+              </>
+            )}
           </div>
         </>
       )}
@@ -707,6 +1151,34 @@ export function Sidebar({
           onCancel={() => setEmptyFolderTarget(null)}
         />
       )}
+
+      {/* Delete Folder Confirmation Dialog */}
+      {deleteFolderTarget && (() => {
+        const descendantCount = mailboxes.filter(mb => {
+          const isDesc = (parentId: string, checkId: string): boolean => {
+            if (parentId === checkId) return true;
+            const children = mailboxes.filter(m => m.parentId === parentId);
+            return children.some(c => isDesc(c.id, checkId));
+          };
+          return mb.id !== deleteFolderTarget.id && isDesc(deleteFolderTarget.id, mb.id);
+        }).length;
+        const emailCount = deleteFolderTarget.totalEmails || 0;
+        const message = emailCount > 0 || descendantCount > 0
+          ? tFolder('delete_confirm_with_contents', { emails: emailCount, subfolders: descendantCount })
+          : tFolder('delete_confirm_empty');
+
+        return (
+          <ConfirmDialog
+            isOpen={true}
+            onClose={() => setDeleteFolderTarget(null)}
+            onConfirm={handleDeleteFolder}
+            title={tFolder('delete_confirm_title', { name: deleteFolderTarget.name })}
+            message={message}
+            confirmText={tFolder('delete_folder')}
+            variant="destructive"
+          />
+        );
+      })()}
 
       {/* Footer: Storage Quota + Sign Out + Push Status */}
       <div className="border-t border-border">
