@@ -31,35 +31,29 @@ export function useMailboxDrop({ mailbox, onDropComplete, onSuccess, onError }: 
   const [isOver, setIsOver] = useState(false);
   const { client } = useAuthStore();
   const { moveToMailbox, selectedEmailIds, clearSelection, fetchEmails, selectedMailbox } = useEmailStore();
-  const { isDragging, sourceMailboxId, draggedEmails, endDrag } = useDragDropContext();
+  const { isDragging, sourceMailboxId, draggedEmails, draggedMailboxId, dragType, endDrag } = useDragDropContext();
 
-  // Determine if this is a valid drop target
   const isValidTarget = useCallback(() => {
     if (!isDragging) return false;
 
-    // Cannot drop on same mailbox
-    if (mailbox.id === sourceMailboxId) return false;
-
-    // Check if mailbox accepts items
-    if (!mailbox.myRights?.mayAddItems) return false;
-
-    // Virtual nodes (shared folder headers) cannot be drop targets
-    if (mailbox.id.startsWith("shared-")) return false;
-
-    // For shared mailboxes, check account compatibility
-    if (mailbox.isShared && draggedEmails[0]) {
-      // Get the source mailbox's account ID from the store
-      const mailboxes = useEmailStore.getState().mailboxes;
-      const sourceMb = mailboxes.find(mb => mb.id === sourceMailboxId);
-
-      // Cross-account moves are not supported
-      if (sourceMb?.accountId !== mailbox.accountId) {
-        return false;
-      }
+    if (dragType === 'mailbox') {
+      if (mailbox.id === draggedMailboxId) return false;
+      if (mailbox.id.startsWith("shared-") || mailbox.isShared) return false;
+      if (!mailbox.myRights?.mayCreateChild) return false;
+      return true;
     }
 
+    // Email drag validation (existing logic)
+    if (mailbox.id === sourceMailboxId) return false;
+    if (!mailbox.myRights?.mayAddItems) return false;
+    if (mailbox.id.startsWith("shared-")) return false;
+    if (mailbox.isShared && draggedEmails[0]) {
+      const mailboxes = useEmailStore.getState().mailboxes;
+      const sourceMb = mailboxes.find(mb => mb.id === sourceMailboxId);
+      if (sourceMb?.accountId !== mailbox.accountId) return false;
+    }
     return true;
-  }, [isDragging, mailbox, sourceMailboxId, draggedEmails]);
+  }, [isDragging, mailbox, sourceMailboxId, draggedEmails, draggedMailboxId, dragType]);
 
   const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -94,6 +88,38 @@ export function useMailboxDrop({ mailbox, onDropComplete, onSuccess, onError }: 
 
     if (!client || !isValidTarget()) {
       endDrag();
+      return;
+    }
+
+    // Handle mailbox drop (reparenting)
+    const mailboxIdData = e.dataTransfer.getData("application/x-mailbox-id");
+    if (mailboxIdData && dragType === 'mailbox') {
+      try {
+        const { moveMailbox } = useEmailStore.getState();
+
+        const allMailboxes = useEmailStore.getState().mailboxes;
+        const isDescendant = (parentId: string, checkId: string): boolean => {
+          const children = allMailboxes.filter(mb => mb.parentId === parentId);
+          return children.some(c => c.id === checkId || isDescendant(c.id, checkId));
+        };
+
+        if (isDescendant(mailboxIdData, mailbox.id)) {
+          endDrag();
+          return;
+        }
+
+        await moveMailbox(client, mailboxIdData, mailbox.id);
+
+        if (onSuccess) {
+          onSuccess(1, mailbox.name);
+        }
+      } catch (error) {
+        if (onError) {
+          onError(error instanceof Error ? error.message : 'Unknown error');
+        }
+      } finally {
+        endDrag();
+      }
       return;
     }
 
@@ -145,7 +171,7 @@ export function useMailboxDrop({ mailbox, onDropComplete, onSuccess, onError }: 
     } finally {
       endDrag();
     }
-  }, [client, mailbox, isValidTarget, moveToMailbox, selectedEmailIds, clearSelection, fetchEmails, selectedMailbox, endDrag, onDropComplete, onSuccess, onError]);
+  }, [client, mailbox, isValidTarget, dragType, moveToMailbox, selectedEmailIds, clearSelection, fetchEmails, selectedMailbox, endDrag, onDropComplete, onSuccess, onError]);
 
   const valid = isValidTarget();
 
