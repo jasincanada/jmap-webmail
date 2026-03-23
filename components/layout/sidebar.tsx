@@ -237,7 +237,7 @@ function MailboxTreeItem({
   const isRenaming = renamingMailboxId === node.id;
   const isCreatingChild = creatingSubfolder?.parentId === node.id;
 
-  const { isDragging: globalDragging } = useDragDropContext();
+  const { isDragging: globalDragging, startMailboxDrag, endDrag: globalEndDrag, dragType, draggedMailboxId } = useDragDropContext();
   const { dropHandlers, isValidDropTarget, isInvalidDropTarget } = useMailboxDrop({
     mailbox: node,
     onSuccess: (count, mailboxName) => {
@@ -258,11 +258,44 @@ function MailboxTreeItem({
     },
   });
 
+  const canDrag = !isVirtualNode && !node.isShared && !node.id.startsWith('shared-') &&
+    !node.id.startsWith('temp-') && node.myRights?.mayRename;
+
+  const handleFolderDragStart = useCallback((e: React.DragEvent) => {
+    if (!canDrag) {
+      e.preventDefault();
+      return;
+    }
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("application/x-mailbox-id", node.id);
+    e.dataTransfer.setData("text/plain", node.name);
+
+    const preview = document.createElement("div");
+    preview.style.cssText = `
+      position: fixed; top: -9999px; left: 0; padding: 6px 12px;
+      background-color: var(--color-primary, #3b82f6); color: white;
+      border-radius: 6px; font-size: 13px; font-weight: 500; white-space: nowrap;
+    `;
+    preview.textContent = node.name;
+    document.body.appendChild(preview);
+    e.dataTransfer.setDragImage(preview, 0, 0);
+    requestAnimationFrame(() => preview.remove());
+
+    startMailboxDrag(node.id);
+  }, [canDrag, node.id, node.name, startMailboxDrag]);
+
+  const handleFolderDragEnd = useCallback(() => {
+    globalEndDrag();
+  }, [globalEndDrag]);
+
   return (
     <>
       <div
         {...(globalDragging ? dropHandlers : {})}
         onContextMenu={(e) => onMailboxContextMenu?.(e, node)}
+        draggable={canDrag}
+        onDragStart={handleFolderDragStart}
+        onDragEnd={handleFolderDragEnd}
         className={cn(
           "group w-full flex items-center px-2 py-1 lg:py-1 max-lg:py-3 max-lg:min-h-[44px] text-sm transition-all duration-200",
           isVirtualNode
@@ -272,7 +305,8 @@ function MailboxTreeItem({
               : "hover:bg-muted text-foreground",
           node.depth === 0 && !isVirtualNode && "font-medium",
           isValidDropTarget && "bg-primary/20 ring-2 ring-primary ring-inset",
-          isInvalidDropTarget && "bg-destructive/10 ring-2 ring-destructive/30 ring-inset opacity-50"
+          isInvalidDropTarget && "bg-destructive/10 ring-2 ring-destructive/30 ring-inset opacity-50",
+          globalDragging && dragType === 'mailbox' && draggedMailboxId === node.id && "opacity-40"
         )}
       >
         {hasChildren && (
@@ -699,6 +733,7 @@ export function Sidebar({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const t = useTranslations('sidebar');
   const tFolder = useTranslations('sidebar.folder_management');
+  const { dragType, endDrag: globalEndDrag } = useDragDropContext();
   const { client } = useAuthStore();
   const { emptyFolder, createMailbox, renameMailbox, moveMailbox, deleteMailbox } = useEmailStore();
   const { sidebarWidth, updateSetting } = useSettingsStore();
@@ -991,7 +1026,32 @@ export function Sidebar({
       )}
 
       {/* Mailbox List */}
-      <div className="flex-1 overflow-y-auto">
+      <div
+        className="flex-1 overflow-y-auto"
+        onDragOver={(e) => {
+          if (dragType === 'mailbox') {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+          }
+        }}
+        onDrop={async (e) => {
+          if (dragType !== 'mailbox') return;
+          e.preventDefault();
+          const mailboxId = e.dataTransfer.getData("application/x-mailbox-id");
+          if (!mailboxId || !client) return;
+
+          const mb = mailboxes.find(m => m.id === mailboxId);
+          if (mb && mb.parentId) {
+            try {
+              await moveMailbox(client, mailboxId, null);
+              toast.success(tFolder('folder_moved_to_root'));
+            } catch {
+              toast.error(tFolder('move_error'));
+            }
+          }
+          globalEndDrag();
+        }}
+      >
         <div className="py-1">
           {mailboxes.length === 0 ? (
             <div className="px-4 py-2 text-sm text-muted-foreground">
