@@ -515,6 +515,8 @@
     "german": "Deutsch",
     "dutch": "Nederlands",
     "portuguese": "Português",
+    "russian": "Русский",
+    "ukrainian": "Українська",
     "select_language": "Seleziona lingua",
     "switch_to_english": "Passa all'inglese",
     "switch_to_french": "Passa al francese",
@@ -524,6 +526,8 @@
     "switch_to_german": "Passa al tedesco",
     "switch_to_dutch": "Passa all'olandese",
     "switch_to_portuguese": "Passa al portoghese",
+    "switch_to_russian": "Passa al russo",
+    "switch_to_ukrainian": "Passa all'ucraino",
     "switching": "Cambio lingua in corso..."
   },
   "settings": {
