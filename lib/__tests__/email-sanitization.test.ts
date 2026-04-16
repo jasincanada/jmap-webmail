@@ -5,6 +5,7 @@ import {
   parseHtmlSafely,
   hasRichFormatting,
   needsIframeRendering,
+  plainTextToSafeHtml,
 } from '../email-sanitization';
 
 describe('email-sanitization', () => {
@@ -241,6 +242,59 @@ describe('email-sanitization', () => {
 
     it('returns false for empty string', () => {
       expect(needsIframeRendering('')).toBe(false);
+    });
+  });
+
+  describe('plainTextToSafeHtml', () => {
+    const parseAnchor = (html: string): HTMLAnchorElement | null => {
+      const doc = parseHtmlSafely(`<div>${html}</div>`);
+      return doc.querySelector('a');
+    };
+
+    it('neutralizes double-quote attribute escape in URLs (Linus Rath report)', () => {
+      const payload = 'Click http://example.tld/"onmouseover="alert(document.domain)"x=" now';
+      const html = plainTextToSafeHtml(payload);
+      const a = parseAnchor(html);
+      expect(a).not.toBeNull();
+      expect(a!.getAttribute('onmouseover')).toBeNull();
+      expect(a!.attributes.length).toBeLessThanOrEqual(4);
+      expect(a!.getAttribute('href')).toContain('"onmouseover=');
+      expect(html).toContain('&quot;');
+    });
+
+    it('neutralizes single-quote attribute escape in URLs', () => {
+      const payload = "http://example.tld/'onmouseover='alert(1)'x='";
+      const html = plainTextToSafeHtml(payload);
+      const a = parseAnchor(html);
+      expect(a).not.toBeNull();
+      expect(a!.getAttribute('onmouseover')).toBeNull();
+      expect(html).toContain('&#39;');
+    });
+
+    it('escapes angle brackets and ampersands in HTML-significant order', () => {
+      expect(plainTextToSafeHtml('<b>&</b>')).toBe('&lt;b&gt;&amp;&lt;/b&gt;');
+    });
+
+    it('linkifies plain URLs into safe anchors', () => {
+      const html = plainTextToSafeHtml('visit https://example.com/path');
+      expect(html).toContain('<a href="https://example.com/path"');
+      expect(html).toContain('rel="noopener noreferrer"');
+      expect(html).toContain('target="_blank"');
+    });
+
+    it('applies custom link class when provided', () => {
+      const html = plainTextToSafeHtml('https://x.test', { linkClassName: 'text-primary hover:underline' });
+      expect(html).toContain('class="text-primary hover:underline"');
+    });
+
+    it('preserves line breaks and tabs', () => {
+      const html = plainTextToSafeHtml('a\nb\tc\r\nd');
+      expect(html).toContain('a<br>b&nbsp;&nbsp;&nbsp;&nbsp;c<br>d');
+    });
+
+    it('does not double-escape existing entities', () => {
+      const html = plainTextToSafeHtml('A & B');
+      expect(html).toBe('A &amp; B');
     });
   });
 });

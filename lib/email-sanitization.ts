@@ -98,6 +98,45 @@ export function needsIframeRendering(html: string): boolean {
 }
 
 /**
+ * Escape all five HTML-significant characters so the result is safe to
+ * interpolate into both element text and attribute values. `&` MUST run
+ * first, otherwise later substitutions get double-escaped.
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Convert a plain-text email body to HTML safe for direct rendering.
+ * Escapes HTML-significant chars (including quotes, to prevent attribute
+ * escape in the linkifier), preserves line breaks and tabs, and linkifies
+ * http(s) URLs. Quotes inside URLs stay as entities — the browser decodes
+ * them as part of the href value, never as attribute delimiters.
+ */
+export function plainTextToSafeHtml(
+  text: string,
+  options?: { linkClassName?: string }
+): string {
+  const linkClass = options?.linkClassName
+    ? ` class="${options.linkClassName}"`
+    : '';
+  return escapeHtml(text)
+    .replace(/\r\n/g, '<br>')
+    .replace(/\r/g, '<br>')
+    .replace(/\n/g, '<br>')
+    .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')
+    .replace(
+      /(https?:\/\/[^\s<]+)/g,
+      `<a href="$1" target="_blank" rel="noopener noreferrer"${linkClass}>$1</a>`
+    );
+}
+
+/**
  * Collapse empty containers left behind when external images are blocked.
  * Walks up from each blocked img to find the nearest table cell or wrapper div
  * and hides it if it contains no meaningful visible content.

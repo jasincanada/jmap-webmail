@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import DOMPurify from "dompurify";
 import { Email } from "@/lib/jmap/types";
-import { hasRichFormatting, needsIframeRendering, EMAIL_SANITIZE_CONFIG, collapseBlockedImageContainers } from "@/lib/email-sanitization";
+import { hasRichFormatting, needsIframeRendering, EMAIL_SANITIZE_CONFIG, collapseBlockedImageContainers, plainTextToSafeHtml } from "@/lib/email-sanitization";
 import { SandboxedEmailFrame } from "./sandboxed-email-frame";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
@@ -568,19 +568,8 @@ export function EmailViewer({
       if (email.textBody?.[0]?.partId && email.bodyValues[email.textBody[0].partId]) {
         const textContent = email.bodyValues[email.textBody[0].partId].value;
 
-        // Convert plain text to HTML with proper formatting
-        const htmlFromText = textContent
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/\r\n/g, '<br>')  // Windows line endings
-          .replace(/\r/g, '<br>')    // Old Mac line endings
-          .replace(/\n/g, '<br>')    // Unix line endings
-          .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')  // Convert tabs to spaces
-          .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
-
         return {
-          html: htmlFromText,
+          html: plainTextToSafeHtml(textContent),
           isHtml: false
         };
       }
