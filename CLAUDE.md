@@ -176,6 +176,8 @@ git checkout master
 - `docs/ARCHITECTURE.md` - Internal architecture reference
 - `scripts/seed-demo.ts` - Demo data seeder
 - `.claude/` directory
+- `.superpowers/` directory
+- `docs/superpowers/` directory (specs and plans)
 - Any file containing "claude" or AI references
 
 ### Files to keep separate between branches
@@ -213,3 +215,4 @@ This project follows **semver** (`MAJOR.MINOR.PATCH`). Version lives in `package
 - The `public-release` branch has clean history (no dev iterations)
 - Never push `master` to GitHub, only `public-release`
 - Always run `npm run lint` before releasing
+- **NEVER mention AI, slop, Claude, LLM, superpowers, or any AI-related terms** in commit messages, PR descriptions, CHANGELOG, README, ROADMAP, code comments, or any content pushed to the public repository. All public-facing text must read as normal human-written software project content.
