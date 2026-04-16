@@ -773,6 +773,25 @@ export class JMAPClient {
     ]);
   }
 
+  /**
+   * Move every email in a thread to a single destination mailbox. Resolves
+   * the thread's emailIds first (one round-trip), then batches a single
+   * Email/set to update them all in one JMAP request. Returns the ids
+   * that were moved so the caller can reconcile local state.
+   */
+  async moveThreadToMailbox(threadId: string, toMailboxId: string, accountId?: string): Promise<string[]> {
+    const targetAccountId = accountId || this.accountId;
+    const thread = await this.getThread(threadId, accountId);
+    const ids = thread?.emailIds ?? [];
+    if (ids.length === 0) return [];
+
+    const updates = Object.fromEntries(ids.map(id => [id, { mailboxIds: { [toMailboxId]: true } }]));
+    await this.request([
+      ["Email/set", { accountId: targetAccountId, update: updates }, "0"],
+    ]);
+    return ids;
+  }
+
   async createMailbox(name: string, parentId?: string): Promise<string> {
     const create: Record<string, unknown> = { name };
     if (parentId) create.parentId = parentId;

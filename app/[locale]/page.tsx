@@ -76,6 +76,7 @@ export default function Home() {
     markAsRead,
     toggleStar,
     moveToMailbox,
+    moveThreadToMailbox,
     searchEmails,
     searchQuery,
     setSearchQuery,
@@ -452,13 +453,20 @@ export default function Home() {
 
     // Find archive mailbox
     const archiveMailbox = mailboxes.find(m => m.role === "archive" || m.name.toLowerCase() === "archive");
-    if (archiveMailbox) {
-      try {
+    if (!archiveMailbox) return;
+
+    try {
+      // Archive the entire thread when the message belongs to one. Matches
+      // Gmail / Apple Mail behavior — otherwise the rest of the conversation
+      // is left orphaned in the inbox.
+      if (selectedEmail.threadId) {
+        await moveThreadToMailbox(client, selectedEmail.threadId, archiveMailbox.id);
+      } else {
         await moveToMailbox(client, selectedEmail.id, archiveMailbox.id);
-        dismissViewer();
-      } catch {
-        return;
       }
+      dismissViewer();
+    } catch {
+      return;
     }
   };
 

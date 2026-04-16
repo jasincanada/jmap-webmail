@@ -60,6 +60,7 @@ interface EmailStore {
   deleteEmail: (client: JMAPClient, emailId: string) => Promise<void>;
   markAsRead: (client: JMAPClient, emailId: string, read: boolean) => Promise<void>;
   moveToMailbox: (client: JMAPClient, emailId: string, mailboxId: string) => Promise<void>;
+  moveThreadToMailbox: (client: JMAPClient, threadId: string, mailboxId: string) => Promise<void>;
   searchEmails: (client: JMAPClient, query: string) => Promise<void>;
   advancedSearch: (client: JMAPClient) => Promise<void>;
   setSearchFilters: (filters: Partial<SearchFilters>) => void;
@@ -601,6 +602,74 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
           error: error instanceof Error ? error.message : "Failed to update email"
         };
       });
+      throw error;
+    }
+  },
+
+  moveThreadToMailbox: async (client, threadId, destinationMailboxId) => {
+    try {
+      const { mailboxes, selectedMailbox, emails } = get();
+      const currentMailbox = mailboxes.find(mb => mb.id === selectedMailbox);
+      const accountId = currentMailbox?.isShared ? currentMailbox.accountId : undefined;
+      const destMailbox = mailboxes.find(mb => mb.id === destinationMailboxId);
+      const jmapDestId = destMailbox?.originalId || destinationMailboxId;
+
+      const movedIds = await client.moveThreadToMailbox(threadId, jmapDestId, accountId);
+      if (movedIds.length === 0) return;
+
+      const movedSet = new Set(movedIds);
+
+      // Walk the locally known emails to compute per-source-mailbox deltas
+      // so the sidebar stays consistent without a full refetch. Any thread
+      // emails we don't have locally (older messages, different mailbox)
+      // will be reconciled on the next JMAP push.
+      const unreadByMailbox = new Map<string, number>();
+      const totalByMailbox = new Map<string, number>();
+      let movedUnreadTotal = 0;
+      let movedThreadWasUnread = false;
+      for (const e of emails) {
+        if (!movedSet.has(e.id)) continue;
+        const isUnread = !e.keywords?.$seen;
+        if (isUnread) {
+          movedUnreadTotal += 1;
+          movedThreadWasUnread = true;
+        }
+        const ids = e.mailboxIds ? Object.keys(e.mailboxIds) : [];
+        for (const mbId of ids) {
+          totalByMailbox.set(mbId, (totalByMailbox.get(mbId) || 0) + 1);
+          if (isUnread) unreadByMailbox.set(mbId, (unreadByMailbox.get(mbId) || 0) + 1);
+        }
+      }
+
+      set((state) => ({
+        emails: state.emails.filter(e => !movedSet.has(e.id)),
+        selectedEmail: state.selectedEmail && movedSet.has(state.selectedEmail.id) ? null : state.selectedEmail,
+        mailboxes: state.mailboxes.map(mailbox => {
+          const totalDelta = totalByMailbox.get(mailbox.id) || 0;
+          const unreadDelta = unreadByMailbox.get(mailbox.id) || 0;
+          if (totalDelta > 0 && mailbox.id !== destinationMailboxId) {
+            return {
+              ...mailbox,
+              totalEmails: Math.max(0, mailbox.totalEmails - totalDelta),
+              unreadEmails: Math.max(0, mailbox.unreadEmails - unreadDelta),
+              totalThreads: Math.max(0, mailbox.totalThreads - 1),
+              unreadThreads: Math.max(0, mailbox.unreadThreads - (movedThreadWasUnread ? 1 : 0)),
+            };
+          }
+          if (mailbox.id === destinationMailboxId) {
+            return {
+              ...mailbox,
+              totalEmails: mailbox.totalEmails + movedIds.length,
+              unreadEmails: mailbox.unreadEmails + movedUnreadTotal,
+              totalThreads: mailbox.totalThreads + 1,
+              unreadThreads: mailbox.unreadThreads + (movedThreadWasUnread ? 1 : 0),
+            };
+          }
+          return mailbox;
+        }),
+      }));
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : "Failed to move thread" });
       throw error;
     }
   },
