@@ -16,7 +16,7 @@ import type {
   FilterActionType,
 } from "@/lib/jmap/sieve-types";
 import type { Mailbox } from "@/lib/jmap/types";
-import { buildMailboxTree, flattenMailboxTree } from "@/lib/utils";
+import { buildMailboxTree, flattenMailboxTree, getMailboxFullPath } from "@/lib/utils";
 
 interface FilterRuleModalProps {
   rule?: FilterRule;
@@ -338,7 +338,7 @@ export function FilterRuleModal({
                     >
                       <option value="">{t("move_to_folder")}</option>
                       {hierarchicalMailboxes.map((mb) => (
-                        <option key={mb.id} value={mb.name}>
+                        <option key={mb.id} value={getMailboxFullPath(mailboxes, mb.id)}>
                           {"\u00A0".repeat(mb.depth * 3)}{mb.name}
                         </option>
                       ))}

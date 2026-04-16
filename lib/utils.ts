@@ -295,3 +295,25 @@ export function flattenMailboxTree(nodes: MailboxNode[]): MailboxNode[] {
   traverse(nodes);
   return result;
 }
+
+/**
+ * Resolve a mailbox's full hierarchical path ("Inbox/Projects/Foo") by
+ * walking parentId. Sieve fileinto and IMAP expect the full path; JMAP
+ * only stores the leaf name per mailbox, so UIs must join them up.
+ */
+export function getMailboxFullPath(
+  mailboxes: Mailbox[],
+  id: string,
+  delimiter = '/',
+): string {
+  const byId = new Map(mailboxes.map(m => [m.id, m]));
+  const segments: string[] = [];
+  const seen = new Set<string>();
+  let current = byId.get(id);
+  while (current && !seen.has(current.id)) {
+    seen.add(current.id);
+    segments.unshift(current.name);
+    current = current.parentId ? byId.get(current.parentId) : undefined;
+  }
+  return segments.join(delimiter);
+}
