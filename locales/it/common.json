@@ -668,6 +668,10 @@
         "close": "Chiudi",
         "invalid_email": "Inserisci un indirizzo email valido",
         "already_added": "Questo mittente è già attendibile"
+      },
+      "domain_favicon_avatars": {
+        "label": "Avatar per dominio",
+        "description": "Quando un contatto non ha una foto, viene mostrato il favicon del dominio del mittente invece delle iniziali. Recuperato da un servizio pubblico di favicon usando solo il nome di dominio (nessun indirizzo email, nessun hash). Disattivato per impostazione predefinita."
       }
     },
     "composer": {

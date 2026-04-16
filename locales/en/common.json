@@ -676,6 +676,10 @@
         "close": "Close",
         "invalid_email": "Please enter a valid email address",
         "already_added": "This sender is already trusted"
+      },
+      "domain_favicon_avatars": {
+        "label": "Domain avatars",
+        "description": "When a contact has no picture, show the sender domain's favicon instead of initials. Fetched from a public favicon service using only the domain name (no email address, no hashing). Off by default."
       }
     },
     "composer": {

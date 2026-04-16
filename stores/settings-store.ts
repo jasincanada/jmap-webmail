@@ -36,6 +36,7 @@ interface SettingsState {
   // Privacy & Security
   sessionTimeout: number; // minutes (0 = never)
   trustedSenders: string[]; // Email addresses that can load external content
+  domainFaviconAvatars: boolean; // Use sender domain favicons as avatars (off by default; opt-in to avoid any third-party request)
 
   // Calendar Notifications
   calendarNotificationsEnabled: boolean;
@@ -88,6 +89,7 @@ const DEFAULT_SETTINGS = {
   // Privacy & Security
   sessionTimeout: 0, // Never
   trustedSenders: [] as string[],
+  domainFaviconAvatars: false,
 
   // Calendar Notifications
   calendarNotificationsEnabled: true,

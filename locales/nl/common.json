@@ -668,6 +668,10 @@
         "close": "Sluiten",
         "invalid_email": "Voer een geldig e-mailadres in",
         "already_added": "Deze afzender wordt al vertrouwd"
+      },
+      "domain_favicon_avatars": {
+        "label": "Domein-avatars",
+        "description": "Als een contact geen foto heeft, wordt het favicon van het domein van de afzender getoond in plaats van initialen. Opgehaald van een openbare favicon-dienst op basis van alleen de domeinnaam (geen e-mailadres, geen hashing). Standaard uitgeschakeld."
       }
     },
     "composer": {

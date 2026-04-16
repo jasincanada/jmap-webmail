@@ -668,6 +668,10 @@
         "close": "Fermer",
         "invalid_email": "Veuillez entrer une adresse email valide",
         "already_added": "Cet expéditeur est déjà de confiance"
+      },
+      "domain_favicon_avatars": {
+        "label": "Avatars par domaine",
+        "description": "Quand un contact n'a pas de photo, afficher le favicon du domaine de l'expéditeur au lieu des initiales. Récupéré via un service public de favicons en utilisant uniquement le nom de domaine (sans adresse e-mail ni hachage). Désactivé par défaut."
       }
     },
     "composer": {

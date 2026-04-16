@@ -18,6 +18,7 @@ export function EmailSettings() {
     emailsPerPage,
     externalContentPolicy,
     trustedSenders,
+    domainFaviconAvatars,
     updateSetting,
   } = useSettingsStore();
 
@@ -99,6 +100,14 @@ export function EmailSettings() {
           <span className="text-sm text-foreground">{getTrustedSendersCount()}</span>
           <ChevronRight className="w-4 h-4 text-muted-foreground" />
         </button>
+      </SettingItem>
+
+      {/* Domain Favicon Avatars */}
+      <SettingItem label={t('domain_favicon_avatars.label')} description={t('domain_favicon_avatars.description')}>
+        <ToggleSwitch
+          checked={domainFaviconAvatars}
+          onChange={(checked) => updateSetting('domainFaviconAvatars', checked)}
+        />
       </SettingItem>
 
       {/* Trusted Senders Modal */}

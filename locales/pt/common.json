@@ -668,6 +668,10 @@
         "close": "Fechar",
         "invalid_email": "Por favor, digite um endereço de e-mail válido",
         "already_added": "Este remetente já é confiável"
+      },
+      "domain_favicon_avatars": {
+        "label": "Avatares por domínio",
+        "description": "Quando um contacto não tem fotografia, o favicon do domínio do remetente é apresentado em vez das iniciais. Obtido de um serviço público de favicons usando apenas o nome de domínio (sem endereço de e-mail nem hash). Desativado por omissão."
       }
     },
     "composer": {
