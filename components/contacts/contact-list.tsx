@@ -169,14 +169,14 @@ export function ContactList({
                 <BookUser className="w-12 h-12 mb-3 text-muted-foreground/30" />
                 <p className="text-sm font-medium text-foreground">{t("empty_state_title")}</p>
                 <p className="text-xs text-muted-foreground mt-1">{t("empty_state_subtitle")}</p>
-                <div className="flex gap-2 mt-4">
-                  <Button size="sm" onClick={onCreateNew}>
-                    <UserPlus className="w-4 h-4 mr-1.5" />
+                <div className="flex flex-wrap gap-2 mt-4 justify-center">
+                  <Button size="sm" onClick={onCreateNew} className="min-w-0 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <UserPlus className="w-4 h-4 mr-1.5 shrink-0" />
                     {t("create_new")}
                   </Button>
                   {onImport && (
-                    <Button variant="outline" size="sm" onClick={onImport}>
-                      <Upload className="w-4 h-4 mr-1.5" />
+                    <Button variant="outline" size="sm" onClick={onImport} className="min-w-0 whitespace-nowrap overflow-hidden text-ellipsis">
+                      <Upload className="w-4 h-4 mr-1.5 shrink-0" />
                       {t("import_vcard")}
                     </Button>
                   )}
