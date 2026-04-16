@@ -40,7 +40,8 @@
       "missing_params": "Faltan datos de autorización. Intenta iniciar sesión de nuevo.",
       "token_exchange_failed": "No se pudo completar la autenticación. Inténtalo de nuevo.",
       "access_denied": "Acceso denegado. Contacta a tu administrador.",
-      "back_to_login": "Volver al inicio de sesión"
+      "back_to_login": "Volver al inicio de sesión",
+      "requires_https": "El inicio de sesión único requiere una conexión segura. Accede a este correo web por HTTPS (o localhost en desarrollo)."
     }
   },
   "sidebar": {

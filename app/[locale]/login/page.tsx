@@ -40,6 +40,7 @@ export default function LoginPage() {
   const [oauthDiscoveryDone, setOauthDiscoveryDone] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
   const [oauthRetryCount, setOauthRetryCount] = useState(0);
+  const [oauthLocalError, setOauthLocalError] = useState<string | null>(null);
 
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -256,6 +257,17 @@ export default function LoginPage() {
 
   const handleOAuthLogin = async () => {
     if (!oauthMetadata || !oauthClientId) return;
+
+    // PKCE needs Web Crypto (SubtleCrypto.digest). That API is only exposed
+    // in secure contexts — i.e. HTTPS or localhost. Fail loudly before we
+    // try to call it so the user sees a fix-this message instead of a
+    // mystery "crypto.subtle is undefined" TypeError.
+    if (typeof window === "undefined" || !window.isSecureContext || typeof crypto?.subtle?.digest !== "function") {
+      setOauthLocalError(t("oauth_error.requires_https"));
+      return;
+    }
+
+    setOauthLocalError(null);
     setOauthLoading(true);
 
     const verifier = generateCodeVerifier();
@@ -341,6 +353,13 @@ export default function LoginPage() {
                 ? t('error.totp_invalid')
                 : t(`error.${error}`) || t("error.generic")}
             </p>
+          </div>
+        )}
+
+        {oauthLocalError && (
+          <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-amber-700 dark:text-amber-300">{oauthLocalError}</p>
           </div>
         )}
 

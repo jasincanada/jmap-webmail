@@ -40,7 +40,8 @@
       "missing_params": "Dati di autorizzazione mancanti. Prova ad accedere di nuovo.",
       "token_exchange_failed": "Impossibile completare l'autenticazione. Riprova.",
       "access_denied": "Accesso negato. Contatta il tuo amministratore.",
-      "back_to_login": "Torna al login"
+      "back_to_login": "Torna al login",
+      "requires_https": "Il Single Sign-On richiede una connessione sicura. Accedi a questa webmail tramite HTTPS (o localhost in sviluppo)."
     }
   },
   "sidebar": {

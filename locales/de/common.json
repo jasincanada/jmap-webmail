@@ -40,7 +40,8 @@
       "missing_params": "Fehlende Autorisierungsdaten. Bitte erneut anmelden.",
       "token_exchange_failed": "Authentifizierung konnte nicht abgeschlossen werden. Bitte erneut versuchen.",
       "access_denied": "Zugriff verweigert. Bitte kontaktieren Sie Ihren Administrator.",
-      "back_to_login": "Zurück zur Anmeldung"
+      "back_to_login": "Zurück zur Anmeldung",
+      "requires_https": "Single Sign-On erfordert eine sichere Verbindung. Bitte greifen Sie über HTTPS auf dieses Webmail zu (oder localhost in der Entwicklung)."
     }
   },
   "sidebar": {

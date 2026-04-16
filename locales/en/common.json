@@ -40,7 +40,8 @@
       "missing_params": "Missing authorization data. Please try signing in again.",
       "token_exchange_failed": "Failed to complete authentication. Please try again.",
       "access_denied": "Access was denied. Please contact your administrator.",
-      "back_to_login": "Back to login"
+      "back_to_login": "Back to login",
+      "requires_https": "Single Sign-On requires a secure connection. Please access this webmail over HTTPS (or localhost during development)."
     }
   },
   "sidebar": {
