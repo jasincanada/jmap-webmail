@@ -680,6 +680,7 @@ export function EmailViewer({
   return (
     <div
       key={email.id}
+      id="email-viewer-container"
       className={cn("flex-1 flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-300 relative", className)}
     >
       {/* Loading overlay when fetching new email */}
@@ -905,7 +906,7 @@ export function EmailViewer({
               </div>
 
               {/* More Actions Dropdown */}
-              <div className="relative">
+              <div className="relative print:hidden">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -1361,7 +1362,7 @@ export function EmailViewer({
       </div>
 
       {/* Email Content Area */}
-      <div className="flex-1 overflow-auto bg-muted/30">
+      <div id="email-content-area" className="flex-1 overflow-auto bg-muted/30">
         {/* Mobile/Tablet Sender Info - scrolls with content */}
         <div className="lg:hidden bg-background border-b border-border px-4 py-3">
           <div className="flex items-start gap-3">
@@ -1610,7 +1611,7 @@ export function EmailViewer({
 
           {/* Quick Reply Section */}
           <div className={cn(
-            "mt-6 bg-background rounded-lg shadow-sm border transition-all",
+            "print:hidden mt-6 bg-background rounded-lg shadow-sm border transition-all",
             isQuickReplyFocused || quickReplyText ? "border-primary" : "border-border"
           )}>
             <div className="p-4">

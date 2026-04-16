@@ -428,3 +428,30 @@ body {
     -webkit-backdrop-filter: none !important;
   }
 }
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #email-viewer-container,
+  #email-viewer-container * {
+    visibility: visible !important;
+  }
+  #email-viewer-container {
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    min-height: 100vh;
+    display: block !important;
+    background: white !important;
+    z-index: 9999;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  #email-content-area {
+    overflow: hidden !important;
+    height: auto !important;
+    display: block !important;
+  }
+}
