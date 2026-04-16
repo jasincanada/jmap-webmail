@@ -123,7 +123,7 @@ export function plainTextToSafeHtml(
   options?: { linkClassName?: string }
 ): string {
   const linkClass = options?.linkClassName
-    ? ` class="${options.linkClassName}"`
+    ? ` class="${escapeHtml(options.linkClassName)}"`
     : '';
   return escapeHtml(text)
     .replace(/\r\n/g, '<br>')

@@ -287,6 +287,15 @@ describe('email-sanitization', () => {
       expect(html).toContain('class="text-primary hover:underline"');
     });
 
+    it('escapes linkClassName to defend against a caller-supplied injection', () => {
+      const malicious = 'x" onfocus="alert(1)" x="';
+      const html = plainTextToSafeHtml('https://x.test', { linkClassName: malicious });
+      const a = parseAnchor(html);
+      expect(a).not.toBeNull();
+      expect(a!.getAttribute('onfocus')).toBeNull();
+      expect(a!.className).toContain('onfocus=');
+    });
+
     it('preserves line breaks and tabs', () => {
       const html = plainTextToSafeHtml('a\nb\tc\r\nd');
       expect(html).toContain('a<br>b&nbsp;&nbsp;&nbsp;&nbsp;c<br>d');
