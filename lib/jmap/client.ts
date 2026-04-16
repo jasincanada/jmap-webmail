@@ -1472,6 +1472,11 @@ export class JMAPClient {
     return coreCapability?.maxCallsInRequest || 50;
   }
 
+  getMaxObjectsInGet(): number {
+    const coreCapability = this.capabilities["urn:ietf:params:jmap:core"] as { maxObjectsInGet?: number } | undefined;
+    return coreCapability?.maxObjectsInGet || 500;
+  }
+
   getEventSourceUrl(): string | null {
     if (!this.session) return null;
 
@@ -1765,23 +1770,43 @@ export class JMAPClient {
   async getContacts(addressBookId?: string): Promise<ContactCard[]> {
     try {
       const accountId = this.getContactsAccountId();
+      const maxBatchSize = this.getMaxObjectsInGet();
+      // TODO: paginate query for >1000 contacts (limit caps results silently)
       const queryArgs: Record<string, unknown> = { accountId, limit: 1000 };
       if (addressBookId) {
         queryArgs.filter = { inAddressBook: addressBookId };
       }
 
-      const response = await this.request([
+      const queryResponse = await this.request([
         ["ContactCard/query", queryArgs, "0"],
-        ["ContactCard/get", {
-          accountId,
-          "#ids": { resultOf: "0", name: "ContactCard/query", path: "/ids" },
-        }, "1"],
       ], this.contactUsing());
 
-      if (response.methodResponses?.[1]?.[0] === "ContactCard/get") {
-        return (response.methodResponses[1][1].list || []) as ContactCard[];
+      if (queryResponse.methodResponses?.[0]?.[0] !== "ContactCard/query") {
+        return [];
       }
-      return [];
+
+      const allIds = (queryResponse.methodResponses[0][1].ids || []) as string[];
+      if (allIds.length === 0) {
+        return [];
+      }
+
+      // Batch the get so servers capping maxObjectsInGet (Stalwart default 500)
+      // don't silently fail. All batches are packed into a single JMAP request
+      // — one HTTP roundtrip regardless of contact count.
+      const calls: [string, Record<string, unknown>, string][] = [];
+      for (let i = 0; i < allIds.length; i += maxBatchSize) {
+        const batchIds = allIds.slice(i, i + maxBatchSize);
+        calls.push(["ContactCard/get", { accountId, ids: batchIds }, String(calls.length)]);
+      }
+
+      const response = await this.request(calls, this.contactUsing());
+      const allContacts: ContactCard[] = [];
+      for (const [method, result] of response.methodResponses || []) {
+        if (method === "ContactCard/get") {
+          allContacts.push(...((result as { list?: ContactCard[] }).list || []));
+        }
+      }
+      return allContacts;
     } catch {
       return [];
     }

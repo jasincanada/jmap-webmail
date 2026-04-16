@@ -120,27 +120,43 @@ describe('JMAPClient contact methods', () => {
   });
 
   describe('getContacts', () => {
-    it('should return contacts from server', async () => {
+    function setupClientWithMaxObjects(max: number) {
       const client = createClient();
-      mockFetch({
-        methodResponses: [
-          ['ContactCard/query', { ids: ['contact-1'] }, '0'],
-          ['ContactCard/get', { list: [mockContact] }, '1'],
-        ],
+      Object.assign(client, {
+        capabilities: {
+          'urn:ietf:params:jmap:contacts': {},
+          'urn:ietf:params:jmap:core': { maxObjectsInGet: max },
+        },
+      });
+      return client;
+    }
+
+    it('should return contacts from server (single batch)', async () => {
+      const client = setupClientWithMaxObjects(500);
+      const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+      mockFetchOnce(fetchSpy, {
+        methodResponses: [['ContactCard/query', { ids: ['contact-1'] }, '0']],
+      });
+      mockFetchOnce(fetchSpy, {
+        methodResponses: [['ContactCard/get', { list: [mockContact] }, '0']],
       });
 
       const result = await client.getContacts();
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('contact-1');
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
     });
 
     it('should filter by addressBookId when provided', async () => {
-      const client = createClient();
-      const fetchSpy = mockFetch({
-        methodResponses: [
-          ['ContactCard/query', { ids: ['contact-1'] }, '0'],
-          ['ContactCard/get', { list: [mockContact] }, '1'],
-        ],
+      const client = setupClientWithMaxObjects(500);
+      const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+      mockFetchOnce(fetchSpy, {
+        methodResponses: [['ContactCard/query', { ids: ['contact-1'] }, '0']],
+      });
+      mockFetchOnce(fetchSpy, {
+        methodResponses: [['ContactCard/get', { list: [mockContact] }, '0']],
       });
 
       await client.getContacts('ab-1');
@@ -152,10 +168,7 @@ describe('JMAPClient contact methods', () => {
     it('should not include filter when no addressBookId', async () => {
       const client = createClient();
       const fetchSpy = mockFetch({
-        methodResponses: [
-          ['ContactCard/query', { ids: [] }, '0'],
-          ['ContactCard/get', { list: [] }, '1'],
-        ],
+        methodResponses: [['ContactCard/query', { ids: [] }, '0']],
       });
 
       await client.getContacts();
@@ -164,13 +177,10 @@ describe('JMAPClient contact methods', () => {
       expect(body.methodCalls[0][1].filter).toBeUndefined();
     });
 
-    it('should return empty array when no contacts', async () => {
+    it('should return empty array when zero contacts', async () => {
       const client = createClient();
       mockFetch({
-        methodResponses: [
-          ['ContactCard/query', { ids: [] }, '0'],
-          ['ContactCard/get', { list: [] }, '1'],
-        ],
+        methodResponses: [['ContactCard/query', { ids: [] }, '0']],
       });
 
       const result = await client.getContacts();
@@ -185,17 +195,80 @@ describe('JMAPClient contact methods', () => {
       expect(result).toEqual([]);
     });
 
-    it('should return empty array for unexpected response at index 1', async () => {
+    it('should return empty array for unexpected query response', async () => {
       const client = createClient();
       mockFetch({
-        methodResponses: [
-          ['ContactCard/query', { ids: [] }, '0'],
-          ['SomethingElse', {}, '1'],
-        ],
+        methodResponses: [['SomethingElse', {}, '0']],
       });
 
       const result = await client.getContacts();
       expect(result).toEqual([]);
+    });
+
+    it('should handle exact boundary (ids.length === maxObjectsInGet)', async () => {
+      const client = setupClientWithMaxObjects(2);
+      const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+      mockFetchOnce(fetchSpy, {
+        methodResponses: [['ContactCard/query', { ids: ['c-1', 'c-2'] }, '0']],
+      });
+      mockFetchOnce(fetchSpy, {
+        methodResponses: [['ContactCard/get', { list: [
+          { ...mockContact, id: 'c-1' },
+          { ...mockContact, id: 'c-2' },
+        ] }, '0']],
+      });
+
+      const result = await client.getContacts();
+      expect(result).toHaveLength(2);
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('should batch into a single JMAP request when over maxObjectsInGet', async () => {
+      const client = setupClientWithMaxObjects(2);
+      const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+      mockFetchOnce(fetchSpy, {
+        methodResponses: [['ContactCard/query', { ids: ['c-1', 'c-2', 'c-3'] }, '0']],
+      });
+      mockFetchOnce(fetchSpy, {
+        methodResponses: [
+          ['ContactCard/get', { list: [
+            { ...mockContact, id: 'c-1' },
+            { ...mockContact, id: 'c-2' },
+          ] }, '0'],
+          ['ContactCard/get', { list: [
+            { ...mockContact, id: 'c-3' },
+          ] }, '1'],
+        ],
+      });
+
+      const result = await client.getContacts();
+      expect(result).toHaveLength(3);
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+
+      const body = JSON.parse(fetchSpy.mock.calls[1][1]?.body as string);
+      expect(body.methodCalls).toHaveLength(2);
+      expect(body.methodCalls[0][1].ids).toEqual(['c-1', 'c-2']);
+      expect(body.methodCalls[1][1].ids).toEqual(['c-3']);
+    });
+
+    it('should pass IDs directly instead of using back-reference', async () => {
+      const client = setupClientWithMaxObjects(500);
+      const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+      mockFetchOnce(fetchSpy, {
+        methodResponses: [['ContactCard/query', { ids: ['contact-1'] }, '0']],
+      });
+      mockFetchOnce(fetchSpy, {
+        methodResponses: [['ContactCard/get', { list: [mockContact] }, '0']],
+      });
+
+      await client.getContacts();
+
+      const body = JSON.parse(fetchSpy.mock.calls[1][1]?.body as string);
+      expect(body.methodCalls[0][1].ids).toEqual(['contact-1']);
+      expect(body.methodCalls[0][1]['#ids']).toBeUndefined();
     });
   });
 
