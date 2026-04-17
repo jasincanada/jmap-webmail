@@ -429,6 +429,27 @@ body {
   }
 }
 
+/* Print support. The user clicks Print on an email, which clones the
+   viewer into #print-overlay at the body level and flips html.is-printing
+   on. The live app is hidden, the overlay is positioned at top-left and
+   styled for paper: black text, transparent-over-white background,
+   no shadows, no animations. Keeping the overlay at the body root
+   avoids cross-browser :has()/flex/visibility quirks entirely.
+   Cleanup runs on the afterprint event. */
+html.is-printing body > *:not(#print-overlay) {
+  display: none !important;
+}
+
+#print-overlay {
+  position: absolute;
+  left: -10000px;
+  top: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 @media print {
   @page {
     margin: 12mm;
@@ -436,7 +457,7 @@ body {
 
   html, body {
     background: white !important;
-    color: black !important;
+    color: #000 !important;
     margin: 0 !important;
     padding: 0 !important;
     height: auto !important;
@@ -444,35 +465,17 @@ body {
     overflow: visible !important;
   }
 
-  /* Remove every element that's neither on the ancestor chain of the
-     email viewer, nor the viewer itself, nor one of its descendants.
-     display: none (rather than visibility: hidden) actually takes them
-     out of layout, so the printed document height reflects only the
-     viewer's own content — otherwise the sidebar and email list keep
-     their height and push the output to many blank pages. */
-  body *:not(:has(#email-viewer-container)):not(#email-viewer-container):not(#email-viewer-container *) {
-    display: none !important;
-  }
-
-  /* The ancestor chain keeps its flex layout — we just stop it from
-     enforcing viewport height or clipping. */
-  *:has(#email-viewer-container) {
+  html.is-printing #print-overlay {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
     height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
     overflow: visible !important;
-    background: white !important;
   }
 
-  /* Force light-mode colours across the printed subtree. Browsers
-     don't print background colours by default, so dark-mode light
-     text on a dark background prints as invisible light text on white
-     paper. Override colour, background and shadows to guarantee the
-     content is readable regardless of the app's current theme.
-     Also neutralise any animations/transforms that could otherwise
-     leave a mid-keyframe snapshot in the printed output. */
-  #email-viewer-container,
-  #email-viewer-container * {
+  #print-overlay,
+  #print-overlay * {
     color: #000 !important;
     background: transparent !important;
     background-color: transparent !important;
@@ -485,15 +488,10 @@ body {
     transform: none !important;
     filter: none !important;
     opacity: 1 !important;
+    visibility: visible !important;
   }
 
-  /* Force a solid white paper background on the outermost printed
-     element so content never lands on a transparent parent. */
-  #email-viewer-container {
-    background: #fff !important;
-  }
-
-  #email-viewer-container {
+  #print-overlay #email-viewer-container {
     position: static !important;
     display: block !important;
     width: 100% !important;
@@ -503,10 +501,12 @@ body {
     margin: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
+    background: #fff !important;
+    box-shadow: none !important;
     border: none !important;
   }
 
-  #email-content-area {
+  #print-overlay #email-content-area {
     display: block !important;
     width: 100% !important;
     height: auto !important;
@@ -514,10 +514,7 @@ body {
     overflow: visible !important;
   }
 
-  /* Sandboxed email iframe: its internal document doesn't inherit our
-     print styles. Force its dimensions so the full body prints, and
-     give it a white backdrop via a surrounding wrapper style. */
-  #email-viewer-container iframe {
+  #print-overlay iframe {
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
@@ -525,9 +522,12 @@ body {
     background: #fff !important;
   }
 
-  /* Links printed as blue text are conventional; keep them visible. */
-  #email-viewer-container a {
+  #print-overlay a {
     color: #0645ad !important;
     text-decoration: underline !important;
+  }
+
+  #print-overlay .print\:hidden {
+    display: none !important;
   }
 }
