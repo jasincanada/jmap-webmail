@@ -11,14 +11,61 @@ interface AvatarProps {
   className?: string;
 }
 
+// Freemail / webmail providers where the sender's domain is a generic
+// mailbox host rather than an identifying brand. Showing Google's logo
+// for every gmail.com sender is misleading — the domain belongs to the
+// provider, not to the individual. Fall back to initials for these.
+const FREEMAIL_DOMAINS = new Set([
+  "gmail.com",
+  "googlemail.com",
+  "yahoo.com",
+  "yahoo.co.uk",
+  "yahoo.fr",
+  "ymail.com",
+  "outlook.com",
+  "outlook.fr",
+  "hotmail.com",
+  "hotmail.fr",
+  "live.com",
+  "live.fr",
+  "msn.com",
+  "icloud.com",
+  "me.com",
+  "mac.com",
+  "aol.com",
+  "proton.me",
+  "protonmail.com",
+  "pm.me",
+  "tutanota.com",
+  "tuta.io",
+  "gmx.com",
+  "gmx.de",
+  "gmx.fr",
+  "gmx.net",
+  "web.de",
+  "mail.ru",
+  "yandex.ru",
+  "yandex.com",
+  "fastmail.com",
+  "fastmail.fm",
+  "zoho.com",
+  "orange.fr",
+  "wanadoo.fr",
+  "free.fr",
+  "laposte.net",
+  "sfr.fr",
+  "bbox.fr",
+  "hey.com",
+  "duck.com",
+]);
+
 function extractDomain(email?: string): string | null {
   if (!email) return null;
   const at = email.lastIndexOf("@");
   if (at < 0 || at === email.length - 1) return null;
   const domain = email.slice(at + 1).trim().toLowerCase();
-  // Reject obviously invalid or local-only domains so we never send a
-  // request for hostnames a public favicon service would never resolve.
   if (!domain.includes(".") || domain === "localhost") return null;
+  if (FREEMAIL_DOMAINS.has(domain)) return null;
   return domain;
 }
 
