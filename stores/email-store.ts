@@ -897,19 +897,35 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   },
 
   batchDelete: async (client) => {
-    const { selectedEmailIds, emails, mailboxes } = get();
+    const { selectedEmailIds, emails, mailboxes, selectedMailbox } = get();
     if (selectedEmailIds.size === 0) return;
 
     set({ error: null });
     try {
       const emailIdsArray = Array.from(selectedEmailIds);
-      await client.batchDeleteEmails(emailIdsArray);
+      const deletedEmails = emails.filter(e => selectedEmailIds.has(e.id));
 
-      // Remove deleted emails from local state
+      const deleteAction = useSettingsStore.getState().deleteAction;
+      const currentMailbox = mailboxes.find(mb => mb.id === selectedMailbox);
+      const accountId = currentMailbox?.isShared ? currentMailbox.accountId : undefined;
+
+      let trashMailbox: typeof mailboxes[number] | undefined;
+      if (deleteAction === 'trash') {
+        trashMailbox = mailboxes.find(mb => {
+          if (accountId) return mb.role === 'trash' && mb.accountId === accountId;
+          return mb.role === 'trash' && !mb.isShared;
+        });
+      }
+
+      if (trashMailbox) {
+        const trashId = trashMailbox.originalId || trashMailbox.id;
+        await client.batchMoveEmails(emailIdsArray, trashId, accountId);
+      } else {
+        await client.batchDeleteEmails(emailIdsArray);
+      }
+
       const remainingEmails = emails.filter(e => !selectedEmailIds.has(e.id));
 
-      // Update mailbox counters
-      const deletedEmails = emails.filter(e => selectedEmailIds.has(e.id));
       const updatedMailboxes = mailboxes.map(mailbox => {
         let deltaTotalEmails = 0;
         let deltaUnreadEmails = 0;
@@ -919,6 +935,12 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
             deltaTotalEmails--;
             if (!email.keywords?.$seen) {
               deltaUnreadEmails--;
+            }
+          }
+          if (trashMailbox && mailbox.id === trashMailbox.id && !email.mailboxIds?.[mailbox.id]) {
+            deltaTotalEmails++;
+            if (!email.keywords?.$seen) {
+              deltaUnreadEmails++;
             }
           }
         });

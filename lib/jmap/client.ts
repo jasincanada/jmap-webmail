@@ -764,12 +764,13 @@ export class JMAPClient {
     };
   }
 
-  async batchMoveEmails(emailIds: string[], toMailboxId: string): Promise<void> {
+  async batchMoveEmails(emailIds: string[], toMailboxId: string, accountId?: string): Promise<void> {
     if (emailIds.length === 0) return;
 
+    const targetAccountId = accountId || this.accountId;
     const updates = Object.fromEntries(emailIds.map(id => [id, { mailboxIds: { [toMailboxId]: true } }]));
     await this.request([
-      ["Email/set", { accountId: this.accountId, update: updates }, "0"],
+      ["Email/set", { accountId: targetAccountId, update: updates }, "0"],
     ]);
   }
 
