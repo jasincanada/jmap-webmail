@@ -705,7 +705,7 @@ export function EmailViewer({
                 variant="ghost"
                 size="icon"
                 onClick={onBack}
-                className="h-11 w-11 lg:h-10 lg:w-10 flex-shrink-0 -ml-2"
+                className="h-11 w-11 lg:h-10 lg:w-10 flex-shrink-0 -ml-2 print:hidden"
                 aria-label={t('back_to_list')}
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -742,7 +742,7 @@ export function EmailViewer({
             </div>
 
             {/* Quick Actions */}
-            <div className="flex items-center gap-0.5 flex-shrink-0">
+            <div className="flex items-center gap-0.5 flex-shrink-0 print:hidden">
               {/* Loading indicator */}
               {isLoading && (
                 <div className="mr-2 flex items-center gap-1.5 text-muted-foreground hidden lg:flex">
