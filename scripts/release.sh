@@ -61,6 +61,7 @@ CODE_FILES=(
     "components/"
     "contexts/"
     "hooks/"
+    "i18n/"
     "lib/"
     "stores/"
     "locales/"
