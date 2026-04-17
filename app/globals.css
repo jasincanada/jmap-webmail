@@ -522,6 +522,43 @@ html.is-printing body > *:not(#print-overlay) {
     background: #fff !important;
   }
 
+  /* Newsletter-style HTML emails are typically laid out with fixed-width
+     tables (width="600" or style="width:640px"). On A4 paper the usable
+     width is around 180mm, so the right edge of the content gets clipped.
+     Force every printed element to shrink to the page width, let tables
+     auto-layout, and encourage long URLs / words to break. */
+  #print-overlay *:not(html):not(body) {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  #print-overlay img,
+  #print-overlay video,
+  #print-overlay canvas,
+  #print-overlay svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  #print-overlay table {
+    max-width: 100% !important;
+    width: auto !important;
+    table-layout: auto !important;
+  }
+  #print-overlay td,
+  #print-overlay th,
+  #print-overlay p,
+  #print-overlay li,
+  #print-overlay pre,
+  #print-overlay code {
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+  #print-overlay pre {
+    white-space: pre-wrap !important;
+  }
+  #print-overlay .print-inlined-iframe {
+    width: 100% !important;
+  }
+
   #print-overlay a {
     color: #0645ad !important;
     text-decoration: underline !important;
