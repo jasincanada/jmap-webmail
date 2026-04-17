@@ -3,6 +3,10 @@
 - Take care to update @TODO.md to keep track on tasks.
 - Don't forget to commit when its needed.
 
+## Dev Environment Rules
+
+- **Never `killall`, `pkill`, or otherwise signal `firefox`.** Firefox is the user's everyday browser; killing it loses their open tabs and sessions. When a headless Firefox is needed for testing, use the Playwright-installed binary at `~/.cache/ms-playwright/firefox-1509/firefox/firefox` with a dedicated `--profile /tmp/ff-profile-<unique>` and track only the spawned PID so cleanup is scoped.
+
 ## Internationalization (i18n)
 
 This project uses **next-intl** for internationalization with support for English, French, Japanese, Spanish, Italian, German, Dutch, and Portuguese.
