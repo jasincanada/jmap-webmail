@@ -464,17 +464,33 @@ body {
     background: white !important;
   }
 
-  /* The viewer's enter animation (animate-in fade-in) starts at
-     opacity 0; Chrome snapshots keyframes for print so the document
-     can come out blank. Neutralise animations, transforms and filters
-     across the printed subtree. */
+  /* Force light-mode colours across the printed subtree. Browsers
+     don't print background colours by default, so dark-mode light
+     text on a dark background prints as invisible light text on white
+     paper. Override colour, background and shadows to guarantee the
+     content is readable regardless of the app's current theme.
+     Also neutralise any animations/transforms that could otherwise
+     leave a mid-keyframe snapshot in the printed output. */
   #email-viewer-container,
   #email-viewer-container * {
+    color: #000 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    border-color: #ccc !important;
     animation: none !important;
     transition: none !important;
     transform: none !important;
     filter: none !important;
     opacity: 1 !important;
+  }
+
+  /* Force a solid white paper background on the outermost printed
+     element so content never lands on a transparent parent. */
+  #email-viewer-container {
+    background: #fff !important;
   }
 
   #email-viewer-container {
@@ -487,8 +503,6 @@ body {
     margin: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
-    background: white !important;
-    box-shadow: none !important;
     border: none !important;
   }
 
@@ -498,6 +512,22 @@ body {
     height: auto !important;
     max-height: none !important;
     overflow: visible !important;
-    background: white !important;
+  }
+
+  /* Sandboxed email iframe: its internal document doesn't inherit our
+     print styles. Force its dimensions so the full body prints, and
+     give it a white backdrop via a surrounding wrapper style. */
+  #email-viewer-container iframe {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    width: 100% !important;
+    background: #fff !important;
+  }
+
+  /* Links printed as blue text are conventional; keep them visible. */
+  #email-viewer-container a {
+    color: #0645ad !important;
+    text-decoration: underline !important;
   }
 }
