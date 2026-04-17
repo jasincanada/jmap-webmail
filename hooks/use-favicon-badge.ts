@@ -3,26 +3,30 @@
 import { useEffect, useRef } from "react";
 
 const SIZE = 32;
+const DYNAMIC_ATTR = "data-dynamic-favicon";
 
 export function useFaviconBadge(count: number) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
-  const originalHref = useRef<string | null>(null);
   const countRef = useRef(count);
   countRef.current = count;
 
   useEffect(() => {
-    const link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
-    if (!link?.href) return;
-
-    originalHref.current = link.href;
+    // Grab the base favicon href from whatever the document currently has
+    // (Next.js renders one from app/icon.svg). We NEVER remove or edit
+    // that link — Next.js's metadata reconciler owns it and pulling it
+    // out from under React crashes reconciliation with
+    // "parentNode is null". Our badge lives on its own link tagged with
+    // data-dynamic-favicon.
+    const baseLink = document.querySelector<HTMLLinkElement>("link[rel~='icon']:not([data-dynamic-favicon])");
+    if (!baseLink?.href) return;
 
     const canvas = document.createElement("canvas");
     canvas.width = SIZE;
     canvas.height = SIZE;
     canvasRef.current = canvas;
 
-    fetch(link.href)
+    fetch(baseLink.href)
       .then((r) => r.blob())
       .then((blob) => {
         const reader = new FileReader();
@@ -41,13 +45,15 @@ export function useFaviconBadge(count: number) {
       .catch(() => {
         /* favicon not loadable — badge will draw without base icon */
       });
+
+    return () => {
+      clearDynamicFavicon();
+    };
   }, []);
 
   useEffect(() => {
     if (count <= 0) {
-      if (originalHref.current) {
-        setFavicon(originalHref.current, "image/svg+xml");
-      }
+      clearDynamicFavicon();
       return;
     }
 
@@ -102,19 +108,30 @@ function applyBadge(
   ctx.fillStyle = "#ffffff";
   ctx.fillText(label, x + padding, y + padding / 2);
 
-  setFavicon(canvas.toDataURL("image/png"));
+  setDynamicFavicon(canvas.toDataURL("image/png"));
 }
 
-function removeCurrentFavicons() {
-  const links = document.querySelectorAll<HTMLLinkElement>("link[rel~='icon']");
-  links.forEach((link) => link.remove());
+/**
+ * Upsert a dynamic favicon link marked with data-dynamic-favicon. The
+ * app/icon.svg managed by Next.js is left alone. Browsers pick the
+ * last matching link for rel="icon", so the dynamic link takes
+ * precedence on Chromium; Firefox/Safari fall back to the static icon,
+ * which is fine — the count-based badge remains a Chromium nicety.
+ */
+function setDynamicFavicon(href: string) {
+  let link = document.querySelector<HTMLLinkElement>(`link[${DYNAMIC_ATTR}]`);
+  if (!link) {
+    link = document.createElement("link");
+    link.setAttribute(DYNAMIC_ATTR, "");
+    link.rel = "icon";
+    link.type = "image/png";
+    document.head.appendChild(link);
+  }
+  if (link.href !== href) {
+    link.href = href;
+  }
 }
 
-export function setFavicon(href: string, type: string = "image/png") {
-  removeCurrentFavicons();
-  const link = document.createElement("link");
-  link.rel = "icon";
-  link.type = type;
-  link.href = href;
-  document.head.appendChild(link);
+function clearDynamicFavicon() {
+  document.querySelector(`link[${DYNAMIC_ATTR}]`)?.remove();
 }
