@@ -228,6 +228,39 @@ export function EmailViewer({
     }
   );
 
+  // Wire the print overlay at the document level so Ctrl+P / Cmd+P /
+  // browser menu triggers go through the same cloning path as the
+  // in-app Print button. beforeprint fires right before the dialog
+  // opens, afterprint fires whether the user prints or cancels.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleBeforePrint = () => {
+      if (document.getElementById("print-overlay")) return;
+      const source = document.getElementById("email-viewer-container");
+      if (!source) return;
+      const overlay = document.createElement("div");
+      overlay.id = "print-overlay";
+      overlay.setAttribute("aria-hidden", "true");
+      overlay.appendChild(source.cloneNode(true));
+      document.body.appendChild(overlay);
+      document.documentElement.classList.add("is-printing");
+    };
+
+    const handleAfterPrint = () => {
+      document.getElementById("print-overlay")?.remove();
+      document.documentElement.classList.remove("is-printing");
+    };
+
+    window.addEventListener("beforeprint", handleBeforePrint);
+    window.addEventListener("afterprint", handleAfterPrint);
+    return () => {
+      window.removeEventListener("beforeprint", handleBeforePrint);
+      window.removeEventListener("afterprint", handleAfterPrint);
+      handleAfterPrint();
+    };
+  }, []);
+
   const [cidUrls, setCidUrls] = useState<Map<string, string>>(new Map());
   useEffect(() => {
     if (!email?.attachments || !client) {
@@ -930,28 +963,9 @@ export function EmailViewer({
                   <button
                     onClick={() => {
                       setShowMoreActions(false);
-                      // Clone the viewer into an overlay appended to body so
-                      // print can target a top-level node, independent of
-                      // the app's flex / overflow / dark-mode wrappers. The
-                      // overlay stays hidden on screen via a print-only CSS
-                      // rule and is cleaned up after printing.
-                      const source = document.getElementById("email-viewer-container");
-                      if (!source) {
-                        window.print();
-                        return;
-                      }
-                      const overlay = document.createElement("div");
-                      overlay.id = "print-overlay";
-                      overlay.setAttribute("aria-hidden", "true");
-                      overlay.appendChild(source.cloneNode(true));
-                      document.body.appendChild(overlay);
-                      document.documentElement.classList.add("is-printing");
-                      const cleanup = () => {
-                        overlay.remove();
-                        document.documentElement.classList.remove("is-printing");
-                        window.removeEventListener("afterprint", cleanup);
-                      };
-                      window.addEventListener("afterprint", cleanup);
+                      // The overlay is created by the beforeprint listener
+                      // above, which also handles Ctrl+P and browser menu
+                      // Print triggers.
                       window.print();
                     }}
                     className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
