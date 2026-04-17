@@ -23,12 +23,17 @@ function extractDomain(email?: string): string | null {
 }
 
 /**
- * DuckDuckGo's favicon endpoint is used instead of Gravatar because it
- * operates on the sender's domain, not on a hash of their email address —
- * we never send anything that can be correlated back to the user.
+ * Routed through our own /api/favicon endpoint rather than hitting
+ * DuckDuckGo directly. DDG replies with an image body (HTTP 404 or a
+ * 200 with a placeholder) for unknown domains, and the browser treats
+ * anything with an image body as a successful load — so without the
+ * proxy every domain would get DDG's "no favicon" placeholder rendered
+ * as if it were real. The proxy passes the upstream status through so
+ * onError fires when the domain actually has no favicon, and the
+ * avatar falls back to initials.
  */
 function faviconUrlFor(domain: string): string {
-  return `https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`;
+  return `/api/favicon?domain=${encodeURIComponent(domain)}`;
 }
 
 export function Avatar({ name, email, size = "md", className }: AvatarProps) {
