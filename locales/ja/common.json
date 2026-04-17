@@ -1211,7 +1211,8 @@
       "name_required": "名前は必須です",
       "email_invalid": "有効なメールアドレスを入力してください",
       "save_failed": "連絡先の保存に失敗しました",
-      "email_error_inline": "メールアドレスの形式が正しくありません"
+      "email_error_inline": "メールアドレスの形式が正しくありません",
+      "delete": "削除"
     },
     "groups": {
       "create": "新しいグループ",
@@ -1275,7 +1276,8 @@
     "empty_state_subtitle": "最初の連絡先を作成するか、vCardファイルからインポートしてください",
     "empty_search_hint": "別の検索語をお試しください",
     "clear_search": "検索をクリア",
-    "import_vcard": "vCardをインポート"
+    "import_vcard": "vCardをインポート",
+    "delete_confirm_title": "連絡先を削除しますか?"
   },
   "calendar": {
     "title": "カレンダー",

@@ -1220,7 +1220,8 @@
       "name_required": "At least a first name or last name is required",
       "email_invalid": "Please enter a valid email address",
       "email_error_inline": "Invalid email format",
-      "save_failed": "Failed to save contact"
+      "save_failed": "Failed to save contact",
+      "delete": "Delete"
     },
     "groups": {
       "create": "New Group",
@@ -1279,7 +1280,8 @@
       "error_create": "Failed to create contact",
       "error_update": "Failed to update contact",
       "error_delete": "Failed to delete contact"
-    }
+    },
+    "delete_confirm_title": "Delete contact?"
   },
   "calendar": {
     "title": "Calendar",

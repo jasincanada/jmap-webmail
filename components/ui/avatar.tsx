@@ -71,14 +71,19 @@ export function Avatar({ name, email, size = "md", className }: AvatarProps) {
     lg: "w-12 h-12 text-base",
   };
 
+  // When a favicon has loaded, swap to a neutral backdrop so transparent
+  // regions of the icon don't bleed the initials-derived hue through.
+  const showFavicon = !!domain && faviconOk;
+  const backdrop = showFavicon ? "#fff" : getBackgroundColor();
+
   return (
     <div
       className={cn(
-        "rounded-full flex items-center justify-center font-semibold text-white overflow-hidden relative",
+        "rounded-full flex items-center justify-center font-semibold text-white overflow-hidden relative ring-1 ring-black/5 dark:ring-white/10",
         sizeClasses[size],
         className
       )}
-      style={{ backgroundColor: getBackgroundColor() }}
+      style={{ backgroundColor: backdrop }}
       title={name || email}
     >
       {/* Initials render behind so there's no flash if the favicon loads late or fails */}
@@ -93,7 +98,10 @@ export function Avatar({ name, email, size = "md", className }: AvatarProps) {
           onLoad={() => setFaviconOk(true)}
           onError={() => setFaviconOk(false)}
           className={cn(
-            "absolute inset-0 w-full h-full object-cover transition-opacity duration-150",
+            // contain (not cover) keeps the favicon fully visible with a
+            // small white margin, which reads better than a cropped logo
+            // when the source icon isn't square.
+            "absolute inset-[15%] w-[70%] h-[70%] object-contain transition-opacity duration-150",
             faviconOk ? "opacity-100" : "opacity-0"
           )}
         />

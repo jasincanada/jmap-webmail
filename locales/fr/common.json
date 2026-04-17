@@ -1211,7 +1211,8 @@
       "name_required": "Un prénom ou un nom est requis",
       "email_invalid": "Veuillez saisir une adresse e-mail valide",
       "save_failed": "Échec de l'enregistrement du contact",
-      "email_error_inline": "Format d'e-mail invalide"
+      "email_error_inline": "Format d'e-mail invalide",
+      "delete": "Supprimer"
     },
     "groups": {
       "create": "Nouveau groupe",
@@ -1275,7 +1276,8 @@
     "empty_state_subtitle": "Créez votre premier contact ou importez depuis un fichier vCard",
     "empty_search_hint": "Essayez un autre terme de recherche",
     "clear_search": "Effacer la recherche",
-    "import_vcard": "Importer vCard"
+    "import_vcard": "Importer vCard",
+    "delete_confirm_title": "Supprimer le contact ?"
   },
   "calendar": {
     "title": "Calendrier",
