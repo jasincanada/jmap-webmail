@@ -1324,6 +1324,7 @@ export class JMAPClient {
     if (!sentMailbox) {
       throw new Error('No sent mailbox found');
     }
+    const draftsMailbox = mailboxes.find(mb => mb.role === 'drafts');
 
     let finalIdentityId = identityId;
     if (!finalIdentityId) {
@@ -1343,21 +1344,32 @@ export class JMAPClient {
 
     const methodCalls: JMAPMethodCall[] = [];
 
+    // Stalwart's duplicate-message check (and many MDAs) consults the
+    // sender's own account when delivering inbound mail. If we land the
+    // outgoing copy in Sent before EmailSubmission runs, the subsequent
+    // SMTP delivery for email-to-self matches the already-stored
+    // Message-ID and gets dropped as a duplicate. Keep the email in the
+    // Drafts mailbox (or any non-shared inbox proxy) during submission
+    // and let EmailSubmission's onSuccessUpdateEmail move it to Sent
+    // only after the server has handed the outbound copy to SMTP.
+    // Closes #60.
+    const holdingMailboxId = draftsMailbox?.id ?? sentMailbox.id;
+
     if (draftId) {
-      methodCalls.push(["Email/set", {
-        accountId: this.accountId,
-        update: {
-          [draftId]: {
-            "keywords/$draft": false,
-            "keywords/$seen": true,
-            mailboxIds: { [sentMailbox.id]: true },
-          },
-        },
-      }, "0"]);
+      // Draft already lives in Drafts — don't touch its mailbox until
+      // after submission succeeds.
       methodCalls.push(["EmailSubmission/set", {
         accountId: this.accountId,
         create: { "1": { emailId: draftId, identityId: finalIdentityId } },
-      }, "1"]);
+        onSuccessUpdateEmail: {
+          "#1": {
+            [`mailboxIds/${holdingMailboxId}`]: null,
+            [`mailboxIds/${sentMailbox.id}`]: true,
+            "keywords/$draft": null,
+            "keywords/$seen": true,
+          },
+        },
+      }, "0"]);
     } else {
       methodCalls.push(["Email/set", {
         accountId: this.accountId,
@@ -1368,8 +1380,8 @@ export class JMAPClient {
             cc: cc?.map(email => ({ email })),
             bcc: bcc?.map(email => ({ email })),
             subject,
-            keywords: { "$seen": true },
-            mailboxIds: { [sentMailbox.id]: true },
+            keywords: { "$draft": true },
+            mailboxIds: { [holdingMailboxId]: true },
             bodyValues: { "1": { value: body } },
             textBody: [{ partId: "1", type: "text/plain" }],
           },
@@ -1378,6 +1390,14 @@ export class JMAPClient {
       methodCalls.push(["EmailSubmission/set", {
         accountId: this.accountId,
         create: { "1": { emailId: `#${emailId}`, identityId: finalIdentityId } },
+        onSuccessUpdateEmail: {
+          "#1": {
+            [`mailboxIds/${holdingMailboxId}`]: null,
+            [`mailboxIds/${sentMailbox.id}`]: true,
+            "keywords/$draft": null,
+            "keywords/$seen": true,
+          },
+        },
       }, "1"]);
     }
 
