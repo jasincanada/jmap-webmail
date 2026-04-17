@@ -430,28 +430,74 @@ body {
 }
 
 @media print {
+  /* Kill the default page margin so a position:static printed subtree gets
+     the full page, and so content doesn't collide with headers/footers. */
+  @page {
+    margin: 12mm;
+  }
+
+  html, body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Hide every descendant of body, then re-reveal only the email viewer
+     subtree. visibility (not display) preserves the subtree's layout
+     measurements so we don't have to reflow anything. */
   body * {
     visibility: hidden !important;
   }
   #email-viewer-container,
   #email-viewer-container * {
     visibility: visible !important;
+    /* Animations are captured frame-by-frame in print; the fade-in utility
+       starts at opacity 0, which would otherwise produce a blank page if
+       the browser samples the keyframe before completion. Neutralise the
+       animation entirely for print. Same for transforms/filters, which
+       can be left over from Tailwind's enter keyframe. */
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    filter: none !important;
+    opacity: 1 !important;
   }
+
+  /* Lift the viewer out of the flex layout and let it flow naturally on
+     each printed page. position: static (rather than fixed) avoids
+     Chrome's "fixed element only renders on the first page" behaviour
+     so long emails print across multiple pages. */
   #email-viewer-container {
-    position: fixed !important;
-    left: 0;
-    top: 0;
-    width: 100vw;
-    min-height: 100vh;
+    position: static !important;
     display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
     background: white !important;
-    z-index: 9999;
     box-shadow: none !important;
     border: none !important;
   }
+
   #email-content-area {
-    overflow: hidden !important;
-    height: auto !important;
     display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+
+  /* Ancestors of #email-viewer-container still lay out even though their
+     descendants are visibility: hidden. If any of them has a fixed height
+     + overflow: hidden (the outer flex h-screen wrapper does), it clips
+     the visible descendant to zero height. Force the whole ancestor chain
+     to stop clipping and to accept auto height. */
+  html, body, *:has(#email-viewer-container) {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
   }
 }
