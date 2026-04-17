@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import DOMPurify from "dompurify";
 import { Email, ThreadGroup } from "@/lib/jmap/types";
 import { hasRichFormatting, needsIframeRendering, EMAIL_SANITIZE_CONFIG, collapseBlockedImageContainers, plainTextToSafeHtml } from "@/lib/email-sanitization";
@@ -228,13 +228,35 @@ function EmailCard({
   const [hasBlockedContent, setHasBlockedContent] = useState(false);
   const { client } = useAuthStore();
 
+  // Gmail tags attachments with a Content-ID even when the body never
+  // references them, so "has a cid" is not the same as "is inline". Only
+  // treat an attachment as inline when its cid is actually cited via
+  // cid:... in the HTML body.
+  const referencedCids = useMemo(() => {
+    const cids = new Set<string>();
+    if (!email?.htmlBody || !email.bodyValues) return cids;
+    for (const part of email.htmlBody) {
+      const html = part.partId ? email.bodyValues[part.partId]?.value : undefined;
+      if (!html) continue;
+      const matches = html.matchAll(/cid:([^"'\s>)]+)/gi);
+      for (const m of matches) cids.add(m[1]);
+    }
+    return cids;
+  }, [email?.htmlBody, email?.bodyValues]);
+
+  const isInlineAttachment = useCallback(
+    (att: { cid?: string; blobId?: string }) =>
+      !!(att.cid && att.blobId && referencedCids.has(att.cid)),
+    [referencedCids]
+  );
+
   const [cidUrls, setCidUrls] = useState<Map<string, string>>(new Map());
   useEffect(() => {
     if (!email?.attachments || !client) {
       setCidUrls(new Map());
       return;
     }
-    const inlineAtts = email.attachments.filter(a => a.cid && a.blobId);
+    const inlineAtts = email.attachments.filter(isInlineAttachment);
     if (inlineAtts.length === 0) {
       setCidUrls(new Map());
       return;
@@ -263,7 +285,7 @@ function EmailCard({
       cancelled = true;
       objectUrls.forEach(url => URL.revokeObjectURL(url));
     };
-  }, [email?.id, email?.attachments, client]);
+  }, [email?.id, email?.attachments, client, isInlineAttachment]);
 
   // Mark as read when email is expanded
   useEffect(() => {
@@ -508,11 +530,11 @@ function EmailCard({
             )}
           </div>
 
-          {/* Attachments (excluding inline/CID images rendered in the body) */}
-          {email.attachments && email.attachments.filter(a => !a.cid).length > 0 && (
+          {/* Attachments (excluding inline images that the body actually cites via cid:) */}
+          {email.attachments && email.attachments.filter(a => !isInlineAttachment(a)).length > 0 && (
             <div className="px-4 pb-4">
               <div className="flex flex-wrap gap-2">
-                {email.attachments.filter(a => !a.cid).map((attachment, idx) => {
+                {email.attachments.filter(a => !isInlineAttachment(a)).map((attachment, idx) => {
                   const Icon = getFileIcon(attachment.name, attachment.type);
                   return (
                     <button

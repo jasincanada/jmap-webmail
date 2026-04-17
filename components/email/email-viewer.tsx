@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import DOMPurify from "dompurify";
 import { Email } from "@/lib/jmap/types";
 import { hasRichFormatting, needsIframeRendering, EMAIL_SANITIZE_CONFIG, collapseBlockedImageContainers, plainTextToSafeHtml } from "@/lib/email-sanitization";
@@ -297,13 +297,35 @@ export function EmailViewer({
     };
   }, []);
 
+  // Gmail tags attachments with a Content-ID even when the body never
+  // references them inline, so "has a cid" ≠ "is an inline image". Build
+  // a set of the cids actually cited as cid:... URLs in the HTML body;
+  // treat anything not in that set as a regular downloadable attachment.
+  const referencedCids = useMemo(() => {
+    const cids = new Set<string>();
+    if (!email?.htmlBody || !email.bodyValues) return cids;
+    for (const part of email.htmlBody) {
+      const html = part.partId ? email.bodyValues[part.partId]?.value : undefined;
+      if (!html) continue;
+      const matches = html.matchAll(/cid:([^"'\s>)]+)/gi);
+      for (const m of matches) cids.add(m[1]);
+    }
+    return cids;
+  }, [email?.htmlBody, email?.bodyValues]);
+
+  const isInlineAttachment = useCallback(
+    (att: { cid?: string; blobId?: string }) =>
+      !!(att.cid && att.blobId && referencedCids.has(att.cid)),
+    [referencedCids]
+  );
+
   const [cidUrls, setCidUrls] = useState<Map<string, string>>(new Map());
   useEffect(() => {
     if (!email?.attachments || !client) {
       setCidUrls(new Map());
       return;
     }
-    const inlineAtts = email.attachments.filter(a => a.cid && a.blobId);
+    const inlineAtts = email.attachments.filter(isInlineAttachment);
     if (inlineAtts.length === 0) {
       setCidUrls(new Map());
       return;
@@ -332,7 +354,7 @@ export function EmailViewer({
       cancelled = true;
       objectUrls.forEach(url => URL.revokeObjectURL(url));
     };
-  }, [email?.id, email?.attachments, client]);
+  }, [email?.id, email?.attachments, client, isInlineAttachment]);
 
   useEffect(() => {
     // Mark as read when email is viewed
@@ -1567,12 +1589,12 @@ export function EmailViewer({
 
         <div className="max-w-4xl mx-auto p-6">
 
-          {/* Attachments (excluding inline/CID images already rendered in the body) */}
-          {email.attachments && email.attachments.filter(a => !a.cid).length > 0 && (
+          {/* Attachments (excluding inline images that the body actually cites via cid:) */}
+          {email.attachments && email.attachments.filter(a => !isInlineAttachment(a)).length > 0 && (
             <div className="mb-4">
               {/* Image attachments as thumbnails */}
               {email.attachments.filter(a =>
-                !a.cid && (
+                !isInlineAttachment(a) && (
                 a.type?.startsWith('image/') ||
                 ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(a.name?.split('.').pop()?.toLowerCase() || ''))
               ).length > 0 && (
@@ -1580,7 +1602,7 @@ export function EmailViewer({
                   <div className="flex flex-wrap gap-2">
                     {email.attachments
                       .filter(a =>
-                        !a.cid && (
+                        !isInlineAttachment(a) && (
                         a.type?.startsWith('image/') ||
                         ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(a.name?.split('.').pop()?.toLowerCase() || ''))
                       )
@@ -1614,7 +1636,7 @@ export function EmailViewer({
 
               {/* Non-image attachments in a compact list */}
               {email.attachments.filter(a =>
-                !a.cid &&
+                !isInlineAttachment(a) &&
                 !a.type?.startsWith('image/') &&
                 !['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(a.name?.split('.').pop()?.toLowerCase() || '')
               ).length > 0 && (
@@ -1622,7 +1644,7 @@ export function EmailViewer({
                   <Paperclip className="w-4 h-4 text-muted-foreground" />
                   {email.attachments
                     .filter(a =>
-                      !a.cid &&
+                      !isInlineAttachment(a) &&
                       !a.type?.startsWith('image/') &&
                       !['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(a.name?.split('.').pop()?.toLowerCase() || '')
                     )
