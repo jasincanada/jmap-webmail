@@ -276,6 +276,11 @@ This document tracks the development status and planned features for JMAP Webmai
 - [x] Attachments render for mail originating from providers that stamp a Content-ID on every part (#58)
 - [x] Email-to-self delivered instead of being dropped by the MTA's duplicate-message check (#60)
 
+### Release 1.5.2 (2026-05-14)
+- [x] Patch CVE-2026-44578 (Next.js WebSocket SSRF, CVSS 8.6) by upgrading to 16.2.6, plus eleven other May 2026 advisories
+- [x] Bulk delete honours the "delete to trash" setting instead of always hard-deleting
+- [x] Favicon unread badge clears on the zero transition instead of sticking until the next refresh
+
 ## Planned Features
 
 ### Real-time and PWA (1.6.0)

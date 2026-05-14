@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.5.2 (2026-05-14)
+
+### Security
+
+- **Next.js upgraded to 16.2.6 to patch CVE-2026-44578**
+  (GHSA-c4j6-fc7j-m34r, CVSS 8.6). The framework's WebSocket upgrade
+  handler did not apply the safe-rewrite checks used for normal HTTP
+  requests, so a single unauthenticated HTTP upgrade could cause the
+  Node server to issue an internal request to any host reachable on
+  port 80 and return the response to the attacker. Self-hosted
+  deployments (the only mode this project supports) were exposed to
+  cloud metadata endpoints, internal APIs, and admin panels. The bump
+  to 16.2.6 also pulls in eleven other May 2026 advisories covering
+  middleware/proxy bypass, denial of service, and a React patch.
+- **`next-intl` upgraded to patch GHSA-4c35-wcg5-mm9h**, a prototype
+  pollution issue in the experimental precompile path. This project
+  doesn't enable that path, but the dependency is patched anyway.
+- **Hardening note for self-hosters**: a public PoC for CVE-2026-44578
+  exists. Redeploy on `rootfr/jmap-webmail:1.5.2` (or `latest`) and,
+  where you can, keep the container off untrusted networks and block
+  egress to cloud metadata endpoints (AWS IMDS, GCP metadata).
+
+### Fixes
+
+- **Bulk delete now honours the "delete to trash" setting**: emptying
+  a selection from the toolbar always performed a hard delete, even
+  when the user had configured deletes to move to Trash first. The
+  store path used by the toolbar now routes through the same trash
+  helper as the single-message delete action, so the behaviour matches
+  Settings.
+- **Favicon clears the unread badge as soon as the inbox empties**:
+  on `unreadCount === 0` the favicon kept the last-painted badge until
+  the next refresh because the redraw skipped the zero case. The hook
+  now repaints the base icon on the zero transition so the badge
+  disappears immediately.
+
 ## 1.5.1 (2026-04-17)
 
 ### Fixes

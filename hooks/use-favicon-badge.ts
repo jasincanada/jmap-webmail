@@ -34,9 +34,7 @@ export function useFaviconBadge(count: number) {
           const img = new Image();
           img.onload = () => {
             imageRef.current = img;
-            if (countRef.current > 0) {
-              applyBadge(canvas, img, countRef.current);
-            }
+            renderFavicon(canvas, img, countRef.current);
           };
           img.src = reader.result as string;
         };
@@ -52,15 +50,34 @@ export function useFaviconBadge(count: number) {
   }, []);
 
   useEffect(() => {
-    if (count <= 0) {
-      clearDynamicFavicon();
-      return;
-    }
-
-    if (canvasRef.current) {
-      applyBadge(canvasRef.current, imageRef.current, count);
+    if (canvasRef.current && imageRef.current) {
+      renderFavicon(canvasRef.current, imageRef.current, count);
     }
   }, [count]);
+}
+
+function renderFavicon(
+  canvas: HTMLCanvasElement,
+  image: HTMLImageElement,
+  count: number,
+) {
+  if (count > 0) {
+    applyBadge(canvas, image, count);
+  } else {
+    // Paint the plain base icon into the dynamic link instead of removing
+    // it. Chromium caches the previously-painted badged favicon until a
+    // new href replaces it; simply removing the link leaves the stale
+    // badge visible until the tab is reloaded.
+    drawBase(canvas, image);
+  }
+}
+
+function drawBase(canvas: HTMLCanvasElement, image: HTMLImageElement) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.clearRect(0, 0, SIZE, SIZE);
+  ctx.drawImage(image, 0, 0, SIZE, SIZE);
+  setDynamicFavicon(canvas.toDataURL("image/png"));
 }
 
 function applyBadge(
