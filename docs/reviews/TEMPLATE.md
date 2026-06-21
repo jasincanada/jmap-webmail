@@ -14,6 +14,7 @@
 |----------|---------|--------|----------|
 | jasmail-code-reviewer | SHIP CLEAR / BLOCKED | 0 | no |
 | jasmail-security-reviewer | SHIP CLEAR / BLOCKED | 0 | no |
+| jasmail-vulnerability-reviewer | SHIP CLEAR / BLOCKED | 0 | no |
 | jasmail-test-reviewer | SHIP CLEAR / BLOCKED | 0 | no |
 | jasmail-plan-reviewer | SHIP CLEAR / BLOCKED | 0 | no |
 | jasmail-a11y-reviewer | SHIP CLEAR / BLOCKED | 0 | no |
@@ -43,7 +44,8 @@
 | Gate | Result |
 |------|--------|
 | `npm run check:ship:maximum -- --version X.Y.Z` | pass |
-| `npm run diff:scope` (maximum mode) | all 7 specialists |
+| `npm run check:vulnerabilities` | pass |
+| `npm run diff:scope` (maximum mode) | all 8 specialists |
 | `docker compose build jasmail` | pass |
 
 ## Final verdict

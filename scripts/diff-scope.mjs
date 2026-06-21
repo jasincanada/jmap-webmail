@@ -66,6 +66,7 @@ const specialists = {
   always: [
     'jasmail-code-reviewer',
     'jasmail-security-reviewer',
+    'jasmail-vulnerability-reviewer',
     'jasmail-test-reviewer',
     'jasmail-plan-reviewer',
   ],

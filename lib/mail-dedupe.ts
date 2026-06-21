@@ -2,8 +2,10 @@ import {
   buildDedupeKey,
   DEFAULT_DEDUPE_MATCH_CONFIG,
   DedupeScanError,
+  deriveDedupeLimits,
   hasEnabledCriteria,
   validateDedupeScan,
+  type DedupeBrowserLimits,
   type DedupeMatchConfig,
 } from '@/lib/dedupe-config';
 import type {
@@ -24,8 +26,16 @@ export const DUPES_FOLDER = 'dupes';
 export const DELETED_FOLDER = 'deleted';
 export const DEDUPE_DELETED_RETENTION_DAYS = 90;
 const SKIP_ROLES = new Set(['trash', 'junk']);
-const BATCH = 500;
 const SCAN_CONCURRENCY = 3;
+
+/** JMAP Email/get batch size — follows the connected server's `maxObjectsInGet`. */
+export function getDedupeBatchSize(client: JMAPClient): number {
+  return client.getMaxObjectsInGet();
+}
+
+export function getDedupeLimits(client: JMAPClient): DedupeBrowserLimits {
+  return deriveDedupeLimits(getDedupeBatchSize(client));
+}
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -441,11 +451,12 @@ export async function batchApplyDuplicateMoves(
     pending.set(bucketKey, bucket);
   }
 
+  const batchSize = getDedupeBatchSize(client);
   let moved = 0;
   for (const bucket of pending.values()) {
-    for (let offset = 0; offset < bucket.emailIds.length; offset += BATCH) {
+    for (let offset = 0; offset < bucket.emailIds.length; offset += batchSize) {
       throwIfAborted(signal);
-      const chunk = bucket.emailIds.slice(offset, offset + BATCH);
+      const chunk = bucket.emailIds.slice(offset, offset + batchSize);
       onProgress?.(`Moving ${chunk.length} duplicate(s)`);
       await client.moveEmailsBetweenMailboxes(
         chunk,
@@ -626,7 +637,9 @@ export async function scanFolderDuplicates(
     };
   }
 
-  validateDedupeScan(total, config);
+  const batchSize = getDedupeBatchSize(client);
+  const limits = getDedupeLimits(client);
+  validateDedupeScan(total, config, limits);
 
   const groups = new Map<string, Email[]>();
   let position = 0;
@@ -637,15 +650,18 @@ export async function scanFolderDuplicates(
     const page = await client.queryMailboxEmailIdsPage(
       mailboxRef.jmapId,
       position,
-      BATCH,
+      batchSize,
       mailboxRef.accountId,
       signal,
     );
     if (page.ids.length === 0) {
       if (position < total) {
-        throw new DedupeScanError(
-          `Scan interrupted: no messages returned at position ${position.toLocaleString()} of ${total.toLocaleString()}.`,
-        );
+        throw new DedupeScanError({
+          code: 'scan_interrupted',
+          limits,
+          message:
+            `Scan interrupted: no messages returned at position ${position.toLocaleString()} of ${total.toLocaleString()}.`,
+        });
       }
       break;
     }
@@ -808,10 +824,11 @@ export async function runMailboxDedupe(
     pending.set(dupesStoreId, bucket);
   }
 
+  const batchSize = getDedupeBatchSize(client);
   for (const bucket of pending.values()) {
-    for (let offset = 0; offset < bucket.emailIds.length; offset += BATCH) {
+    for (let offset = 0; offset < bucket.emailIds.length; offset += batchSize) {
       throwIfAborted(signal);
-      const chunk = bucket.emailIds.slice(offset, offset + BATCH);
+      const chunk = bucket.emailIds.slice(offset, offset + batchSize);
       onProgress?.(`Moving ${chunk.length} duplicate(s)`);
       await client.moveEmailsBetweenMailboxes(
         chunk,
@@ -865,10 +882,11 @@ export async function runFolderDedupe(
 
   let moved = 0;
   const emailIds = scan.moves.map((move) => move.emailId);
+  const batchSize = getDedupeBatchSize(client);
 
-  for (let offset = 0; offset < emailIds.length; offset += BATCH) {
+  for (let offset = 0; offset < emailIds.length; offset += batchSize) {
     throwIfAborted(signal);
-    const chunk = emailIds.slice(offset, offset + BATCH);
+    const chunk = emailIds.slice(offset, offset + batchSize);
     onProgress?.(`Moving ${chunk.length} duplicate(s)`);
     await client.moveEmailsBetweenMailboxes(
       chunk,

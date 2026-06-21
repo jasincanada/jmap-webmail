@@ -1,6 +1,6 @@
 # JasMail Development Operating System
 
-**Version:** 2.2.0 · **Mode:** `maximum` (Option C) · **Skills:** `.grok/skills/jasmail-*`
+**Version:** 2.3.0 · **Mode:** `maximum` (Option C) · **Skills:** `.grok/skills/jasmail-*`
 
 The JasMail dev OS ships **only** when all specialists report `SHIP CLEAR: 0` and maximum mechanical gates pass.
 
@@ -16,10 +16,10 @@ npm run check:ship
 npm run upstream:triage
 
 # Before tagging vX.Y.Z
-npm run diff:scope                            # maximum mode = all 7 specialists
+npm run diff:scope                            # maximum mode = all 8 specialists
 # … /jasmail-dev-os through review + bugfix loops …
 # Write docs/reviews/YYYY-MM-DD-vX.Y.Z-review.md
-npm run check:ship:maximum -- --version X.Y.Z # build + dedupe + E2E + CVE check + artifact
+npm run check:ship:maximum -- --version X.Y.Z # build + dedupe + E2E + vuln scan + CVE check + artifact
 git tag vX.Y.Z && git push fork main --tags   # pre-push enforces maximum gate
 ```
 
@@ -30,6 +30,7 @@ git tag vX.Y.Z && git push fork main --tags   # pre-push enforces maximum gate
 | `/jasmail-dev-os` | Full release cycle (maximum mode) |
 | `/jasmail-upstream-maintainer` | Upstream merge — same pain as features |
 | `/jasmail-implementer` | Single plan todo |
+| `/jasmail-github-sync` | Push safe commits to fork; keep issues aligned (no tag) |
 
 ## Architecture (Option C)
 
@@ -39,7 +40,7 @@ flowchart TD
     plan --> impl[jasmail-implementer]
     impl --> tests[jasmail-test-writer]
     tests --> micro[jasmail-plan-reviewer]
-    micro -->|all todos| round[7 specialists — no skips]
+    micro -->|all todos| round[8 specialists — no skips]
     round --> artifact[review.md SHIP CLEAR]
     artifact -->|BLOCKED| fix[jasmail-bugfixer]
     fix --> round
@@ -50,7 +51,7 @@ flowchart TD
 
 ## Specialist roster
 
-All **7** reviewers run on every release (no `diff:scope` skips in maximum mode).
+All **8** reviewers run on every release (no `diff:scope` skips in maximum mode).
 
 | Skill | Role |
 |-------|------|
@@ -59,6 +60,7 @@ All **7** reviewers run on every release (no `diff:scope` skips in maximum mode)
 | [jasmail-implementer](../.grok/skills/jasmail-implementer/SKILL.md) | Implementation |
 | [jasmail-code-reviewer](../.grok/skills/jasmail-code-reviewer/SKILL.md) | General quality |
 | [jasmail-security-reviewer](../.grok/skills/jasmail-security-reviewer/SKILL.md) | Auth, JMAP, SQL |
+| [jasmail-vulnerability-reviewer](../.grok/skills/jasmail-vulnerability-reviewer/SKILL.md) | CVEs, secrets, exploits |
 | [jasmail-test-reviewer](../.grok/skills/jasmail-test-reviewer/SKILL.md) | Coverage |
 | [jasmail-plan-reviewer](../.grok/skills/jasmail-plan-reviewer/SKILL.md) | Plan ↔ code |
 | [jasmail-a11y-reviewer](../.grok/skills/jasmail-a11y-reviewer/SKILL.md) | Accessibility |
@@ -73,7 +75,7 @@ Full index: [.grok/skills/README.md](../.grok/skills/README.md)
 |---------|----------|
 | `npm run check:ship` | lint, typecheck, test, locales |
 | `npm run check:ship:full` | + build |
-| `npm run check:ship:maximum` | + dedupe suite + Playwright E2E + upstream CVE check |
+| `npm run check:ship:maximum` | + dedupe suite + Playwright E2E + `check:vulnerabilities` + upstream CVE check |
 
 | Hook / CI | When |
 |-----------|------|

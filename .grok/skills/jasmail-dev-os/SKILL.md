@@ -41,6 +41,7 @@ You **coordinate only**. You do not implement features, fix bugs, or tag release
 | `rereview-round-1` | Repeat until all SHIP CLEAR |
 | `build-gates` | eslint, typecheck, test, locales, build, docker |
 | `document` | release-notes, tester-docs, product-features, github-issues |
+| `github-sync` | Push safe commits to fork; align issues with repo (optional between releases) |
 | `ship` | commit, tag, push |
 
 Mark exactly one `in_progress` at a time. Append new round ids as needed.
@@ -98,6 +99,7 @@ Launch **all** applicable specialists concurrently:
 |-------|---------|-----------|
 | `jasmail-code-reviewer` | Yes | — |
 | `jasmail-security-reviewer` | Yes | — |
+| `jasmail-vulnerability-reviewer` | Yes | — |
 | `jasmail-test-reviewer` | Yes | — |
 | `jasmail-plan-reviewer` | Yes | — |
 | `jasmail-a11y-reviewer` | **Always** (Option C) | never skip |
@@ -118,6 +120,7 @@ Commits: ...
 |----------|---------|--------|
 | code | SHIP CLEAR / BLOCKED | N |
 | security | ... | |
+| vulnerability | ... | |
 ...
 
 ## Merged findings (by severity)
@@ -156,7 +159,7 @@ Option C (`DEV_OS_MODE=maximum`): all specialists in `reviewers` — **ignore** 
 ```bash
 cd /home/jas/dockersites/email/jmap-webmail
 npm run check:ship                              # quick gate (pre-commit)
-npm run check:ship:maximum -- --version X.Y.Z   # build + dedupe + E2E + CVE + artifact
+npm run check:ship:maximum -- --version X.Y.Z   # build + dedupe + E2E + vuln scan + CVE + artifact
 cd /home/jas/dockersites/email && docker compose build jasmail   # every release
 ```
 
@@ -182,6 +185,7 @@ Record pass/fail in review artifact and RELEASE_CHECKLIST Phase 5.
 | `jasmail-tester-docs` | docs/TESTER_TASKS.md section |
 | `jasmail-product-features` | docs/PRODUCT_FEATURES.md |
 | `jasmail-github-issues` | Close/open issues; paste `gh` output into checklist |
+| `jasmail-github-sync` | Commit/push safe work to fork between releases; never tag |
 
 ---
 
@@ -206,6 +210,7 @@ Human hub: `docs/DEV_OS.md` · Maintenance: `docs/DEV_OS_MAINTENANCE.md`
 | `jasmail-test-writer` | Tests after each todo |
 | `jasmail-code-reviewer` | General quality, patterns |
 | `jasmail-security-reviewer` | Auth, JMAP safety, SQL |
+| `jasmail-vulnerability-reviewer` | CVEs, secrets, supply chain, exploits |
 | `jasmail-test-reviewer` | Coverage gaps |
 | `jasmail-plan-reviewer` | Plan ↔ code alignment |
 | `jasmail-a11y-reviewer` | Accessibility |
@@ -215,7 +220,8 @@ Human hub: `docs/DEV_OS.md` · Maintenance: `docs/DEV_OS_MAINTENANCE.md`
 | `jasmail-release-notes` | Changelogs |
 | `jasmail-tester-docs` | QA tasks |
 | `jasmail-product-features` | Feature catalog |
-| `jasmail-github-issues` | Issue tracker sync |
+| `jasmail-github-issues` | Issue tracker sync at release |
+| `jasmail-github-sync` | Fork push + issue alignment between releases |
 | `jasmail-upstream-maintainer` | Fork ↔ upstream merge |
 
 ## Repo paths

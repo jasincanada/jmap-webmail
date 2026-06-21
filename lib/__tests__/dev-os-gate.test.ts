@@ -58,11 +58,12 @@ SHIP BLOCKED: 2 | SHIP CLEAR: 0
     expect(bad.ok).toBe(false);
   });
 
-  it('maximumGateStepNames includes docker-build', () => {
+  it('maximumGateStepNames includes docker-build and vulnerability-scan', () => {
     const steps = maximumGateStepNames({ isMaximum: true, full: true, version: '1.7.1' });
     expect(steps).toContain('docker-build');
     expect(steps).toContain('review-artifact');
     expect(steps).toContain('e2e');
+    expect(steps).toContain('vulnerability-scan');
   });
 });
 

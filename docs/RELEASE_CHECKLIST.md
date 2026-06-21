@@ -35,10 +35,11 @@ For each todo:
 - [ ] `npm run upstream:triage` — no `cve-pending` status
 - [ ] If upstream ahead: merged, cherry-picked, or deferred with `MERGE_LOG` entry
 
-## Phase 3 — Full review round (all 7 specialists — no skips)
+## Phase 3 — Full review round (all 8 specialists — no skips)
 
 - [ ] `jasmail-code-reviewer` — SHIP CLEAR
 - [ ] `jasmail-security-reviewer` — SHIP CLEAR
+- [ ] `jasmail-vulnerability-reviewer` — SHIP CLEAR (`npm run check:vulnerabilities` pass)
 - [ ] `jasmail-test-reviewer` — SHIP CLEAR
 - [ ] `jasmail-plan-reviewer` — SHIP CLEAR
 - [ ] `jasmail-a11y-reviewer` — SHIP CLEAR
@@ -55,8 +56,8 @@ Review artifact written with merged findings and final verdict.
 
 ## Phase 5 — Build gates (maximum)
 
-- [ ] `npm run check:ship:maximum -- --version X.Y.Z` (build + dedupe + E2E + CVE check + review artifact)
-- [ ] `npm run diff:scope` logged in review artifact (maximum mode = all specialists)
+- [ ] `npm run check:ship:maximum -- --version X.Y.Z` (build + dedupe + E2E + vuln scan + CVE check + review artifact)
+- [ ] `npm run diff:scope` logged in review artifact (maximum mode = all 8 specialists)
 - [ ] `docker compose build jasmail` (every release)
 
 ## Phase 6 — Document & track

@@ -8,7 +8,9 @@ description: >
 
 # JasMail Security Reviewer
 
-Dedicated **security** reviewer. Findings block release.
+Dedicated **application security** reviewer (auth, JMAP, SQL, XSS). Findings block release.
+
+> Pair with `jasmail-vulnerability-reviewer` every round — that agent owns CVEs, secrets, and supply-chain scans (`npm run check:vulnerabilities`).
 
 ## Scope
 

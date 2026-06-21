@@ -34,6 +34,7 @@
     "check:ship": "node scripts/ship-gate.mjs",
     "check:ship:full": "node scripts/ship-gate.mjs --full",
     "check:ship:maximum": "node scripts/ship-gate.mjs --maximum",
+    "check:vulnerabilities": "node scripts/vulnerability-scan.mjs",
     "test:e2e": "playwright test",
     "upstream:triage": "node scripts/upstream-status.mjs --fetch --human",
     "diff:scope": "node scripts/diff-scope.mjs",

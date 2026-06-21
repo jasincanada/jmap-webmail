@@ -37,6 +37,10 @@ if (isMaximum) {
   });
   steps.push({ name: 'e2e', cmd: 'npx playwright test' });
   steps.push({
+    name: 'vulnerability-scan',
+    cmd: 'node scripts/vulnerability-scan.mjs',
+  });
+  steps.push({
     name: 'upstream-cve-check',
     cmd: 'node scripts/upstream-status.mjs --fetch --strict',
   });

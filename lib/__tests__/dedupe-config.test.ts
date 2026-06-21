@@ -6,13 +6,33 @@ import {
   DEDUPE_BODY_MAX_FOLDER_MESSAGES,
   DEDUPE_BROWSER_HARD_MAX,
   DEDUPE_CONFIRM_THRESHOLD,
+  DEDUPE_DEFAULT_MAX_OBJECTS_IN_GET,
+  DEDUPE_LIMIT_MULTIPLIERS,
   DEFAULT_DEDUPE_MATCH_CONFIG,
   DedupeScanError,
   dedupeFetchProperties,
   dedupeScanNeedsConfirmation,
+  deriveDedupeLimits,
   normalizeMessageId,
   validateDedupeScan,
 } from '@/lib/dedupe-config';
+
+describe('deriveDedupeLimits', () => {
+  it('scales limits from maxObjectsInGet', () => {
+    const limits = deriveDedupeLimits(500);
+    expect(limits.maxObjectsInGet).toBe(500);
+    expect(limits.confirmThreshold).toBe(500 * DEDUPE_LIMIT_MULTIPLIERS.confirm);
+    expect(limits.bodyMaxFolderMessages).toBe(500 * DEDUPE_LIMIT_MULTIPLIERS.body);
+    expect(limits.browserHardMax).toBe(500 * DEDUPE_LIMIT_MULTIPLIERS.hardMax);
+  });
+
+  it('matches Stalwart default exports', () => {
+    const limits = deriveDedupeLimits(DEDUPE_DEFAULT_MAX_OBJECTS_IN_GET);
+    expect(limits.confirmThreshold).toBe(DEDUPE_CONFIRM_THRESHOLD);
+    expect(limits.bodyMaxFolderMessages).toBe(DEDUPE_BODY_MAX_FOLDER_MESSAGES);
+    expect(limits.browserHardMax).toBe(DEDUPE_BROWSER_HARD_MAX);
+  });
+});
 
 describe('validateDedupeScan', () => {
   it('allows small folders', () => {
@@ -28,6 +48,18 @@ describe('validateDedupeScan', () => {
     const config = { ...DEFAULT_DEDUPE_MATCH_CONFIG, body: true };
     expect(() => validateDedupeScan(DEDUPE_BODY_MAX_FOLDER_MESSAGES + 1, config))
       .toThrow(DedupeScanError);
+  });
+
+  it('tags body limit errors for CLI guidance', () => {
+    const config = { ...DEFAULT_DEDUPE_MATCH_CONFIG, body: true };
+    const limits = deriveDedupeLimits(500);
+    try {
+      validateDedupeScan(limits.bodyMaxFolderMessages + 1, config, limits);
+    } catch (error) {
+      expect(error).toBeInstanceOf(DedupeScanError);
+      expect((error as DedupeScanError).code).toBe('body_limit');
+      expect((error as DedupeScanError).suggestCli).toBe(true);
+    }
   });
 });
 

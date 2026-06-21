@@ -47,7 +47,7 @@ export function validateReviewArtifactContent(content) {
 export function maximumGateStepNames({ isMaximum, full, version }) {
   const steps = ['eslint', 'typecheck', 'test', 'locales'];
   if (full) steps.push('build');
-  if (isMaximum) steps.push('dedupe-suite', 'e2e', 'upstream-cve-check', 'docker-build');
+  if (isMaximum) steps.push('dedupe-suite', 'e2e', 'vulnerability-scan', 'upstream-cve-check', 'docker-build');
   if (version) steps.push('review-artifact');
   return steps;
 }

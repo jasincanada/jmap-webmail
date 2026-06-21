@@ -16,39 +16,104 @@ export interface DedupeMatchConfig {
   threadId: boolean;
 }
 
+/** Stalwart default `maxObjectsInGet` — used when session caps are unavailable. */
+export const DEDUPE_DEFAULT_MAX_OBJECTS_IN_GET = 500;
+
+/** Multipliers applied to the server's `maxObjectsInGet` for browser guardrails. */
+export const DEDUPE_LIMIT_MULTIPLIERS = {
+  confirm: 20,
+  body: 4,
+  hardMax: 100,
+} as const;
+
+export interface DedupeBrowserLimits {
+  maxObjectsInGet: number;
+  confirmThreshold: number;
+  bodyMaxFolderMessages: number;
+  browserHardMax: number;
+}
+
+/** Derive browser dedupe limits from the JMAP server's batch cap (Stalwart default: 500). */
+export function deriveDedupeLimits(maxObjectsInGet: number): DedupeBrowserLimits {
+  const batch = Math.max(1, Math.floor(maxObjectsInGet));
+  return {
+    maxObjectsInGet: batch,
+    confirmThreshold: batch * DEDUPE_LIMIT_MULTIPLIERS.confirm,
+    bodyMaxFolderMessages: batch * DEDUPE_LIMIT_MULTIPLIERS.body,
+    browserHardMax: batch * DEDUPE_LIMIT_MULTIPLIERS.hardMax,
+  };
+}
+
+const STALWART_DEFAULT_LIMITS = deriveDedupeLimits(DEDUPE_DEFAULT_MAX_OBJECTS_IN_GET);
+
 /** Above this count the browser asks for explicit confirmation before scanning. */
-export const DEDUPE_CONFIRM_THRESHOLD = 10_000;
+export const DEDUPE_CONFIRM_THRESHOLD = STALWART_DEFAULT_LIMITS.confirmThreshold;
 
 /** Browser scan refuses above this count — use the CLI (`mail-dedupe`) instead. */
-export const DEDUPE_BROWSER_HARD_MAX = 50_000;
+export const DEDUPE_BROWSER_HARD_MAX = STALWART_DEFAULT_LIMITS.browserHardMax;
 
 /** Body matching in the browser is limited to preview text above this folder size. */
-export const DEDUPE_BODY_MAX_FOLDER_MESSAGES = 2_000;
+export const DEDUPE_BODY_MAX_FOLDER_MESSAGES = STALWART_DEFAULT_LIMITS.bodyMaxFolderMessages;
+
+export type DedupeScanErrorCode = 'folder_too_large' | 'body_limit' | 'scan_interrupted';
 
 export class DedupeScanError extends Error {
-  constructor(message: string) {
-    super(message);
+  readonly code: DedupeScanErrorCode;
+  readonly suggestCli: boolean;
+  readonly messageCount?: number;
+  readonly limits: DedupeBrowserLimits;
+
+  constructor(options: {
+    message: string;
+    code: DedupeScanErrorCode;
+    suggestCli?: boolean;
+    messageCount?: number;
+    limits?: DedupeBrowserLimits;
+  }) {
+    super(options.message);
     this.name = 'DedupeScanError';
+    this.code = options.code;
+    this.suggestCli = options.suggestCli ?? false;
+    this.messageCount = options.messageCount;
+    this.limits = options.limits ?? STALWART_DEFAULT_LIMITS;
   }
 }
 
-export function validateDedupeScan(messageCount: number, config: DedupeMatchConfig): void {
-  if (messageCount > DEDUPE_BROWSER_HARD_MAX) {
-    throw new DedupeScanError(
-      `This folder has ${messageCount.toLocaleString()} messages — too large for browser dedupe. ` +
+export function validateDedupeScan(
+  messageCount: number,
+  config: DedupeMatchConfig,
+  limits: DedupeBrowserLimits = STALWART_DEFAULT_LIMITS,
+): void {
+  if (messageCount > limits.browserHardMax) {
+    throw new DedupeScanError({
+      code: 'folder_too_large',
+      suggestCli: true,
+      messageCount,
+      limits,
+      message:
+        `This folder has ${messageCount.toLocaleString()} messages — too large for browser dedupe ` +
+        `(limit ${limits.browserHardMax.toLocaleString()} for batch size ${limits.maxObjectsInGet}). ` +
         'Use the mail-dedupe CLI instead.',
-    );
+    });
   }
-  if (config.body && messageCount > DEDUPE_BODY_MAX_FOLDER_MESSAGES) {
-    throw new DedupeScanError(
-      `Body matching is disabled for folders over ${DEDUPE_BODY_MAX_FOLDER_MESSAGES.toLocaleString()} messages ` +
+  if (config.body && messageCount > limits.bodyMaxFolderMessages) {
+    throw new DedupeScanError({
+      code: 'body_limit',
+      suggestCli: true,
+      messageCount,
+      limits,
+      message:
+        `Body matching is disabled for folders over ${limits.bodyMaxFolderMessages.toLocaleString()} messages ` +
         `(${messageCount.toLocaleString()} here). Disable body criterion or use the CLI.`,
-    );
+    });
   }
 }
 
-export function dedupeScanNeedsConfirmation(messageCount: number): boolean {
-  return messageCount > DEDUPE_CONFIRM_THRESHOLD;
+export function dedupeScanNeedsConfirmation(
+  messageCount: number,
+  limits: DedupeBrowserLimits = STALWART_DEFAULT_LIMITS,
+): boolean {
+  return messageCount > limits.confirmThreshold;
 }
 
 export const DEFAULT_DEDUPE_MATCH_CONFIG: DedupeMatchConfig = {

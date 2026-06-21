@@ -23,6 +23,7 @@
 |-------|-------------|
 | [jasmail-code-reviewer](jasmail-code-reviewer/SKILL.md) | Yes |
 | [jasmail-security-reviewer](jasmail-security-reviewer/SKILL.md) | Yes |
+| [jasmail-vulnerability-reviewer](jasmail-vulnerability-reviewer/SKILL.md) | Yes |
 | [jasmail-test-reviewer](jasmail-test-reviewer/SKILL.md) | Yes |
 | [jasmail-plan-reviewer](jasmail-plan-reviewer/SKILL.md) | Yes |
 | [jasmail-a11y-reviewer](jasmail-a11y-reviewer/SKILL.md) | Always (maximum mode) |
@@ -31,6 +32,12 @@
 | [jasmail-upstream-maintainer](jasmail-upstream-maintainer/SKILL.md) | Upstream merges (+8th) |
 
 Policy: [docs/DEV_OS_POLICY.md](../../docs/DEV_OS_POLICY.md)
+
+## GitHub sync (between releases)
+
+| Skill | Slash | Purpose |
+|-------|-------|---------|
+| [jasmail-github-sync](jasmail-github-sync/SKILL.md) | `/jasmail-github-sync` | Commit/push safe work to fork; update issues — **no tags** |
 
 ## Documentation bots (post SHIP CLEAR)
 

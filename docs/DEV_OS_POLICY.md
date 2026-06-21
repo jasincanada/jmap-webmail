@@ -48,6 +48,7 @@ Under Option C, **every release and upstream merge** runs all specialists:
 | jasmail-upstream-maintainer | Upstream merges only |
 | jasmail-code-reviewer | Yes |
 | jasmail-security-reviewer | Yes |
+| jasmail-vulnerability-reviewer | Yes |
 | jasmail-test-reviewer | Yes |
 | jasmail-plan-reviewer | Yes |
 | jasmail-a11y-reviewer | Yes |
@@ -62,7 +63,7 @@ Set `DEV_OS_MODE=maximum` (default in this repo) or use `npm run diff:scope` whi
 |---------|------|----------|
 | `npm run check:ship` | Every commit (pre-commit) | lint, typecheck, test, locales |
 | `npm run check:ship:full` | PR / main push | + production build |
-| `npm run check:ship:maximum` | Before **every tag** and **every upstream merge** | + dedupe suite + E2E + upstream strict check + review artifact |
+| `npm run check:ship:maximum` | Before **every tag** and **every upstream merge** | + dedupe suite + E2E + `check:vulnerabilities` + upstream strict check + review artifact |
 
 Upstream merges also require:
 

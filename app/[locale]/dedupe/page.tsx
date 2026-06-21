@@ -4,10 +4,15 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { Loader2 } from 'lucide-react';
 import { DedupeOperationsView } from '@/components/dedupe/dedupe-operations-view';
+import { DedupePageShell } from '@/components/dedupe/dedupe-page-shell';
 import { useAuthStore } from '@/stores/auth-store';
 
 function DedupePageContent() {
-  return <DedupeOperationsView />;
+  return (
+    <DedupePageShell>
+      <DedupeOperationsView />
+    </DedupePageShell>
+  );
 }
 
 export default function DedupePage() {
@@ -34,16 +39,14 @@ export default function DedupePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background overflow-y-auto">
-      <Suspense
-        fallback={
-          <div className="flex h-64 items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        }
-      >
-        <DedupePageContent />
-      </Suspense>
-    </div>
+    <Suspense
+      fallback={
+        <div className="flex h-screen items-center justify-center bg-background">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <DedupePageContent />
+    </Suspense>
   );
 }

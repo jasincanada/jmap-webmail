@@ -16,6 +16,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DedupeActionPicker } from '@/components/dedupe/dedupe-action-picker';
+import { DedupeCliPanel } from '@/components/dedupe/dedupe-cli-panel';
+import { DedupeLimitsPanel } from '@/components/dedupe/dedupe-limits-panel';
+import { DedupeRecentRuns } from '@/components/dedupe/dedupe-recent-runs';
 import { useAuthStore } from '@/stores/auth-store';
 import { useEmailStore } from '@/stores/email-store';
 import { useDedupeActionStore } from '@/stores/dedupe-action-store';
@@ -25,6 +28,7 @@ import { useDedupeOperationsStore } from '@/stores/dedupe-operations-store';
 import { createBrowserAuditWriter } from '@/lib/dedupe-audit/browser-writer';
 import { dedupeAuditClient } from '@/lib/dedupe-audit/client';
 import {
+  DedupeScanError,
   dedupeScanNeedsConfirmation,
   hasEnabledCriteria,
 } from '@/lib/dedupe-config';
@@ -35,6 +39,7 @@ import {
   DedupeAbortedError,
   applyDuplicateAction,
   getAccountScanMaxFolderCount,
+  getDedupeLimits,
   rebuildScanWithKeeperPolicy,
   scanFolderDuplicates,
   scanMailboxDuplicates,
@@ -219,6 +224,13 @@ export function DedupeOperationsView() {
   const [destinationMailboxId, setDestinationMailboxId] = useState<string | null>(
     defaultDestinationMailboxId,
   );
+  const [runsRefreshKey, setRunsRefreshKey] = useState(0);
+  const [suggestCli, setSuggestCli] = useState(false);
+
+  const serverLimits = useMemo(
+    () => (client ? getDedupeLimits(client) : null),
+    [client],
+  );
 
   const folderParam = searchParams.get('folder');
   const rawActionParam = searchParams.get('action') || 'scan';
@@ -292,6 +304,7 @@ export function DedupeOperationsView() {
       mailboxId: folderParam,
       mailboxName: resolvedMailbox?.name ?? null,
     });
+    setSuggestCli(false);
     setScanningMailbox(isAccount ? null : folderParam);
 
     let auditRunId: string | null = null;
@@ -338,6 +351,7 @@ export function DedupeOperationsView() {
           },
         });
         completeAccount(outcome);
+        setRunsRefreshKey((value) => value + 1);
         toast.success(t('account_scan_done', { count: outcome.duplicateCount }));
         return;
       }
@@ -371,6 +385,7 @@ export function DedupeOperationsView() {
         },
       });
       completeFolder(result);
+      setRunsRefreshKey((value) => value + 1);
       if (result.duplicateCount > 0) {
         toast.success(t('folder_scan_done', { count: result.duplicateCount, folder: mailbox.name }));
       } else {
@@ -379,6 +394,7 @@ export function DedupeOperationsView() {
     } catch (err) {
       if (auditRunId) {
         void dedupeAuditClient.updateRun(auditRunId, { status: 'error' });
+        setRunsRefreshKey((value) => value + 1);
       }
       if (
         err instanceof DedupeAbortedError ||
@@ -388,6 +404,9 @@ export function DedupeOperationsView() {
         return;
       }
       const message = err instanceof Error ? err.message : t('failed');
+      if (err instanceof DedupeScanError && err.suggestCli) {
+        setSuggestCli(true);
+      }
       fail(message);
       toast.error(message);
     } finally {
@@ -498,10 +517,12 @@ export function DedupeOperationsView() {
       });
 
       completeApply(result);
+      setRunsRefreshKey((value) => value + 1);
       toast.success(t('apply_done', { count: result.moved }));
     } catch (err) {
       if (applyRunId) {
         void dedupeAuditClient.updateRun(applyRunId, { status: 'error' });
+        setRunsRefreshKey((value) => value + 1);
       }
       if (
         err instanceof DedupeAbortedError ||
@@ -543,13 +564,14 @@ export function DedupeOperationsView() {
 
   const requestScanConfirmation = useCallback(async (): Promise<boolean> => {
     if (!client) return true;
+    const limits = getDedupeLimits(client);
 
     if (scopeParam === 'folder' && folderParam && resolvedMailbox) {
       const mailboxRef = resolvedMailbox.originalId || resolvedMailbox.id;
       const accountId = resolvedMailbox.isShared ? resolvedMailbox.accountId : undefined;
       const total = await client.countMailboxEmails(mailboxRef, accountId);
       setFolderMessageCount(total);
-      if (dedupeScanNeedsConfirmation(total)) {
+      if (dedupeScanNeedsConfirmation(total, limits)) {
         setAwaitingConfirm('scan');
         return false;
       }
@@ -560,7 +582,7 @@ export function DedupeOperationsView() {
       const mailboxList = mailboxes.length > 0 ? mailboxes : await client.getAllMailboxes();
       const maxCount = await getAccountScanMaxFolderCount(client, mailboxList);
       setFolderMessageCount(maxCount);
-      if (dedupeScanNeedsConfirmation(maxCount)) {
+      if (dedupeScanNeedsConfirmation(maxCount, limits)) {
         setAwaitingConfirm('scan');
         return false;
       }
@@ -655,6 +677,14 @@ export function DedupeOperationsView() {
         </div>
         <PhaseBadge phase={phase} />
       </div>
+
+      {serverLimits && (
+        <DedupeLimitsPanel limits={serverLimits} />
+      )}
+
+      <DedupeCliPanel />
+
+      <DedupeRecentRuns activeRunId={runId} refreshKey={runsRefreshKey} />
 
       {awaitingConfirm === 'scan' && (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 space-y-4">
@@ -753,8 +783,13 @@ export function DedupeOperationsView() {
         )}
 
         {phase === 'error' && error && (
-          <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {error}
+          <div className="space-y-3">
+            <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </div>
+            {suggestCli && (
+              <DedupeCliPanel variant="prominent" />
+            )}
           </div>
         )}
 

@@ -40,11 +40,12 @@
 - [ ] `docker compose build jasmail` pass
 - [ ] `UPSTREAM_MERGE=1 npm run diff:scope` logged in artifact
 
-## Phase 4 — Full review (8 specialists — no skips)
+## Phase 4 — Full review (9 specialists — no skips)
 
 - [ ] `jasmail-upstream-maintainer` — SHIP CLEAR
 - [ ] `jasmail-code-reviewer` — SHIP CLEAR
 - [ ] `jasmail-security-reviewer` — SHIP CLEAR
+- [ ] `jasmail-vulnerability-reviewer` — SHIP CLEAR
 - [ ] `jasmail-test-reviewer` — SHIP CLEAR
 - [ ] `jasmail-plan-reviewer` — SHIP CLEAR
 - [ ] `jasmail-a11y-reviewer` — SHIP CLEAR

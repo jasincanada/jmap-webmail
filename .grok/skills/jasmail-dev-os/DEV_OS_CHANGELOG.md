@@ -1,5 +1,20 @@
 # Development OS changelog
 
+## 2.3.0 (2026-06-20)
+
+### GitHub sync subagent
+
+- `jasmail-github-sync` — commit/push safe work to `fork` between releases; never tags
+- Invoke after work sessions or when issues reference unpushed local files
+
+### Vulnerability reviewer — don't ship like Windows 95
+
+- `jasmail-vulnerability-reviewer` — 8th mandatory specialist (CVEs, secrets, supply chain)
+- `scripts/vulnerability-scan.mjs` + `npm run check:vulnerabilities`
+- `check:ship:maximum` includes `vulnerability-scan` step (blocks high/critical prod CVEs + secret patterns)
+- `jasmail-security-reviewer` scoped to app logic; pairs with vulnerability reviewer every round
+- Review artifact template + RELEASE_CHECKLIST updated for 8 specialists
+
 ## 2.2.0 (2026-06-20)
 
 ### Option C — Maximum Quality (binding policy)

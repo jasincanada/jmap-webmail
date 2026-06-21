@@ -18,9 +18,18 @@ Reviewers and the bugfixer read this file every cycle. Append new patterns after
 | **Abort not honoured** | JMAP calls ignore `AbortSignal` | Test-reviewer: grep `signal` through call chain | v1.6 |
 | **Audit gap** | Apply path skips `recordChange` | Security-reviewer: every touched message logged | v1.7 |
 
+## Vulnerability deferrals
+
+| Package | Severity | Mitigation | Review by |
+|---------|----------|------------|-----------|
+| (none yet) | — | — | — |
+
+Record moderate+ production CVEs the vulnerability-reviewer accepts with explicit mitigation.
+
 ## Specialist focus areas
 
-- **Security:** session cookies, `/api/*` auth, JMAP destroy/move, SQL injection in audit API
+- **Security (app):** session cookies, `/api/*` auth, JMAP destroy/move, SQL injection in audit API
+- **Vulnerability (CVE):** `npm run check:vulnerabilities`, prod high/critical = block; dev critical = fix before tag; secrets in repo
 - **Tests:** regression test per behavioral fix; API routes need in-memory SQLite tests
 - **A11y:** keyboard operability, `aria-label`, focus management in dialogs
 - **i18n:** 10 locales (`de`, `en`, `es`, `fr`, `it`, `ja`, `nl`, `pt`, `ru`, `uk`)

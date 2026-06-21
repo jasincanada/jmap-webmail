@@ -6,6 +6,7 @@ import { ExternalLink, RotateCcw, Search } from 'lucide-react';
 import { SettingsSection, SettingItem, ToggleSwitch, RadioGroup } from './settings-section';
 import { Button } from '@/components/ui/button';
 import { useDedupeConfigStore } from '@/stores/dedupe-config-store';
+import { DedupeCliPanel } from '@/components/dedupe/dedupe-cli-panel';
 import { DEDUPE_DELETED_RETENTION_DAYS } from '@/lib/mail-dedupe';
 import { hasEnabledCriteria, type DedupeCriteriaKey } from '@/lib/dedupe-config';
 
@@ -98,6 +99,8 @@ export function DedupeSettings() {
             {t('open_operations')}
           </Button>
         </div>
+
+        <DedupeCliPanel className="mt-2" />
       </SettingsSection>
     </div>
   );
