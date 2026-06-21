@@ -7,12 +7,11 @@ import {
   SearchFilters,
   DEFAULT_SEARCH_FILTERS,
   buildJMAPFilter,
-  isFilterEmpty,
   isMailboxListViewActive,
 } from "@/lib/jmap/search-utils";
 import {
   buildListJMAPFilter,
-  buildServerListJMAPSort,
+  buildListJMAPSort,
   mergeJMAPFilters,
 } from "@/lib/list-query-utils";
 
@@ -23,7 +22,7 @@ function resolveMailboxListQuery(
 ): { filter: Record<string, unknown>; sort: { property: string; isAscending: boolean }[] } {
   const { listSort, listFilter } = useSettingsStore.getState();
   const listMailboxFilter = buildListJMAPFilter(jmapMailboxId, listFilter);
-  const sort = buildServerListJMAPSort(listSort);
+  const sort = buildListJMAPSort(listSort);
 
   if (isMailboxListViewActive(searchQuery, searchFilters)) {
     return {
@@ -749,39 +748,18 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   },
 
   searchEmails: async (client, query) => {
-    set({ isLoading: true, error: null, searchQuery: query, emails: [], hasMoreEmails: false, totalEmails: 0 }); // Clear emails for loading state
-    try {
-      // Get the current mailbox to scope the search
-      const selectedMailbox = get().selectedMailbox;
-      const mailboxes = get().mailboxes;
-      const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
-      // Use originalId for shared mailboxes
-      const jmapMailboxId = mailbox?.originalId || selectedMailbox;
-      // Only pass accountId for shared mailboxes, not for primary account
-      const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
-
-      // Get emails per page from settings
-      const emailsPerPage = useSettingsStore.getState().emailsPerPage;
-      const result = await client.searchEmails(query, jmapMailboxId, accountId, emailsPerPage, 0);
-      set({
-        emails: result.emails,
-        hasMoreEmails: result.hasMore,
-        totalEmails: result.total,
-        isLoading: false
-      });
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "Failed to search emails",
-        isLoading: false,
-        emails: [],
-        hasMoreEmails: false,
-        totalEmails: 0
-      });
-    }
+    set({
+      searchQuery: query,
+      emails: [],
+      hasMoreEmails: false,
+      totalEmails: 0,
+      error: null,
+    });
+    await get().fetchEmails(client, get().selectedMailbox);
   },
 
   advancedSearch: async (client) => {
-    const { searchQuery, searchFilters, selectedMailbox, mailboxes, searchAbortController } = get();
+    const { searchAbortController } = get();
 
     if (searchAbortController) {
       searchAbortController.abort();
@@ -789,32 +767,19 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
     const controller = new AbortController();
     set({
-      isLoading: true,
-      error: null,
       emails: [],
       hasMoreEmails: false,
       totalEmails: 0,
+      error: null,
       searchAbortController: controller,
     });
 
     try {
-      const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
-      const jmapMailboxId = mailbox?.originalId || selectedMailbox;
-      const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
-
-      const filter = buildJMAPFilter(searchQuery, searchFilters, jmapMailboxId);
-      const emailsPerPage = useSettingsStore.getState().emailsPerPage;
-      const result = await client.advancedSearchEmails(filter, accountId, emailsPerPage, 0);
+      await get().fetchEmails(client, get().selectedMailbox);
 
       if (controller.signal.aborted) return;
 
-      set({
-        emails: result.emails,
-        hasMoreEmails: result.hasMore,
-        totalEmails: result.total,
-        isLoading: false,
-        searchAbortController: null,
-      });
+      set({ searchAbortController: null });
     } catch (error) {
       if (controller.signal.aborted) return;
       set({
@@ -1183,15 +1148,6 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
     // Only refresh if a mailbox is currently selected
     if (!selectedMailbox) return;
-
-    if (searchQuery) {
-      await get().searchEmails(client, searchQuery);
-      return;
-    }
-    if (!isFilterEmpty(searchFilters)) {
-      await get().advancedSearch(client);
-      return;
-    }
 
     try {
       // Fetch emails for the current mailbox without clearing the list first

@@ -42,12 +42,14 @@ export function normalizeListFilter(value: unknown): ListFilter {
     : DEFAULT_LIST_FILTER;
 }
 
-/** Server-side sort — only date; subject/sender are applied client-side on thread groups. */
+/** @deprecated Use buildListJMAPSort — kept for tests referencing the old date-only path. */
 export function buildServerListJMAPSort(listSort: ListSort): { property: string; isAscending: boolean }[] {
-  if (listSort === 'date-asc') {
-    return [{ property: 'receivedAt', isAscending: true }];
-  }
-  return [{ property: 'receivedAt', isAscending: false }];
+  return buildListJMAPSort(listSort);
+}
+
+/** Subject/sender sorts may be approximate until all pages are loaded (client re-sorts thread groups). */
+export function isPartialListSort(listSort: ListSort): boolean {
+  return listSort !== 'date-desc' && listSort !== 'date-asc';
 }
 
 export function buildListJMAPSort(listSort: ListSort): { property: string; isAscending: boolean }[] {

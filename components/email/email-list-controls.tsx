@@ -6,7 +6,7 @@ import { ArrowUpDown, ChevronDown, Filter } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import type { ListFilter, ListSort } from '@/lib/list-query-utils';
-import { isListFilterActive } from '@/lib/list-query-utils';
+import { isListFilterActive, isPartialListSort } from '@/lib/list-query-utils';
 import { isMailboxListViewActive } from '@/lib/jmap/search-utils';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useAuthStore } from '@/stores/auth-store';
@@ -135,7 +135,7 @@ function DropdownMenu<T extends string>({
 export function EmailListControls() {
   const t = useTranslations('email_list');
   const { client } = useAuthStore();
-  const { selectedMailbox, fetchEmails, searchQuery, searchFilters } = useEmailStore();
+  const { selectedMailbox, fetchEmails, searchQuery, searchFilters, hasMoreEmails } = useEmailStore();
   const listSort = useSettingsStore((state) => state.listSort);
   const listFilter = useSettingsStore((state) => state.listFilter);
   const updateSetting = useSettingsStore((state) => state.updateSetting);
@@ -201,6 +201,9 @@ export function EmailListControls() {
       )}
       {!mailboxListViewActive && (
         <span className="text-xs text-muted-foreground">{t('list_controls.search_active_hint')}</span>
+      )}
+      {hasMoreEmails && isPartialListSort(listSort) && (
+        <span className="text-xs text-muted-foreground">{t('list_sort.partial_hint')}</span>
       )}
     </div>
   );

@@ -225,7 +225,8 @@
       "subject_asc": "Subject A–Z",
       "subject_desc": "Subject Z–A",
       "sender_asc": "Sender A–Z",
-      "sender_desc": "Sender Z–A"
+      "sender_desc": "Sender Z–A",
+      "partial_hint": "Scroll to load more for full sort order."
     },
     "list_controls": {
       "search_active_hint": "Also applies to search results",
@@ -1683,7 +1684,8 @@
       "confirm_remove_account_title": "Remove duplicates account-wide?",
       "confirm_remove_account_body": "This scans every eligible folder and moves duplicates to each folder's dupes/ subfolder. Nothing is permanently deleted. Run a scan first to preview counts.",
       "confirm_remove_start": "Confirm and remove",
-      "confirm_cancel": "Cancel"
+      "confirm_cancel": "Cancel",
+      "cancel_operation": "Cancel"
     }
   }
 }

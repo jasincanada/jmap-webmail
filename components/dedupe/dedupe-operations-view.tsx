@@ -25,6 +25,7 @@ import {
   hasEnabledCriteria,
 } from '@/lib/dedupe-config';
 import {
+  DedupeAbortedError,
   runFolderDedupe,
   runMailboxDedupe,
   scanFolderDuplicates,
@@ -149,8 +150,18 @@ export function DedupeOperationsView() {
   } = useDedupeOperationsStore();
 
   const startedRef = useRef<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const [awaitingConfirm, setAwaitingConfirm] = useState<'scan' | 'remove' | null>(null);
   const [folderMessageCount, setFolderMessageCount] = useState<number | null>(null);
+
+  const cancelOperation = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setScanningMailbox(null);
+    reset();
+    startedRef.current = null;
+    setAwaitingConfirm(null);
+  }, [reset, setScanningMailbox]);
 
   const folderParam = searchParams.get('folder');
   const actionParam = (searchParams.get('action') || 'scan') as 'scan' | 'remove';
@@ -170,6 +181,11 @@ export function DedupeOperationsView() {
       fail(t('criteria_disabled'));
       return;
     }
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const { signal } = controller;
 
     const isAccount = scopeParam === 'account';
     const operationAction = isAccount
@@ -193,7 +209,7 @@ export function DedupeOperationsView() {
       if (isAccount) {
         const dryRun = actionParam !== 'remove';
         if (!dryRun) clearAllHighlights();
-        const outcome = await runMailboxDedupe(client, dryRun, setProgress, config);
+        const outcome = await runMailboxDedupe(client, dryRun, setProgress, config, signal);
         if (dryRun) {
           clearAllHighlights();
           for (const folder of outcome.folderResults) {
@@ -222,7 +238,7 @@ export function DedupeOperationsView() {
       }
 
       if (actionParam === 'remove') {
-        const outcome = await runFolderDedupe(client, mailbox.id, setProgress, config);
+        const outcome = await runFolderDedupe(client, mailbox.id, setProgress, config, signal);
         clearAllHighlights();
         await Promise.all([
           fetchMailboxes(client),
@@ -248,7 +264,8 @@ export function DedupeOperationsView() {
         config,
         undefined,
         setProgress,
-        true,
+        false,
+        signal,
       );
       setScanResult(result);
       selectMailbox(mailbox.id);
@@ -263,10 +280,14 @@ export function DedupeOperationsView() {
         toast.info(t('folder_scan_none', { folder: mailbox.name }));
       }
     } catch (err) {
+      if (err instanceof DedupeAbortedError) {
+        return;
+      }
       const message = err instanceof Error ? err.message : t('failed');
       fail(message);
       toast.error(message);
     } finally {
+      abortRef.current = null;
       setScanningMailbox(null);
     }
   }, [
@@ -290,6 +311,20 @@ export function DedupeOperationsView() {
     t,
   ]);
 
+  const requestScanConfirmation = useCallback(async (): Promise<boolean> => {
+    if (scopeParam === 'folder' && folderParam && resolvedMailbox && client) {
+      const mailboxRef = resolvedMailbox.originalId || resolvedMailbox.id;
+      const accountId = resolvedMailbox.isShared ? resolvedMailbox.accountId : undefined;
+      const total = await client.countMailboxEmails(mailboxRef, accountId);
+      setFolderMessageCount(total);
+      if (dedupeScanNeedsConfirmation(total)) {
+        setAwaitingConfirm('scan');
+        return false;
+      }
+    }
+    return true;
+  }, [client, folderParam, resolvedMailbox, scopeParam]);
+
   useEffect(() => {
     if (!client) return;
 
@@ -303,19 +338,10 @@ export function DedupeOperationsView() {
 
     const startScanFlow = async () => {
       startedRef.current = signature;
-
-      if (scopeParam === 'folder' && folderParam && resolvedMailbox) {
-        const mailboxRef = resolvedMailbox.originalId || resolvedMailbox.id;
-        const accountId = resolvedMailbox.isShared ? resolvedMailbox.accountId : undefined;
-        const total = await client.countMailboxEmails(mailboxRef, accountId);
-        setFolderMessageCount(total);
-        if (dedupeScanNeedsConfirmation(total)) {
-          setAwaitingConfirm('scan');
-          return;
-        }
+      const confirmed = await requestScanConfirmation();
+      if (confirmed) {
+        void runOperation();
       }
-
-      void runOperation();
     };
 
     if (actionParam === 'remove') {
@@ -324,7 +350,11 @@ export function DedupeOperationsView() {
     }
 
     void startScanFlow();
-  }, [client, runOperation, scopeParam, actionParam, folderParam, resolvedMailbox]);
+  }, [client, runOperation, requestScanConfirmation, scopeParam, actionParam, folderParam, resolvedMailbox]);
+
+  useEffect(() => () => {
+    abortRef.current?.abort();
+  }, []);
 
   const elapsedMs =
     startedAt && (completedAt ?? Date.now()) - startedAt;
@@ -420,9 +450,12 @@ export function DedupeOperationsView() {
         </div>
 
         {(phase === 'scanning' || phase === 'removing') && (
-          <div className="flex items-center gap-2 rounded-md bg-primary/5 px-3 py-2 text-sm text-foreground">
+          <div className="flex flex-wrap items-center gap-2 rounded-md bg-primary/5 px-3 py-2 text-sm text-foreground">
             <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
-            <span>{progress || t('working')}</span>
+            <span className="flex-1 min-w-0">{progress || t('working')}</span>
+            <Button variant="outline" size="sm" onClick={cancelOperation}>
+              {t('cancel_operation')}
+            </Button>
           </div>
         )}
 
@@ -547,7 +580,12 @@ export function DedupeOperationsView() {
               if (actionParam === 'remove') {
                 setAwaitingConfirm('remove');
               } else {
-                void runOperation();
+                void (async () => {
+                  const confirmed = await requestScanConfirmation();
+                  if (confirmed) {
+                    void runOperation();
+                  }
+                })();
               }
             }}
           >

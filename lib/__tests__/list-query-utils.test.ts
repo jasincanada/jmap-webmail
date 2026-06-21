@@ -17,9 +17,12 @@ describe('list-query-utils', () => {
     });
   });
 
-  it('uses date-only sorts for server queries', () => {
+  it('uses full server sort properties', () => {
     expect(buildServerListJMAPSort('subject-asc')).toEqual([
-      { property: 'receivedAt', isAscending: false },
+      { property: 'subject', isAscending: true },
+    ]);
+    expect(buildServerListJMAPSort('sender-desc')).toEqual([
+      { property: 'from', isAscending: false },
     ]);
     expect(buildServerListJMAPSort('date-asc')).toEqual([
       { property: 'receivedAt', isAscending: true },

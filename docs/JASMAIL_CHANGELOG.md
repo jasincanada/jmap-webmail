@@ -8,6 +8,19 @@ The matching **CLI** lives in the stack `dedupe/` directory (outside this repo).
 
 ---
 
+## 1.6.2 (2026-06-21)
+
+### Bug fixes (high)
+
+- **#7/#8/N2:** Search, advanced search, and push refresh use the same `resolveMailboxListQuery` path as normal list fetch (list filter + sort merged).
+- **#9:** Server-side subject/sender sort on JMAP queries; partial-sort hint when more pages remain.
+- **#10:** `getEmailsForDedupe` namespaces `mailboxIds` on shared folders.
+- **#11:** Folder scan no longer creates `dupes/` subfolders (`prepareDupesFolder` removed from scan path).
+- **#12:** Cancel button and abort between batches on `/dedupe` operations.
+- **N1:** “Run again” re-checks large-folder scan confirmation.
+
+---
+
 ## 1.6.1 (2026-06-21)
 
 ### Bug fixes (critical)

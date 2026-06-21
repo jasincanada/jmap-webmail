@@ -1,6 +1,7 @@
 import {
   buildDedupeKey,
   DEFAULT_DEDUPE_MATCH_CONFIG,
+  DedupeScanError,
   hasEnabledCriteria,
   validateDedupeScan,
   type DedupeMatchConfig,
@@ -15,6 +16,19 @@ import type { Email, Mailbox } from '@/lib/jmap/types';
 const DUPES_FOLDER = 'dupes';
 const SKIP_ROLES = new Set(['trash', 'junk']);
 const BATCH = 500;
+
+export class DedupeAbortedError extends Error {
+  constructor() {
+    super('Operation cancelled');
+    this.name = 'DedupeAbortedError';
+  }
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) {
+    throw new DedupeAbortedError();
+  }
+}
 
 export interface DedupeMove {
   emailId: string;
@@ -259,6 +273,7 @@ export async function scanFolderDuplicates(
   mailboxesCache?: Mailbox[],
   onProgress?: (message: string) => void,
   prepareDupesFolder = false,
+  signal?: AbortSignal,
 ): Promise<FolderDedupeScanResult> {
   if (!hasEnabledCriteria(config)) {
     return {
@@ -318,13 +333,22 @@ export async function scanFolderDuplicates(
   let position = 0;
 
   while (position < total) {
+    throwIfAborted(signal);
+
     const page = await client.queryMailboxEmailIdsPage(
       mailboxRef.jmapId,
       position,
       BATCH,
       mailboxRef.accountId,
     );
-    if (page.ids.length === 0) break;
+    if (page.ids.length === 0) {
+      if (position < total) {
+        throw new DedupeScanError(
+          `Scan interrupted: no messages returned at position ${position.toLocaleString()} of ${total.toLocaleString()}.`,
+        );
+      }
+      break;
+    }
 
     onProgress?.(
       `Analyzing ${Math.min(position + page.ids.length, total).toLocaleString()} / ${total.toLocaleString()} in ${displayName}…`,
@@ -368,6 +392,7 @@ export async function scanMailboxDuplicates(
   client: JMAPClient,
   config: DedupeMatchConfig = DEFAULT_DEDUPE_MATCH_CONFIG,
   onProgress?: (message: string) => void,
+  signal?: AbortSignal,
 ): Promise<DedupeScanResult> {
   if (!hasEnabledCriteria(config)) {
     return { scanned: 0, duplicateCount: 0, moves: [], folderResults: [] };
@@ -379,6 +404,7 @@ export async function scanMailboxDuplicates(
   let scanned = 0;
 
   for (const mailbox of mailboxes) {
+    throwIfAborted(signal);
     if (!canDedupeMailbox(mailbox)) continue;
 
     const folderResult = await scanFolderDuplicates(
@@ -387,6 +413,8 @@ export async function scanMailboxDuplicates(
       config,
       mailboxes,
       onProgress ? (message) => onProgress(`${mailbox.name}: ${message}`) : undefined,
+      false,
+      signal,
     );
     scanned += folderResult.scanned;
     moves.push(...folderResult.moves);
@@ -408,8 +436,9 @@ export async function runMailboxDedupe(
   dryRun: boolean,
   onProgress?: (message: string) => void,
   config: DedupeMatchConfig = DEFAULT_DEDUPE_MATCH_CONFIG,
+  signal?: AbortSignal,
 ): Promise<DedupeRunResult> {
-  const scan = await scanMailboxDuplicates(client, config, onProgress);
+  const scan = await scanMailboxDuplicates(client, config, onProgress, signal);
   if (dryRun || scan.moves.length === 0) {
     return { ...scan, moved: dryRun ? 0 : 0 };
   }
@@ -427,6 +456,7 @@ export async function runMailboxDedupe(
 
   const foldersToPrepare = [...new Set(scan.moves.map((move) => move.fromMailboxId))];
   for (const folderId of foldersToPrepare) {
+    throwIfAborted(signal);
     const parentMailbox = mailboxes.find((mb) => mb.id === folderId);
     if (!parentMailbox) {
       throw new Error(`Failed to resolve mailbox ${folderId} for dupes folder`);
@@ -459,6 +489,7 @@ export async function runMailboxDedupe(
 
   for (const bucket of pending.values()) {
     for (let offset = 0; offset < bucket.emailIds.length; offset += BATCH) {
+      throwIfAborted(signal);
       const chunk = bucket.emailIds.slice(offset, offset + BATCH);
       onProgress?.(`Moving ${chunk.length} duplicate(s)`);
       await client.moveEmailsBetweenMailboxes(
@@ -479,8 +510,9 @@ export async function runFolderDedupe(
   mailboxId: string,
   onProgress?: (message: string) => void,
   config: DedupeMatchConfig = DEFAULT_DEDUPE_MATCH_CONFIG,
+  signal?: AbortSignal,
 ): Promise<DedupeRunResult & { mailboxId: string }> {
-  const scan = await scanFolderDuplicates(client, mailboxId, config, undefined, onProgress);
+  const scan = await scanFolderDuplicates(client, mailboxId, config, undefined, onProgress, false, signal);
   const folderResults = scan.duplicateCount > 0 ? [scan] : [];
   if (scan.moves.length === 0) {
     return {
@@ -512,6 +544,7 @@ export async function runFolderDedupe(
   const emailIds = scan.moves.map((move) => move.emailId);
 
   for (let offset = 0; offset < emailIds.length; offset += BATCH) {
+    throwIfAborted(signal);
     const chunk = emailIds.slice(offset, offset + BATCH);
     onProgress?.(`Moving ${chunk.length} duplicate(s)`);
     await client.moveEmailsBetweenMailboxes(

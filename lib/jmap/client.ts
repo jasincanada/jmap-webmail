@@ -341,7 +341,11 @@ export class JMAPClient {
     }
   }
 
-  private async request(methodCalls: JMAPMethodCall[], using?: string[]): Promise<JMAPResponse> {
+  private async request(
+    methodCalls: JMAPMethodCall[],
+    using?: string[],
+    options?: { signal?: AbortSignal },
+  ): Promise<JMAPResponse> {
     if (!this.apiUrl) {
       throw new Error('Not connected. Call connect() first.');
     }
@@ -357,6 +361,7 @@ export class JMAPClient {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
+      signal: options?.signal,
     });
 
     const responseText = await response.text();
@@ -882,6 +887,10 @@ export class JMAPClient {
         throw new Error('Email/get failed while loading messages for dedupe');
       }
       emails.push(...(result?.list || []));
+    }
+
+    if (accountId && accountId !== this.accountId) {
+      namespaceMailboxIds(emails, accountId);
     }
 
     return emails;
