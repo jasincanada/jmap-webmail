@@ -60,7 +60,7 @@ async function fetchConfig(): Promise<ConfigData> {
  */
 export function useConfig(): AppConfig {
   const [config, setConfig] = useState<AppConfig>({
-    appName: configCache?.appName || 'Webmail',
+    appName: configCache?.appName || 'JasMail',
     jmapServerUrl: configCache?.jmapServerUrl || '',
     oauthEnabled: configCache?.oauthEnabled || false,
     oauthClientId: configCache?.oauthClientId || '',
