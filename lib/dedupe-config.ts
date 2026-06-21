@@ -84,38 +84,53 @@ export function hasEnabledCriteria(config: DedupeMatchConfig): boolean {
   return CRITERIA_KEYS.some((key) => config[key]);
 }
 
-export function normalizeMessageId(messageId?: string): string | null {
-  if (!messageId) return null;
-  let value = messageId.trim().toLowerCase();
+/** JMAP fields are typed as strings but servers may return null, arrays, or numbers. */
+export function coerceJmapString(value: unknown): string {
+  if (value == null) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) {
+    return value.map(coerceJmapString).filter(Boolean).join(' ');
+  }
+  return '';
+}
+
+export function normalizeMessageId(messageId?: unknown): string | null {
+  const raw = coerceJmapString(messageId);
+  if (!raw) return null;
+  let value = raw.trim().toLowerCase();
   if (value.startsWith('<') && value.endsWith('>')) {
     value = value.slice(1, -1);
   }
   return value || null;
 }
 
-function normalizeBody(text: string): string {
-  return text.replace(/\s+/g, ' ').trim().toLowerCase();
+function normalizeBody(text: unknown): string {
+  const raw = coerceJmapString(text);
+  if (!raw) return '';
+  return raw.replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
 export function extractBodyText(email: Email): string {
   if (email.bodyValues && email.textBody?.length) {
     const parts = email.textBody
-      .map((part) => email.bodyValues?.[part.partId]?.value ?? '')
+      .map((part) => coerceJmapString(email.bodyValues?.[part.partId]?.value))
       .join('\n');
     if (parts.trim()) {
       return normalizeBody(parts);
     }
   }
-  if (email.preview) {
-    return normalizeBody(email.preview);
+  const preview = coerceJmapString(email.preview);
+  if (preview) {
+    return normalizeBody(preview);
   }
   return '';
 }
 
-function formatAddresses(addresses?: { email?: string }[]): string {
+function formatAddresses(addresses?: { email?: unknown }[]): string {
   if (!addresses?.length) return '';
   return addresses
-    .map((addr) => addr.email?.trim().toLowerCase() ?? '')
+    .map((addr) => coerceJmapString(addr?.email).trim().toLowerCase())
     .filter(Boolean)
     .sort()
     .join(',');
@@ -131,7 +146,7 @@ function compositeParts(email: Email, config: DedupeMatchConfig, includeMessageI
     }
   }
   if (config.subject) {
-    parts.push(`sub:${email.subject?.trim().toLowerCase() ?? ''}`);
+    parts.push(`sub:${coerceJmapString(email.subject).trim().toLowerCase()}`);
   }
   if (config.from) {
     parts.push(`from:${formatAddresses(email.from)}`);
