@@ -2,9 +2,9 @@
 
 Manual QA checklist for **JasMail** (Stalwart + JMAP webmail + dedupe stack). Use this after deploys or before release sign-off.
 
-**Tracking:** Code review findings and follow-up work live in [Epic #97](https://github.com/root-fr/jmap-webmail/issues/97).
+**Tracking:** Code review follow-ups live in [Epic #1](https://github.com/jasincanada/JasMail/issues/1) on this fork. Upstream mirror: [root-fr/jmap-webmail#97](https://github.com/root-fr/jmap-webmail/issues/97).
 
-**Scope:** addon features and bug fixes (webmail fork + CLI). Pass history is logged in the stack `dedupe/CHANGELOG.md` (outside this repo). Core upstream webmail behaviour is only covered where our addon touches it.
+**Scope:** addon features and bug fixes (JasMail webmail + stack CLI). Pass history: [`JASMAIL_CHANGELOG.md`](JASMAIL_CHANGELOG.md). Core upstream webmail behaviour is only covered where our addon touches it.
 
 **How to use**
 
@@ -168,7 +168,7 @@ Run from repo root. Adjust account flags per [`dedupe/README`](dedupe/README) or
 
 ## Reporting failures
 
-[Open a GitHub issue](https://github.com/root-fr/jmap-webmail/issues/new) (or comment on [#97](https://github.com/root-fr/jmap-webmail/issues/97) for review items). Copy this block:
+[Open a GitHub issue](https://github.com/jasincanada/JasMail/issues/new) (or comment on [Epic #1](https://github.com/jasincanada/JasMail/issues/1) for review items). Copy this block:
 
 ```
 **Test ID:** (e.g. L-2)
@@ -187,11 +187,11 @@ Run from repo root. Adjust account flags per [`dedupe/README`](dedupe/README) or
 
 ## Maintenance for developers
 
-When you ship a new changelog pass (stack `dedupe/CHANGELOG.md`):
+When you ship a new changelog pass ([`JASMAIL_CHANGELOG.md`](JASMAIL_CHANGELOG.md)):
 
 1. Add a section or rows to this file with **IDs**, **steps**, and **expected** outcomes.
 2. Reference the **pass number** in the task section heading or ID prefix.
 3. Remove or mark **obsolete** rows if behaviour was removed.
 4. Keep **Unread safety (U-*)** rows for any change that touches JMAP `Email/set`, list fetch, or dedupe move paths.
 
-**Last updated:** 2026-06-20 (pass 12 — list filter/sort restore, read filter, search merge).
+**Last updated:** 2026-06-21 (JasMail v1.6.0 publish — pass 12, fork issue tracking).

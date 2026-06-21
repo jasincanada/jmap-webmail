@@ -1,6 +1,23 @@
 # Changelog
 
-## 1.5.2 (2026-05-14)
+## JasMail 1.6.0 (2026-06-21) — fork release
+
+Fork of upstream 1.5.2. Full addon history: [`docs/JASMAIL_CHANGELOG.md`](docs/JASMAIL_CHANGELOG.md).
+
+### Features
+
+- Mail **dedupe addon**: settings, sidebar actions, `/dedupe` operations page, list highlights, `dupes/` folder handling.
+- **List filter & sort** (passes 9–12): unread/read/starred/attachments, date/subject/sender sort, search merge, scroll pagination.
+- **JasMail** branding; Docker image `jasmail:local`; manual QA in [`docs/TESTER_TASKS.md`](docs/TESTER_TASKS.md).
+
+### Tracking
+
+- Release: [v1.6.0](https://github.com/jasincanada/JasMail/releases/tag/v1.6.0)
+- Review follow-ups: [Epic #1](https://github.com/jasincanada/JasMail/issues/1) on `jasincanada/JasMail`
+
+---
+
+## Upstream 1.5.2 (2026-05-14)
 
 ### Security
 

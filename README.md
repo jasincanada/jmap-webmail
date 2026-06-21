@@ -4,6 +4,24 @@
 
 > Fork of `root-fr/jmap-webmail`. Upstream docs below still apply unless noted otherwise.
 
+### JasMail docs & tracking
+
+| Resource | Link |
+|----------|------|
+| **Latest release** | [v1.6.0](https://github.com/jasincanada/JasMail/releases/tag/v1.6.0) |
+| **Fork changelog** | [`docs/JASMAIL_CHANGELOG.md`](docs/JASMAIL_CHANGELOG.md) |
+| **Upstream changelog** | [`CHANGELOG.md`](CHANGELOG.md) |
+| **Manual QA** | [`docs/TESTER_TASKS.md`](docs/TESTER_TASKS.md) |
+| **Issues & roadmap** | [github.com/jasincanada/JasMail/issues](https://github.com/jasincanada/JasMail/issues) |
+| **Review epic** | [Issue #1](https://github.com/jasincanada/JasMail/issues/1) |
+| **Upstream PR** | [root-fr/jmap-webmail#98](https://github.com/root-fr/jmap-webmail/pull/98) |
+
+```bash
+# Deploy JasMail (email stack)
+cd /path/to/email
+docker compose build jasmail && docker compose up -d jasmail
+```
+
 ## Why Stalwart?
 
 Stalwart is a mail server written in Rust with native JMAP support, not IMAP/SMTP with JMAP added as an afterthought. It handles JMAP, IMAP, SMTP, and ManageSieve. Self-hosted, no third-party dependencies.
