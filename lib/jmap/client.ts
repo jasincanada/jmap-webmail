@@ -1,6 +1,5 @@
 import {
   DEFAULT_DEDUPE_MATCH_CONFIG,
-  dedupeFetchNeedsBody,
   dedupeFetchProperties,
   type DedupeMatchConfig,
 } from '@/lib/dedupe-config';
@@ -779,6 +778,44 @@ export class JMAPClient {
     };
   }
 
+  async countMailboxEmails(mailboxId: string, accountId?: string): Promise<number> {
+    const targetAccountId = accountId || this.accountId;
+    const response = await this.request([
+      ['Email/query', {
+        accountId: targetAccountId,
+        filter: { inMailbox: mailboxId },
+        limit: 0,
+        calculateTotal: true,
+      }, '0'],
+    ]);
+    const queryResult = response.methodResponses?.[0]?.[1];
+    return queryResult?.total ?? 0;
+  }
+
+  async queryMailboxEmailIdsPage(
+    mailboxId: string,
+    position: number,
+    limit: number = 500,
+    accountId?: string,
+  ): Promise<{ ids: string[]; total: number }> {
+    const targetAccountId = accountId || this.accountId;
+    const response = await this.request([
+      ['Email/query', {
+        accountId: targetAccountId,
+        filter: { inMailbox: mailboxId },
+        sort: [{ property: 'receivedAt', isAscending: true }],
+        calculateTotal: true,
+        limit,
+        position,
+      }, '0'],
+    ]);
+    const queryResult = response.methodResponses?.[0]?.[1];
+    return {
+      ids: queryResult?.ids || [],
+      total: queryResult?.total ?? 0,
+    };
+  }
+
   async queryAllMailboxEmailIds(
     mailboxId: string,
     batchSize: number = 500,
@@ -823,7 +860,6 @@ export class JMAPClient {
 
     const targetAccountId = accountId || this.accountId;
     const properties = dedupeFetchProperties(config);
-    const fetchBody = dedupeFetchNeedsBody(config);
 
     const emails: Email[] = [];
 
@@ -835,10 +871,7 @@ export class JMAPClient {
         properties,
       };
 
-      if (fetchBody) {
-        getArgs.fetchTextBodyValues = true;
-        getArgs.maxBodyValueBytes = 256000;
-      }
+      // Body matching uses preview only in the browser — never fetch full bodies here.
 
       const response = await this.request([
         ["Email/get", getArgs, "0"],

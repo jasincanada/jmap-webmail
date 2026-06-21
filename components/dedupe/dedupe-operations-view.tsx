@@ -13,7 +13,6 @@ import {
   Loader2,
   Play,
   RotateCcw,
-  Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/auth-store';
@@ -21,7 +20,10 @@ import { useEmailStore } from '@/stores/email-store';
 import { useDedupeConfigStore } from '@/stores/dedupe-config-store';
 import { useDedupeHighlightStore } from '@/stores/dedupe-highlight-store';
 import { useDedupeOperationsStore } from '@/stores/dedupe-operations-store';
-import { hasEnabledCriteria } from '@/lib/dedupe-config';
+import {
+  dedupeScanNeedsConfirmation,
+  hasEnabledCriteria,
+} from '@/lib/dedupe-config';
 import {
   runFolderDedupe,
   runMailboxDedupe,
@@ -147,6 +149,8 @@ export function DedupeOperationsView() {
   } = useDedupeOperationsStore();
 
   const startedRef = useRef<string | null>(null);
+  const [awaitingConfirm, setAwaitingConfirm] = useState<'scan' | 'remove' | null>(null);
+  const [folderMessageCount, setFolderMessageCount] = useState<number | null>(null);
 
   const folderParam = searchParams.get('folder');
   const actionParam = (searchParams.get('action') || 'scan') as 'scan' | 'remove';
@@ -288,11 +292,39 @@ export function DedupeOperationsView() {
 
   useEffect(() => {
     if (!client) return;
+
     const signature = `${scopeParam}:${actionParam}:${folderParam ?? 'all'}`;
     if (startedRef.current === signature) return;
-    startedRef.current = signature;
-    void runOperation();
-  }, [client, runOperation, scopeParam, actionParam, folderParam]);
+
+    const startRemoveFlow = () => {
+      startedRef.current = signature;
+      setAwaitingConfirm('remove');
+    };
+
+    const startScanFlow = async () => {
+      startedRef.current = signature;
+
+      if (scopeParam === 'folder' && folderParam && resolvedMailbox) {
+        const mailboxRef = resolvedMailbox.originalId || resolvedMailbox.id;
+        const accountId = resolvedMailbox.isShared ? resolvedMailbox.accountId : undefined;
+        const total = await client.countMailboxEmails(mailboxRef, accountId);
+        setFolderMessageCount(total);
+        if (dedupeScanNeedsConfirmation(total)) {
+          setAwaitingConfirm('scan');
+          return;
+        }
+      }
+
+      void runOperation();
+    };
+
+    if (actionParam === 'remove') {
+      startRemoveFlow();
+      return;
+    }
+
+    void startScanFlow();
+  }, [client, runOperation, scopeParam, actionParam, folderParam, resolvedMailbox]);
 
   const elapsedMs =
     startedAt && (completedAt ?? Date.now()) - startedAt;
@@ -319,6 +351,49 @@ export function DedupeOperationsView() {
         </div>
         <PhaseBadge phase={phase} />
       </div>
+
+      {awaitingConfirm && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 space-y-4">
+          <h2 className="text-lg font-medium text-foreground">
+            {awaitingConfirm === 'scan'
+              ? t('confirm_scan_title')
+              : scopeParam === 'account'
+                ? t('confirm_remove_account_title')
+                : t('confirm_remove_folder_title', {
+                    folder: mailboxName || resolvedMailbox?.name || folderParam || '—',
+                  })}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {awaitingConfirm === 'scan' && folderMessageCount != null
+              ? t('confirm_scan_body', { count: folderMessageCount })
+              : scopeParam === 'account'
+                ? t('confirm_remove_account_body')
+                : t('confirm_remove_folder_body')}
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              onClick={() => {
+                setAwaitingConfirm(null);
+                void runOperation();
+              }}
+            >
+              <Play className="w-4 h-4 mr-2" />
+              {awaitingConfirm === 'scan' ? t('confirm_scan_start') : t('confirm_remove_start')}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAwaitingConfirm(null);
+                reset();
+                startedRef.current = null;
+                router.push(scopeParam === 'account' ? '/dedupe?scope=account&action=scan' : '/');
+              }}
+            >
+              {t('confirm_cancel')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-lg border border-border bg-card p-4 space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
@@ -468,7 +543,12 @@ export function DedupeOperationsView() {
             onClick={() => {
               reset();
               startedRef.current = null;
-              void runOperation();
+              setAwaitingConfirm(null);
+              if (actionParam === 'remove') {
+                setAwaitingConfirm('remove');
+              } else {
+                void runOperation();
+              }
             }}
           >
             <RotateCcw className="w-4 h-4 mr-2" />

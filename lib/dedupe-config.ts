@@ -16,6 +16,41 @@ export interface DedupeMatchConfig {
   threadId: boolean;
 }
 
+/** Above this count the browser asks for explicit confirmation before scanning. */
+export const DEDUPE_CONFIRM_THRESHOLD = 10_000;
+
+/** Browser scan refuses above this count — use the CLI (`mail-dedupe`) instead. */
+export const DEDUPE_BROWSER_HARD_MAX = 50_000;
+
+/** Body matching in the browser is limited to preview text above this folder size. */
+export const DEDUPE_BODY_MAX_FOLDER_MESSAGES = 2_000;
+
+export class DedupeScanError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'DedupeScanError';
+  }
+}
+
+export function validateDedupeScan(messageCount: number, config: DedupeMatchConfig): void {
+  if (messageCount > DEDUPE_BROWSER_HARD_MAX) {
+    throw new DedupeScanError(
+      `This folder has ${messageCount.toLocaleString()} messages — too large for browser dedupe. ` +
+        'Use the mail-dedupe CLI instead.',
+    );
+  }
+  if (config.body && messageCount > DEDUPE_BODY_MAX_FOLDER_MESSAGES) {
+    throw new DedupeScanError(
+      `Body matching is disabled for folders over ${DEDUPE_BODY_MAX_FOLDER_MESSAGES.toLocaleString()} messages ` +
+        `(${messageCount.toLocaleString()} here). Disable body criterion or use the CLI.`,
+    );
+  }
+}
+
+export function dedupeScanNeedsConfirmation(messageCount: number): boolean {
+  return messageCount > DEDUPE_CONFIRM_THRESHOLD;
+}
+
 export const DEFAULT_DEDUPE_MATCH_CONFIG: DedupeMatchConfig = {
   mode: 'messageIdFirst',
   messageId: true,
@@ -167,9 +202,8 @@ export function dedupeFetchProperties(config: DedupeMatchConfig): string[] {
   if (config.hasAttachment) properties.add('hasAttachment');
   if (config.threadId) properties.add('threadId');
   if (config.body) {
+    // Browser dedupe uses preview only — never fetch full textBody/bodyValues (see client.ts).
     properties.add('preview');
-    properties.add('textBody');
-    properties.add('bodyValues');
   }
 
   return [...properties];

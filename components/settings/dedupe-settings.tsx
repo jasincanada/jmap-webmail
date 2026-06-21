@@ -65,6 +65,10 @@ export function DedupeSettings() {
         {!criteriaEnabled && (
           <p className="text-sm text-destructive">{t('criteria_none_enabled')}</p>
         )}
+
+        {config.body && (
+          <p className="text-sm text-amber-700 dark:text-amber-400">{t('criteria.body_warning')}</p>
+        )}
       </SettingsSection>
 
       <SettingsSection title={t('title')} description={t('description')}>

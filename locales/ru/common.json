@@ -1088,8 +1088,9 @@
         },
         "body": {
           "label": "Body",
-          "description": "Message body text (fetches full text; slower on large mailboxes)."
+          "description": "Message preview text only in the browser (not full body). Disabled for folders over 2,000 messages."
         },
+        "body_warning": "Body matching uses the short preview only. For full-body matching on large mailboxes, use the mail-dedupe CLI.",
         "threadId": {
           "label": "Thread",
           "description": "JMAP thread ID (messages in the same conversation)."
@@ -1672,7 +1673,17 @@
       "folder_scan_none": "No duplicates in {folder}.",
       "folder_remove_done": "Moved {count, plural, one {# duplicate} other {# duplicates}} from {folder}.",
       "account_scan_done": "Found {count, plural, one {# duplicate} other {# duplicates}} across your mailboxes.",
-      "account_remove_done": "Moved {count, plural, one {# duplicate} other {# duplicates}} to dupes folders."
+      "account_remove_done": "Moved {count, plural, one {# duplicate} other {# duplicates}} to dupes folders.",
+      "status_idle": "Ready",
+      "confirm_scan_title": "Scan a large folder?",
+      "confirm_scan_body": "This folder has {count, plural, one {# message} other {# messages}}. The scan runs in batches but may take several minutes.",
+      "confirm_scan_start": "Start scan",
+      "confirm_remove_folder_title": "Remove duplicates from {folder}?",
+      "confirm_remove_folder_body": "Duplicates will be detected and moved to a dupes subfolder (not deleted). The oldest copy in each group is kept.",
+      "confirm_remove_account_title": "Remove duplicates account-wide?",
+      "confirm_remove_account_body": "This scans every eligible folder and moves duplicates to each folder's dupes/ subfolder. Nothing is permanently deleted. Run a scan first to preview counts.",
+      "confirm_remove_start": "Confirm and remove",
+      "confirm_cancel": "Cancel"
     }
   }
 }

@@ -8,6 +8,16 @@ The matching **CLI** lives in the stack `dedupe/` directory (outside this repo).
 
 ---
 
+## 1.6.1 (2026-06-21)
+
+### Bug fixes (critical)
+
+- **C1:** Batched folder scan — process messages in pages; slim stored refs; hard cap 50k (CLI above that); confirm above 10k.
+- **C2:** Remove never auto-starts on `/dedupe` — explicit confirmation for folder and account-wide remove.
+- **C3:** Body criterion uses preview only in browser; blocked above 2,000 messages; settings warning.
+
+---
+
 ## 1.6.0 (2026-06-21)
 
 ### Release

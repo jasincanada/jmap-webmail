@@ -2,6 +2,7 @@ import {
   buildDedupeKey,
   DEFAULT_DEDUPE_MATCH_CONFIG,
   hasEnabledCriteria,
+  validateDedupeScan,
   type DedupeMatchConfig,
 } from '@/lib/dedupe-config';
 import type { JMAPClient } from '@/lib/jmap/client';
@@ -112,23 +113,38 @@ function buildDupesByParentMap(mailboxes: Mailbox[]): Map<string, string> {
   return dupesByParent;
 }
 
-function buildDuplicateGroups(
+function slimEmailForDedupe(email: Email): Email {
+  return {
+    id: email.id,
+    mailboxIds: email.mailboxIds,
+    keywords: email.keywords ?? {},
+    receivedAt: email.receivedAt,
+    subject: email.subject,
+    messageId: email.messageId,
+    from: email.from,
+    to: email.to,
+    sentAt: email.sentAt,
+    size: email.size,
+    hasAttachment: email.hasAttachment,
+    preview: email.preview,
+    threadId: email.threadId,
+  };
+}
+
+function mergeDuplicateGroups(
+  groups: Map<string, Email[]>,
   emails: Email[],
   jmapMailboxId: string,
   config: DedupeMatchConfig,
-): Map<string, Email[]> {
-  const groups = new Map<string, Email[]>();
-
+): void {
   for (const email of emails) {
     if (!email.mailboxIds?.[jmapMailboxId]) continue;
     const key = buildDedupeKey(email, config);
     if (!key) continue;
     const bucket = groups.get(key) ?? [];
-    bucket.push(email);
+    bucket.push(slimEmailForDedupe(email));
     groups.set(key, bucket);
   }
-
-  return groups;
 }
 
 function groupsToScanResult(
@@ -284,15 +300,11 @@ export async function scanFolderDuplicates(
   const displayName = mailboxDisplayName(mailbox, byId);
   onProgress?.(`Querying messages in ${displayName}…`);
 
-  const ids = await client.queryAllMailboxEmailIds(
-    mailboxRef.jmapId,
-    500,
-    mailboxRef.accountId,
-  );
-  if (ids.length === 0) {
+  const total = await client.countMailboxEmails(mailboxRef.jmapId, mailboxRef.accountId);
+  if (total === 0) {
     return {
       mailboxId,
-      mailboxName: mailboxDisplayName(mailbox, byId),
+      mailboxName: displayName,
       scanned: 0,
       duplicateCount: 0,
       groups: [],
@@ -300,16 +312,34 @@ export async function scanFolderDuplicates(
     };
   }
 
-  onProgress?.(`Loading ${ids.length.toLocaleString()} message(s)…`);
-  const emails = await client.getEmailsForDedupe(ids, config, mailboxRef.accountId);
-  onProgress?.(`Analyzing ${emails.length.toLocaleString()} message(s) for duplicates…`);
-  const groups = buildDuplicateGroups(emails, mailboxRef.jmapId, config);
+  validateDedupeScan(total, config);
+
+  const groups = new Map<string, Email[]>();
+  let position = 0;
+
+  while (position < total) {
+    const page = await client.queryMailboxEmailIdsPage(
+      mailboxRef.jmapId,
+      position,
+      BATCH,
+      mailboxRef.accountId,
+    );
+    if (page.ids.length === 0) break;
+
+    onProgress?.(
+      `Analyzing ${Math.min(position + page.ids.length, total).toLocaleString()} / ${total.toLocaleString()} in ${displayName}…`,
+    );
+
+    const emails = await client.getEmailsForDedupe(page.ids, config, mailboxRef.accountId);
+    mergeDuplicateGroups(groups, emails, mailboxRef.jmapId, config);
+    position += page.ids.length;
+  }
 
   const scanResult = groupsToScanResult(
     mailbox,
     displayName,
     groups,
-    ids.length,
+    total,
   );
 
   if (prepareDupesFolder && scanResult.duplicateCount > 0) {
