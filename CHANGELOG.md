@@ -13,7 +13,7 @@ Fork of upstream 1.5.2. Full addon history: [`docs/JASMAIL_CHANGELOG.md`](docs/J
 ### Tracking
 
 - Release: [v1.6.0](https://github.com/jasincanada/JasMail/releases/tag/v1.6.0)
-- Review follow-ups: [Epic #1](https://github.com/jasincanada/JasMail/issues/1) on `jasincanada/JasMail`
+- Review follow-ups: [Epic #3](https://github.com/jasincanada/JasMail/issues/3) on `jasincanada/JasMail`
 
 ---
 

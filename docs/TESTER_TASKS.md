@@ -2,7 +2,7 @@
 
 Manual QA checklist for **JasMail** (Stalwart + JMAP webmail + dedupe stack). Use this after deploys or before release sign-off.
 
-**Tracking:** Code review follow-ups live in [Epic #1](https://github.com/jasincanada/JasMail/issues/1) on this fork. Upstream mirror: [root-fr/jmap-webmail#97](https://github.com/root-fr/jmap-webmail/issues/97).
+**Tracking:** Code review follow-ups live in [Epic #3](https://github.com/jasincanada/JasMail/issues/3) on this fork. Upstream mirror: [root-fr/jmap-webmail#97](https://github.com/root-fr/jmap-webmail/issues/97).
 
 **Scope:** addon features and bug fixes (JasMail webmail + stack CLI). Pass history: [`JASMAIL_CHANGELOG.md`](JASMAIL_CHANGELOG.md). Core upstream webmail behaviour is only covered where our addon touches it.
 
@@ -168,7 +168,7 @@ Run from repo root. Adjust account flags per [`dedupe/README`](dedupe/README) or
 
 ## Reporting failures
 
-[Open a GitHub issue](https://github.com/jasincanada/JasMail/issues/new) (or comment on [Epic #1](https://github.com/jasincanada/JasMail/issues/1) for review items). Copy this block:
+[Open a GitHub issue](https://github.com/jasincanada/JasMail/issues/new) (or comment on [Epic #3](https://github.com/jasincanada/JasMail/issues/3) for review items). Copy this block:
 
 ```
 **Test ID:** (e.g. L-2)

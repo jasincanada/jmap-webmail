@@ -13,7 +13,7 @@
 | **Upstream changelog** | [`CHANGELOG.md`](CHANGELOG.md) |
 | **Manual QA** | [`docs/TESTER_TASKS.md`](docs/TESTER_TASKS.md) |
 | **Issues & roadmap** | [github.com/jasincanada/JasMail/issues](https://github.com/jasincanada/JasMail/issues) |
-| **Review epic** | [Issue #1](https://github.com/jasincanada/JasMail/issues/1) |
+| **Review epic** | [Issue #3](https://github.com/jasincanada/JasMail/issues/3) |
 | **Upstream PR** | [root-fr/jmap-webmail#98](https://github.com/root-fr/jmap-webmail/pull/98) |
 
 ```bash
