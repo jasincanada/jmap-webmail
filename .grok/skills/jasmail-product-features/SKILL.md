@@ -1,27 +1,23 @@
 ---
 name: jasmail-product-features
 description: >
-  JasMail product features document bot. Maintains docs/PRODUCT_FEATURES.md with
-  user-facing feature descriptions aligned to shipped releases and roadmap. Use before
-  release or when documenting new capabilities.
+  JasMail product features document bot. Updates docs/PRODUCT_FEATURES.md with user-facing
+  descriptions after SHIP CLEAR. Phase 6 of jasmail-dev-os.
 ---
 
 # JasMail Product Features Bot
 
-Maintain `docs/PRODUCT_FEATURES.md` — the user-facing feature catalog.
+## Prerequisite
 
-## On each release
+`SHIP CLEAR: 0` in review artifact.
 
-1. Read changelog and plan docs
-2. Add/update sections for new capabilities
-3. Move shipped roadmap items from "Planned" to active sections
-4. Keep language non-technical (no internal module names)
+## Update `docs/PRODUCT_FEATURES.md`
 
-## v1.7 section
-
-Document scan-first dedupe, action picker, SQLite audit (high-level), `deleted/` 90-day retention.
+- Move shipped capabilities from "Planned" to active sections
+- Non-technical language (no `lib/` paths)
+- Align with release-notes bullets
 
 ## Cross-reference
 
-- `ROADMAP.md` — engineering roadmap
-- `docs/PRODUCT_FEATURES.md` — user-facing catalog
+- `ROADMAP.md` — engineering view
+- `docs/PRODUCT_FEATURES.md` — user/marketing view

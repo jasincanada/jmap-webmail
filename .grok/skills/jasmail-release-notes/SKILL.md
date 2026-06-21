@@ -1,41 +1,36 @@
 ---
 name: jasmail-release-notes
 description: >
-  JasMail release notes subagent. Updates VERSION, CHANGELOG.md, docs/JASMAIL_CHANGELOG.md
-  with user-facing release notes for each shipped version. Use only after reviewer clears ship.
+  JasMail release notes bot. Updates VERSION, CHANGELOG.md, docs/JASMAIL_CHANGELOG.md only
+  after all specialists SHIP CLEAR and review artifact exists. Use in jasmail-dev-os Phase 6.
 ---
 
 # JasMail Release Notes Bot
 
-Update release artifacts **only after** code reviewer reports `SHIP CLEAR: 0 issues`.
+## Prerequisite (hard gate)
+
+- `docs/reviews/YYYY-MM-DD-vX.Y.Z-review.md` contains `Final verdict: SHIP CLEAR: 0`
+- Phase 5 build gates passed
+
+If not met → **stop**; do not bump VERSION.
 
 ## Files
 
-| File | Purpose |
-|------|---------|
-| `VERSION` | Semver string |
-| `package.json` | `"version"` field |
-| `CHANGELOG.md` | Keep a Changelog format |
-| `docs/JASMAIL_CHANGELOG.md` | JasMail-specific detailed notes |
+| File | Action |
+|------|--------|
+| `VERSION` | Semver |
+| `package.json` | `"version"` |
+| `CHANGELOG.md` | Keep a Changelog top section |
+| `docs/JASMAIL_CHANGELOG.md` | Detailed JasMail notes |
 
-## v1.7.0 template
+## Format
 
 ```markdown
-## [1.7.0] - YYYY-MM-DD
-
-### Changed
-- Duplicate handling is scan-first: no automatic mailbox writes until user chooses an action and confirms
-- Removed one-click "Remove duplicates" entry points; action picker replaces auto-move to dupes/
-
-### Added
-- Dedupe action framework (review_only, move_to_folder, move_to_dupes, trash, archive, delete_with_retention)
-- Server-side SQLite audit trail (`/api/dedupe/`) with progress and message-level change log
-- `deleted/` subfolder with 90-day retention before permanent purge
-
-### Security
-- Non-destructive by default; tiered confirmation for write actions
+## X.Y.Z (YYYY-MM-DD)
+### Feature / Changed / Security / Bug fix
+- User-facing bullet (no internal module names)
 ```
 
-## Commit message
+## Commit
 
-`v1.7.0: scan-first dedupe, SQLite audit, deleted/ retention`
+Included in release commit `vX.Y.Z: <summary>` — do not separate doc-only commit unless hotfix docs.

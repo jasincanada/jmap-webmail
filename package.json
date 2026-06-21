@@ -29,7 +29,9 @@
     "lint:fix": "next lint --fix",
     "prepare": "husky",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check:locales": "node scripts/check-locales.mjs",
+    "check:ship": "npm run check:locales && npm run typecheck && npm run test"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.13.18",

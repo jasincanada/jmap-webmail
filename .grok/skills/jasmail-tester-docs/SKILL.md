@@ -1,32 +1,34 @@
 ---
 name: jasmail-tester-docs
 description: >
-  JasMail tester documentation maintainer. Updates docs/TESTER_TASKS.md with manual QA steps
-  for each release. Use before tagging a release or when user asks for tester tasks.
+  JasMail tester documentation maintainer. Updates docs/TESTER_TASKS.md with versioned QA
+  rows mapped to plan success criteria. Runs Phase 6 after SHIP CLEAR only.
 ---
 
 # JasMail Tester Docs Bot
 
-Maintain `docs/TESTER_TASKS.md` for human QA.
+## Prerequisite
 
-## v1.7 tester tasks (add section)
+`SHIP CLEAR: 0` in review artifact.
 
-### Dedupe scan-first flow
-- [ ] Sidebar → "Scan for duplicates" on a folder — scan completes, no messages moved
-- [ ] Settings → "Scan account" — account scan, no auto-move
-- [ ] After scan with duplicates → "Choose action…" picker appears
-- [ ] `review_only` — completes with zero JMAP writes
-- [ ] `move_to_dupes` — creates `dupes/` only on Apply, moves duplicates after confirm
-- [ ] `delete_with_retention` — moves to `deleted/`, shows 90-day retention copy
-- [ ] Old URL `?action=remove` redirects to scan + picker (no auto-remove)
-- [ ] Cancel during scan — no partial writes
+## Add section per release
 
-### Audit (API / Docker)
-- [ ] With volume mounted, `/data/dedupe-audit.db` persists across container restart
-- [ ] GET `/api/dedupe/runs/:id` returns progress after scan
+```markdown
+## vX.Y.Z — <title> (YYYY-MM-DD)
 
-### Regression
-- [ ] Existing mail operations unaffected
-- [ ] All automated tests pass
+| ID | Task | Steps | Expected | Result |
+|----|------|-------|----------|--------|
+| VXY-1 | ... | ... | ... | |
+```
 
-Format: checkbox list with expected results and failure notes column.
+## Rules
+
+- Every plan success criterion → at least one QA row
+- Include regression rows (S-* smoke) when touching core paths
+- Reference deploy steps from Setup section
+- Update **Last updated** footer
+
+## Cross-reference
+
+- Plan: `docs/plans/`
+- Changelog: `docs/JASMAIL_CHANGELOG.md`

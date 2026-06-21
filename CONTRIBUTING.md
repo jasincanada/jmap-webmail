@@ -28,6 +28,23 @@ Thank you for your interest in contributing to JMAP Webmail! This document provi
    npm run dev
    ```
 
+### JasMail development OS
+
+JasMail releases use the **development operating system** in `.grok/skills/jasmail-dev-os/`.
+
+- **Orchestrator:** `/jasmail-dev-os` — plan → implement → review → bugfix → ship
+- **Golden rule:** No tag until `docs/reviews/YYYY-MM-DD-vX.Y.Z-review.md` shows `Final verdict: SHIP CLEAR: 0`
+- **Checklist:** [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md)
+- **Specialists:** implementer, test-writer, code/security/test/plan/a11y/i18n/stack reviewers, bugfixer, doc bots
+
+Ship gates:
+
+```bash
+npx eslint . --max-warnings 0
+npm run check:ship   # locales + typecheck + test
+npm run build
+```
+
 ### Code Quality
 
 Before submitting a pull request, ensure your code passes all checks:
@@ -38,6 +55,9 @@ npm run typecheck
 
 # Linting
 npm run lint
+
+# Locale parity (all 10 locales)
+npm run check:locales
 
 # Fix lint issues automatically
 npm run lint:fix

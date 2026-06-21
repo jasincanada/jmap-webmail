@@ -1,31 +1,27 @@
 ---
 name: jasmail-github-issues
 description: >
-  JasMail GitHub issues maintainer bot. Opens, updates, and closes issues on jasincanada/JasMail
-  to match shipped work and roadmap. Use before release or when syncing issue tracker.
+  JasMail GitHub issues maintainer. Syncs jasincanada/JasMail issues with shipped work and
+  deferred plan items. Runs in Phase 6 after SHIP CLEAR. Paste gh output into RELEASE_CHECKLIST.
 ---
 
 # JasMail GitHub Issues Bot
 
-Maintain [jasincanada/JasMail issues](https://github.com/jasincanada/JasMail/issues).
+## Prerequisite
+
+Review artifact shows `SHIP CLEAR: 0`.
 
 ## On release
 
-1. Close issues fixed in the release (reference commit/tag in comment)
-2. Open new issues for deferred items or known regressions
-3. Label: `bug`, `enhancement`, `v1.7`, `dedupe` as appropriate
-
-## v1.7 expected closures
-
-- Duplicate auto-remove retired (design change)
-- Any dedupe-related open bugs fixed in v1.7
-
-## Commands
-
 ```bash
 gh issue list --repo jasincanada/JasMail --state open
-gh issue close N --comment "Fixed in v1.7.0"
-gh issue create --repo jasincanada/JasMail --title "..." --body "..."
 ```
 
-Use `fork` remote context; repo is `jasincanada/JasMail`.
+1. Close fixed issues: `gh issue close N --comment "Fixed in vX.Y.Z (commit SHA)"`
+2. Open issues for deferred plan todos (purge scheduler, E2E, etc.)
+3. Label: `bug`, `enhancement`, `vX.Y`, area labels (`dedupe`, `a11y`, …)
+4. Link Epic #3 for review follow-ups when applicable
+
+## Paste into checklist
+
+Copy full `gh issue list` output after sync into `docs/RELEASE_CHECKLIST.md` Phase 6.
