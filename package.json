@@ -25,13 +25,18 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "next lint",
-    "lint:fix": "next lint --fix",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix --max-warnings 0",
     "prepare": "husky",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check:locales": "node scripts/check-locales.mjs",
-    "check:ship": "npm run check:locales && npm run typecheck && npm run test"
+    "check:ship": "node scripts/ship-gate.mjs",
+    "check:ship:full": "node scripts/ship-gate.mjs --full",
+    "diff:scope": "node scripts/diff-scope.mjs",
+    "locales:sync": "node scripts/sync-locales.mjs",
+    "ship:validate": "node scripts/validate-review-artifact.mjs",
+    "metrics:record": "node scripts/record-review-metrics.mjs"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.13.18",

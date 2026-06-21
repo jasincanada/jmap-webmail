@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+# Block version tag pushes without a SHIP CLEAR review artifact and passing ship-gate.
+tag=$(git describe --tags --exact-match HEAD 2>/dev/null || true)
+if [ -n "$tag" ]; then
+  version=$(echo "$tag" | sed 's/^v//')
+  echo "pre-push: validating release tag $tag"
+  node scripts/validate-review-artifact.mjs "$version" || exit 1
+  node scripts/ship-gate.mjs --full --version "$version" || exit 1
+fi

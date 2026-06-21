@@ -50,7 +50,7 @@ export default [
     },
   },
   {
-    files: ["scripts/**/*.mjs"],
+    files: ["scripts/**/*.mjs", "scripts/lib/**/*.mjs"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",

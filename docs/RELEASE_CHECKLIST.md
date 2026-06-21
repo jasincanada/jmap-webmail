@@ -50,11 +50,9 @@ Review artifact written with merged findings and final verdict.
 
 ## Phase 5 — Build gates
 
-- [ ] `npx eslint . --max-warnings 0`
-- [ ] `npm run typecheck`
-- [ ] `npm run test`
-- [ ] `npm run check:locales`
-- [ ] `npm run build`
+- [ ] `npm run check:ship` (lint + typecheck + test + locales)
+- [ ] `npm run check:ship:full -- --version X.Y.Z` (adds build + review artifact validation)
+- [ ] `npm run diff:scope` logged in review artifact
 - [ ] `docker compose build jasmail` (when Docker touched or every minor release)
 
 ## Phase 6 — Document & track
@@ -66,8 +64,10 @@ Review artifact written with merged findings and final verdict.
 
 ## Phase 7 — Ship
 
+- [ ] `npm run metrics:record -- --version X.Y.Z --rounds N --findings N`
+- [ ] Retrospective from `docs/reviews/RETROSPECTIVE_TEMPLATE.md` completed
 - [ ] Single release commit message: `vX.Y.Z: <summary>`
-- [ ] Tag `vX.Y.Z` on release commit
+- [ ] Tag `vX.Y.Z` on release commit (pre-push hook validates artifact + full gate)
 - [ ] `git push fork main && git push fork vX.Y.Z`
 - [ ] `docker compose up -d jasmail` (stack operator)
 

@@ -4,17 +4,17 @@ Reviewers and the bugfixer read this file every cycle. Append new patterns after
 
 ## Recurring defects (learned from v1.6–v1.7)
 
-| Pattern | Symptom | Prevention |
-|---------|---------|------------|
-| **UI option not wired** | Picker/store exposes a preference executors ignore | Plan-reviewer: trace UI → store → lib executor |
-| **Phase enum drift** | Store uses `applying` but components check `removing` | Grep all phase literals after store changes |
-| **i18n key skew** | `en` updated; other locales missing keys | Run `npm run check:locales` before review |
-| **Lint ships first** | Unused imports vars in initial commit | ESLint `--max-warnings 0` in ship gate |
-| **Review bypass** | Tag pushed without persisted `SHIP CLEAR` | Orchestrator blocks tag without `docs/reviews/*.md` |
-| **Stack orphan** | Compose volume/env changed outside git repo | Stack-maintainer reviews parent compose diff |
-| **Destructive default** | JMAP writes on scan or page load | Security-reviewer: no writes without Apply + confirm |
-| **Abort not honoured** | JMAP calls ignore `AbortSignal` | Test-reviewer: grep `signal` through call chain |
-| **Audit gap** | Apply path skips `recordChange` | Security-reviewer: every touched message logged |
+| Pattern | Symptom | Prevention | First seen |
+|---------|---------|------------|------------|
+| **UI option not wired** | Picker/store exposes a preference executors ignore | Plan-reviewer: trace UI → store → lib executor | v1.7 |
+| **Phase enum drift** | Store uses `applying` but components check `removing` | Grep all phase literals after store changes | v1.7 |
+| **i18n key skew** | `en` updated; other locales missing keys | `npm run locales:sync` then `check:locales` | v1.7 |
+| **Lint ships first** | Unused imports vars in initial commit | `npm run check:ship` pre-commit | v1.7 |
+| **Review bypass** | Tag pushed without persisted `SHIP CLEAR` | `.husky/pre-push` + `validate-review-artifact.mjs` | v1.7 |
+| **Stack orphan** | Compose volume/env changed outside git repo | Stack-maintainer reviews parent compose diff | v1.7 |
+| **Destructive default** | JMAP writes on scan or page load | Security-reviewer: no writes without Apply + confirm | v1.6 |
+| **Abort not honoured** | JMAP calls ignore `AbortSignal` | Test-reviewer: grep `signal` through call chain | v1.6 |
+| **Audit gap** | Apply path skips `recordChange` | Security-reviewer: every touched message logged | v1.7 |
 
 ## Specialist focus areas
 

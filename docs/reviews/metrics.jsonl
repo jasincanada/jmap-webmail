@@ -1,0 +1,2 @@
+{"version":"1.7.0","date":"2026-06-20","devOsVersion":"1.0.0","reviewRounds":0,"totalFindings":-1,"artifact":"none","tests":"748","note":"Shipped before mature OS; retrospective baseline"}
+{"version":"dev-os","date":"2026-06-20","devOsVersion":"2.0.0","reviewRounds":1,"totalFindings":0,"artifact":"N/A","note":"OS 2.0 mechanical gates landed"}

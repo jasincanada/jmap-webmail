@@ -30,19 +30,18 @@ Thank you for your interest in contributing to JMAP Webmail! This document provi
 
 ### JasMail development OS
 
-JasMail releases use the **development operating system** in `.grok/skills/jasmail-dev-os/`.
+Full guide: [`docs/DEV_OS.md`](docs/DEV_OS.md) · Maintenance: [`docs/DEV_OS_MAINTENANCE.md`](docs/DEV_OS_MAINTENANCE.md)
 
-- **Orchestrator:** `/jasmail-dev-os` — plan → implement → review → bugfix → ship
-- **Golden rule:** No tag until `docs/reviews/YYYY-MM-DD-vX.Y.Z-review.md` shows `Final verdict: SHIP CLEAR: 0`
-- **Checklist:** [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md)
-- **Specialists:** implementer, test-writer, code/security/test/plan/a11y/i18n/stack reviewers, bugfixer, doc bots
-
-Ship gates:
+- **Orchestrator:** `/jasmail-dev-os` (dev OS v2.0 — mechanical gates)
+- **Golden rule:** No tag until review artifact has `SHIP CLEAR: 0` (enforced by `.husky/pre-push`)
+- **Skill index:** [`.grok/skills/README.md`](.grok/skills/README.md)
 
 ```bash
-npx eslint . --max-warnings 0
-npm run check:ship   # locales + typecheck + test
-npm run build
+npm run check:ship              # every commit (pre-commit hook)
+npm run check:ship:full         # before release (+ build)
+npm run diff:scope              # which reviewers to run
+npm run locales:sync            # after editing en/common.json
+npm run ship:validate -- X.Y.Z  # verify review artifact
 ```
 
 ### Code Quality

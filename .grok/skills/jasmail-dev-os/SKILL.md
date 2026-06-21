@@ -125,20 +125,27 @@ SHIP BLOCKED: N | SHIP CLEAR: 0
 
 ---
 
-## Phase 5 — Build gates (orchestrator runs directly)
+## Phase 3b — Deterministic reviewer scope
 
-All must pass:
+```bash
+npm run diff:scope
+```
+
+Use JSON `specialists.conditional` / `specialists.skip` — do not guess from memory.
+
+## Phase 5 — Build gates (mechanical — orchestrator runs directly)
 
 ```bash
 cd /home/jas/dockersites/email/jmap-webmail
-npx eslint . --max-warnings 0
-npm run typecheck
-npm run test
-npm run check:locales
-npm run build
+npm run check:ship                              # quick gate
+npm run check:ship:full -- --version X.Y.Z      # build + review artifact validation
 ```
 
-If Docker/infra touched or minor+ release:
+Scripts: `scripts/ship-gate.mjs`, `scripts/validate-review-artifact.mjs`
+
+CI mirrors this via `.github/workflows/ci.yml`. Tags blocked by `.husky/pre-push` without SHIP CLEAR artifact.
+
+If Docker/infra touched:
 
 ```bash
 cd /home/jas/dockersites/email && docker compose build jasmail
@@ -162,9 +169,13 @@ Record pass/fail in review artifact and RELEASE_CHECKLIST Phase 5.
 ## Phase 7 — Ship
 
 1. Complete every row in `docs/RELEASE_CHECKLIST.md`.
-2. Commit: `vX.Y.Z: <summary>`
-3. `git tag vX.Y.Z && git push fork main && git push fork vX.Y.Z`
-4. Notify operator: `docker compose up -d jasmail`
+2. `npm run metrics:record -- --version X.Y.Z --rounds N --findings N`
+3. Fill `docs/reviews/RETROSPECTIVE_TEMPLATE.md` for the release.
+4. Commit: `vX.Y.Z: <summary>`
+5. `git tag vX.Y.Z && git push fork main && git push fork vX.Y.Z` (pre-push enforces gates)
+6. Notify operator: `docker compose up -d jasmail`
+
+Human hub: `docs/DEV_OS.md` · Maintenance: `docs/DEV_OS_MAINTENANCE.md`
 
 ---
 
