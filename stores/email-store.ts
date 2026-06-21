@@ -339,10 +339,19 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   },
 
   loadMoreEmails: async (client) => {
-    const { isLoadingMore, hasMoreEmails, emails, selectedMailbox, searchQuery } = get();
+    const { isLoadingMore, hasMoreEmails, emails, selectedMailbox, searchQuery, searchFilters } = get();
 
     // Don't load if already loading or no more emails
     if (isLoadingMore || !hasMoreEmails) return;
+
+    const { listSort, listFilter } = useSettingsStore.getState();
+    const requestKey = JSON.stringify({
+      mailbox: selectedMailbox,
+      listSort,
+      listFilter,
+      searchQuery,
+      searchFilters,
+    });
 
     set({ isLoadingMore: true, error: null });
     try {
@@ -353,7 +362,6 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
       const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
       const jmapMailboxId = mailbox?.originalId || selectedMailbox;
-      const { searchFilters } = get();
       const queryOptions = resolveMailboxListQuery(jmapMailboxId, searchQuery, searchFilters);
       const result = await client.getEmails(
         jmapMailboxId,
@@ -363,6 +371,19 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         queryOptions,
       );
 
+      const current = get();
+      const currentKey = JSON.stringify({
+        mailbox: current.selectedMailbox,
+        listSort: useSettingsStore.getState().listSort,
+        listFilter: useSettingsStore.getState().listFilter,
+        searchQuery: current.searchQuery,
+        searchFilters: current.searchFilters,
+      });
+      if (requestKey !== currentKey) {
+        set({ isLoadingMore: false });
+        return;
+      }
+
       set({
         emails: [...emails, ...result.emails],
         hasMoreEmails: result.hasMore,
@@ -370,6 +391,10 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         isLoadingMore: false
       });
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        set({ isLoadingMore: false });
+        return;
+      }
       set({
         error: error instanceof Error ? error.message : "Failed to load more emails",
         isLoadingMore: false
@@ -640,7 +665,8 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       const destMailbox = mailboxes.find(mb => mb.id === destinationMailboxId);
       const jmapDestId = destMailbox?.originalId || destinationMailboxId;
 
-      const movedIds = await client.moveThreadToMailbox(threadId, jmapDestId, accountId);
+      const jmapFromId = currentMailbox?.originalId || selectedMailbox;
+      const movedIds = await client.moveThreadToMailbox(threadId, jmapDestId, jmapFromId, accountId);
       if (movedIds.length === 0) return;
 
       const movedSet = new Set(movedIds);
@@ -714,8 +740,9 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
       const destMailbox = mailboxes.find(mb => mb.id === destinationMailboxId);
       const jmapDestId = destMailbox?.originalId || destinationMailboxId;
+      const jmapFromId = currentMailbox?.originalId || selectedMailbox;
 
-      await client.moveEmail(emailId, jmapDestId, accountId);
+      await client.moveEmail(emailId, jmapDestId, jmapFromId, accountId);
 
       set((state) => {
         const updatedMailboxes = state.mailboxes.map(mailbox => {
@@ -911,7 +938,8 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
       if (trashMailbox) {
         const trashId = trashMailbox.originalId || trashMailbox.id;
-        await client.batchMoveEmails(emailIdsArray, trashId, accountId);
+        const jmapFromId = currentMailbox?.originalId || selectedMailbox;
+        await client.batchMoveEmails(emailIdsArray, trashId, jmapFromId, accountId);
       } else {
         await client.batchDeleteEmails(emailIdsArray);
       }
@@ -960,13 +988,18 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   },
 
   batchMoveToMailbox: async (client, toMailboxId) => {
-    const { selectedEmailIds, emails } = get();
+    const { selectedEmailIds, emails, selectedMailbox, mailboxes } = get();
     if (selectedEmailIds.size === 0) return;
 
     set({ error: null });
     try {
       const emailIdsArray = Array.from(selectedEmailIds);
-      await client.batchMoveEmails(emailIdsArray, toMailboxId);
+      const currentMailbox = mailboxes.find(mb => mb.id === selectedMailbox);
+      const destMailbox = mailboxes.find(mb => mb.id === toMailboxId);
+      const accountId = currentMailbox?.isShared ? currentMailbox.accountId : undefined;
+      const jmapFromId = currentMailbox?.originalId || selectedMailbox;
+      const jmapDestId = destMailbox?.originalId || toMailboxId;
+      await client.batchMoveEmails(emailIdsArray, jmapDestId, jmapFromId, accountId);
 
       // Update local state - remove from current view since they moved
       const remainingEmails = emails.filter(e => !selectedEmailIds.has(e.id));
@@ -976,8 +1009,10 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         selectedEmailIds: new Set(),
       });
 
-      // Silent refresh to sync with server
-      await get().refreshCurrentMailbox(client);
+      await Promise.all([
+        get().refreshCurrentMailbox(client),
+        get().fetchMailboxes(client),
+      ]);
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : "Failed to move emails",
@@ -1246,6 +1281,10 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
       // Fetch all emails in the thread
       const emails = await client.getThreadEmails(threadId, accountId);
+      if (emails.length === 0) {
+        set({ isLoadingThread: null });
+        return [];
+      }
 
       // Update cache
       const newCache = new Map(get().threadEmailsCache);
@@ -1257,9 +1296,12 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       });
 
       return emails;
-    } catch {
+    } catch (error) {
       set({ isLoadingThread: null });
-      return [];
+      if (error instanceof Error && error.name === 'AbortError') {
+        return [];
+      }
+      throw error;
     }
   },
 
@@ -1477,7 +1519,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
           while (true) {
             const batch = await client.queryMailboxEmailIds(jmapId, 500, position);
             if (batch.ids.length === 0) break;
-            await client.batchMoveEmails(batch.ids, trashId);
+            await client.batchMoveEmails(batch.ids, trashId, jmapId);
             if (batch.ids.length < 500) break;
             position = 0;
           }

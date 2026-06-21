@@ -777,7 +777,6 @@ export function Sidebar({
   const [creatingTopLevel, setCreatingTopLevel] = useState(false);
   const [deleteFolderTarget, setDeleteFolderTarget] = useState<Mailbox | null>(null);
   const [removeDedupeTarget, setRemoveDedupeTarget] = useState<Mailbox | null>(null);
-  const [dedupeBusy, setDedupeBusy] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const t = useTranslations('sidebar');
   const tFolder = useTranslations('sidebar.folder_management');
@@ -787,7 +786,7 @@ export function Sidebar({
   const { client } = useAuthStore();
   const dedupeConfig = useDedupeConfigStore((state) => state.config);
   const { getMailboxHighlight } = useDedupeHighlightStore();
-  const { emptyFolder, createMailbox, renameMailbox, moveMailbox, deleteMailbox, fetchEmails, fetchMailboxes } = useEmailStore();
+  const { emptyFolder, createMailbox, renameMailbox, moveMailbox, deleteMailbox } = useEmailStore();
   const { sidebarWidth, updateSetting } = useSettingsStore();
 
   const handleSidebarResize = useCallback((width: number) => {
@@ -1225,20 +1224,18 @@ export function Sidebar({
               <>
                 <div className="h-px bg-border mx-2 my-1" />
                 <button
-                  disabled={dedupeBusy}
                   onClick={() => handleScanDuplicates(contextMenu.mailbox)}
-                  className="flex items-center w-full px-3 py-2 text-sm hover:bg-muted transition-colors disabled:opacity-50"
+                  className="flex items-center w-full px-3 py-2 text-sm hover:bg-muted transition-colors"
                 >
                   <Search className="w-4 h-4 mr-2" />
                   {tDedupe('scan_for_duplicates')}
                 </button>
                 <button
-                  disabled={dedupeBusy}
                   onClick={() => {
                     setContextMenu(null);
                     setRemoveDedupeTarget(contextMenu.mailbox);
                   }}
-                  className="flex items-center w-full px-3 py-2 text-sm hover:bg-muted transition-colors disabled:opacity-50"
+                  className="flex items-center w-full px-3 py-2 text-sm hover:bg-muted transition-colors"
                 >
                   <Play className="w-4 h-4 mr-2" />
                   {tDedupe('remove_duplicates')}

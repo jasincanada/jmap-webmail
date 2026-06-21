@@ -452,7 +452,14 @@ export default function Home() {
     if (!client || !selectedEmail) return;
 
     // Find archive mailbox
-    const archiveMailbox = mailboxes.find(m => m.role === "archive" || m.name.toLowerCase() === "archive");
+    const currentMailbox = mailboxes.find((m) => m.id === selectedMailbox);
+    const accountId = currentMailbox?.isShared ? currentMailbox.accountId : undefined;
+    const archiveMailbox = mailboxes.find((m) => {
+      const isArchive = m.role === 'archive' || m.name.toLowerCase() === 'archive';
+      if (!isArchive) return false;
+      if (accountId) return m.accountId === accountId;
+      return !m.isShared;
+    });
     if (!archiveMailbox) return;
 
     try {
@@ -718,8 +725,9 @@ export default function Home() {
     setActiveView("viewer");
 
     try {
-      // Fetch complete thread emails
-      const emails = await client.getThreadEmails(thread.threadId);
+      const mailbox = mailboxes.find((mb) => mb.id === selectedMailbox);
+      const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
+      const emails = await client.getThreadEmails(thread.threadId, accountId);
       setConversationEmails(emails);
     } catch {
       // Fall back to thread.emails

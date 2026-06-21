@@ -8,6 +8,18 @@ The matching **CLI** lives in the stack `dedupe/` directory (outside this repo).
 
 ---
 
+## 1.6.5 (2026-06-20)
+
+Three review→fix cycles after v1.6.4. Highlights:
+
+- Dedupe: auto-start race, account scan confirm on cold load, AbortError handling, invalid folder URL error, run-again double-start, account-wide progress banner
+- List: `loadMoreEmails` stale-append guard; `getEmails` surfaces real errors
+- JMAP moves: source mailbox removal on single/batch/thread moves; `Email/set` response validation; thread moves batched (500)
+- Threads: chunked `getThreadEmails` with strict chunk validation; shared-folder `accountId` on conversation load; archive scoped per account
+- Cleanup: removed dead `dedupeBusy` state in sidebar
+
+---
+
 ## 1.6.4 (2026-06-20)
 
 ### Bug fixes (medium)

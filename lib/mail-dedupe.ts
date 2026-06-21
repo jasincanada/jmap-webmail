@@ -423,6 +423,16 @@ export async function scanMailboxDuplicates(
   let scanned = 0;
 
   const eligible = mailboxes.filter((mailbox) => canDedupeMailbox(mailbox));
+  const folderProgress = new Map<string, string>();
+  const reportFolderProgress = onProgress
+    ? (mailboxName: string, message: string) => {
+        folderProgress.set(mailboxName, message);
+        const summary = [...folderProgress.entries()]
+          .map(([name, detail]) => `${name}: ${detail}`)
+          .join(' · ');
+        onProgress(summary);
+      }
+    : undefined;
 
   for (let offset = 0; offset < eligible.length; offset += SCAN_CONCURRENCY) {
     throwIfAborted(signal);
@@ -434,7 +444,9 @@ export async function scanMailboxDuplicates(
           mailbox.id,
           config,
           mailboxes,
-          onProgress ? (message) => onProgress(`${mailbox.name}: ${message}`) : undefined,
+          reportFolderProgress
+            ? (message) => reportFolderProgress(mailbox.name, message)
+            : undefined,
           false,
           signal,
         ),

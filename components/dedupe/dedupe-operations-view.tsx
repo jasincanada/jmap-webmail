@@ -91,19 +91,28 @@ function GroupCard({ group, index }: { group: DedupeGroup; index: number }) {
 
   return (
     <div className="rounded-lg border border-border overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors"
-      >
-        <span className={cn('w-1.5 h-8 rounded-full shrink-0 border-l-4', getDedupeStripeColor(index))} />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground truncate">
-            {group.key || t('group_unknown_key')}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {t('group_summary', { total: group.emailIds.length, duplicates: group.duplicateIds.length })}
-          </p>
+      <div className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setOpen((value) => !value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              setOpen((value) => !value);
+            }
+          }}
+          className="flex flex-1 items-center gap-3 min-w-0 text-left cursor-pointer"
+        >
+          <span className={cn('w-1.5 h-8 rounded-full shrink-0 border-l-4', getDedupeStripeColor(index))} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground truncate">
+              {group.key || t('group_unknown_key')}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {t('group_summary', { total: group.emailIds.length, duplicates: group.duplicateIds.length })}
+            </p>
+          </div>
         </div>
         <button
           type="button"
@@ -114,7 +123,7 @@ function GroupCard({ group, index }: { group: DedupeGroup; index: number }) {
         >
           <Copy className="w-4 h-4" />
         </button>
-      </button>
+      </div>
       {open && (
         <div className="border-t border-border divide-y divide-border">
           <div className={cn('px-4 py-2 text-sm', keeperClasses)}>
@@ -217,6 +226,7 @@ export function DedupeOperationsView() {
       : (actionParam === 'remove' ? 'remove' : 'scan');
 
     if (!isAccount && !folderParam) {
+      startedRef.current = null;
       fail(t('missing_folder'));
       return;
     }
@@ -253,7 +263,11 @@ export function DedupeOperationsView() {
           }
         } else if (outcome.moved > 0) {
           clearAllHighlights();
+          const currentMailbox = useEmailStore.getState().selectedMailbox;
           await fetchMailboxes(client);
+          if (currentMailbox) {
+            await fetchEmails(client, currentMailbox);
+          }
         }
         completeAccount(outcome, outcome.moved);
         toast.success(
@@ -266,6 +280,7 @@ export function DedupeOperationsView() {
 
       const mailbox = resolvedMailbox;
       if (!mailbox) {
+        startedRef.current = null;
         fail(t('missing_folder'));
         return;
       }
@@ -317,7 +332,10 @@ export function DedupeOperationsView() {
         toast.info(t('folder_scan_none', { folder: mailbox.name }));
       }
     } catch (err) {
-      if (err instanceof DedupeAbortedError) {
+      if (
+        err instanceof DedupeAbortedError ||
+        (err instanceof Error && err.name === 'AbortError')
+      ) {
         handleAbort();
         return;
       }
@@ -369,7 +387,8 @@ export function DedupeOperationsView() {
     }
 
     if (scopeParam === 'account') {
-      const maxCount = await getAccountScanMaxFolderCount(client, mailboxes);
+      const mailboxList = mailboxes.length > 0 ? mailboxes : await client.getAllMailboxes();
+      const maxCount = await getAccountScanMaxFolderCount(client, mailboxList);
       setFolderMessageCount(maxCount);
       if (dedupeScanNeedsConfirmation(maxCount)) {
         setAwaitingConfirm('scan');
@@ -386,17 +405,27 @@ export function DedupeOperationsView() {
     const signature = `${scopeParam}:${actionParam}:${folderParam ?? 'all'}`;
     if (startedRef.current === signature) return;
 
+    if (scopeParam === 'folder' && folderParam && mailboxes.length > 0 && !resolvedMailbox) {
+      startedRef.current = signature;
+      fail(t('missing_folder'));
+      return;
+    }
+
+    if (scopeParam === 'folder' && folderParam && !resolvedMailbox) return;
+
     const startRemoveFlow = () => {
       startedRef.current = signature;
       setAwaitingConfirm('remove');
     };
 
     const startScanFlow = async () => {
-      startedRef.current = signature;
       const confirmed = await requestScanConfirmation();
-      if (confirmed) {
-        void runOperation();
+      if (!confirmed) {
+        startedRef.current = signature;
+        return;
       }
+      startedRef.current = signature;
+      void runOperation();
     };
 
     if (actionParam === 'remove') {
@@ -405,7 +434,7 @@ export function DedupeOperationsView() {
     }
 
     void startScanFlow();
-  }, [client, runOperation, requestScanConfirmation, scopeParam, actionParam, folderParam, resolvedMailbox]);
+  }, [client, fail, mailboxes.length, runOperation, requestScanConfirmation, scopeParam, actionParam, folderParam, resolvedMailbox, t]);
 
   useEffect(() => () => {
     const { phase } = useDedupeOperationsStore.getState();
@@ -637,8 +666,9 @@ export function DedupeOperationsView() {
             variant="outline"
             onClick={() => {
               reset();
-              startedRef.current = null;
               setAwaitingConfirm(null);
+              const signature = `${scopeParam}:${actionParam}:${folderParam ?? 'all'}`;
+              startedRef.current = signature;
               if (actionParam === 'remove') {
                 setAwaitingConfirm('remove');
               } else {

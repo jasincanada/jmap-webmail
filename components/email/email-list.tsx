@@ -224,7 +224,11 @@ export function EmailList({
 
     if (!isExpanded && client) {
       toggleThreadExpansion(threadId);
-      await fetchThreadEmails(client, threadId);
+      try {
+        await fetchThreadEmails(client, threadId);
+      } catch {
+        toggleThreadExpansion(threadId);
+      }
     } else {
       toggleThreadExpansion(threadId);
     }

@@ -562,7 +562,7 @@ export class JMAPClient {
       if (error instanceof Error && error.name === 'AbortError') {
         throw error;
       }
-      return { emails: [], hasMore: false, total: 0 };
+      throw error;
     }
   }
 
@@ -949,14 +949,40 @@ export class JMAPClient {
     }
   }
 
-  async batchMoveEmails(emailIds: string[], toMailboxId: string, accountId?: string): Promise<void> {
+  async batchMoveEmails(
+    emailIds: string[],
+    toMailboxId: string,
+    fromMailboxId?: string,
+    accountId?: string,
+  ): Promise<void> {
     if (emailIds.length === 0) return;
 
     const targetAccountId = accountId || this.accountId;
-    const updates = Object.fromEntries(emailIds.map(id => [id, { mailboxIds: { [toMailboxId]: true } }]));
-    await this.request([
+    const mailboxPatch = fromMailboxId
+      ? { [toMailboxId]: true, [fromMailboxId]: false }
+      : { [toMailboxId]: true };
+    const updates = Object.fromEntries(
+      emailIds.map((id) => [id, { mailboxIds: mailboxPatch }]),
+    );
+    const response = await this.request([
       ["Email/set", { accountId: targetAccountId, update: updates }, "0"],
     ]);
+
+    const [method, result] = response.methodResponses?.[0] ?? [];
+    if (method !== 'Email/set') {
+      throw new JMAPSetError('unknown', 'Email/set failed while moving messages');
+    }
+
+    const updated = (result?.updated ?? {}) as Record<string, unknown>;
+    const notUpdated = result?.notUpdated as Record<string, { type?: string; description?: string }> | undefined;
+    const missing = emailIds.filter((id) => !(id in updated));
+    if (missing.length > 0) {
+      const first = notUpdated ? Object.values(notUpdated)[0] : undefined;
+      throw new JMAPSetError(
+        first?.type || 'partialUpdate',
+        first?.description || `Failed to move ${missing.length} message(s)`,
+      );
+    }
   }
 
   /**
@@ -965,17 +991,50 @@ export class JMAPClient {
    * Email/set to update them all in one JMAP request. Returns the ids
    * that were moved so the caller can reconcile local state.
    */
-  async moveThreadToMailbox(threadId: string, toMailboxId: string, accountId?: string): Promise<string[]> {
+  async moveThreadToMailbox(
+    threadId: string,
+    toMailboxId: string,
+    fromMailboxId?: string,
+    accountId?: string,
+  ): Promise<string[]> {
     const targetAccountId = accountId || this.accountId;
     const thread = await this.getThread(threadId, accountId);
     const ids = thread?.emailIds ?? [];
-    if (ids.length === 0) return [];
+    if (!thread || ids.length === 0) {
+      throw new JMAPSetError('threadNotFound', `Thread ${threadId} has no messages to move`);
+    }
 
-    const updates = Object.fromEntries(ids.map(id => [id, { mailboxIds: { [toMailboxId]: true } }]));
-    await this.request([
-      ["Email/set", { accountId: targetAccountId, update: updates }, "0"],
-    ]);
-    return ids;
+    const mailboxPatch = fromMailboxId
+      ? { [toMailboxId]: true, [fromMailboxId]: false }
+      : { [toMailboxId]: true };
+    const movedIds: string[] = [];
+
+    for (let offset = 0; offset < ids.length; offset += 500) {
+      const chunk = ids.slice(offset, offset + 500);
+      const updates = Object.fromEntries(chunk.map((id) => [id, { mailboxIds: mailboxPatch }]));
+      const response = await this.request([
+        ["Email/set", { accountId: targetAccountId, update: updates }, "0"],
+      ]);
+
+      const [method, result] = response.methodResponses?.[0] ?? [];
+      if (method !== 'Email/set') {
+        throw new JMAPSetError('unknown', 'Email/set failed while moving thread');
+      }
+
+      const updated = (result?.updated ?? {}) as Record<string, unknown>;
+      const notUpdated = result?.notUpdated as Record<string, { type?: string; description?: string }> | undefined;
+      movedIds.push(...chunk.filter((id) => id in updated));
+      const missing = chunk.filter((id) => !(id in updated));
+      if (missing.length > 0) {
+        const first = notUpdated ? Object.values(notUpdated)[0] : undefined;
+        throw new JMAPSetError(
+          first?.type || 'partialUpdate',
+          first?.description || `Failed to move ${missing.length} message(s) in thread`,
+        );
+      }
+    }
+
+    return movedIds;
   }
 
   async createMailbox(name: string, parentId?: string, accountId?: string): Promise<string> {
@@ -1032,14 +1091,22 @@ export class JMAPClient {
     }
   }
 
-  async moveEmail(emailId: string, toMailboxId: string, accountId?: string): Promise<void> {
+  async moveEmail(
+    emailId: string,
+    toMailboxId: string,
+    fromMailboxId?: string,
+    accountId?: string,
+  ): Promise<void> {
     const targetAccountId = accountId || this.accountId;
+    const mailboxPatch = fromMailboxId
+      ? { [toMailboxId]: true, [fromMailboxId]: false }
+      : { [toMailboxId]: true };
     const response = await this.request([
       ["Email/set", {
         accountId: targetAccountId,
         update: {
           [emailId]: {
-            mailboxIds: { [toMailboxId]: true },
+            mailboxIds: mailboxPatch,
           },
         },
       }, "0"],
@@ -1194,29 +1261,44 @@ export class JMAPClient {
         return [];
       }
 
-      const response = await this.request([
-        ["Email/get", {
-          accountId: targetAccountId,
-          ids: thread.emailIds,
-          properties: [...EMAIL_LIST_PROPERTIES],
-        }, "0"],
-      ]);
+      const emails: Email[] = [];
+      const ids = thread.emailIds;
 
-      if (response.methodResponses?.[0]?.[0] === "Email/get") {
-        const emails = response.methodResponses[0][1].list || [];
+      for (let offset = 0; offset < ids.length; offset += 500) {
+        const chunk = ids.slice(offset, offset + 500);
+        const response = await this.request([
+          ["Email/get", {
+            accountId: targetAccountId,
+            ids: chunk,
+            properties: [...EMAIL_LIST_PROPERTIES],
+          }, "0"],
+        ]);
 
-        if (accountId && accountId !== this.accountId) {
-          namespaceMailboxIds(emails, accountId);
+        const [method, getResult] = response.methodResponses?.[0] ?? [];
+        if (method !== 'Email/get') {
+          throw new Error('Email/get failed while loading thread messages');
         }
-
-        return emails.sort((a: Email, b: Email) =>
-          new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
-        );
+        const chunkEmails = getResult?.list || [];
+        if (chunkEmails.length !== chunk.length) {
+          throw new Error(
+            `Email/get returned ${chunkEmails.length} of ${chunk.length} thread messages`,
+          );
+        }
+        emails.push(...chunkEmails);
       }
 
-      return [];
-    } catch {
-      return [];
+      if (accountId && accountId !== this.accountId) {
+        namespaceMailboxIds(emails, accountId);
+      }
+
+      return emails.sort((a: Email, b: Email) =>
+        new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
+      );
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw error;
+      }
+      throw error;
     }
   }
 

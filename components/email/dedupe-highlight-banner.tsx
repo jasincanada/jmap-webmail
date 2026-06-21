@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { Copy, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDedupeHighlightStore } from '@/stores/dedupe-highlight-store';
+import { useDedupeOperationsStore } from '@/stores/dedupe-operations-store';
 import { useActiveMailboxDedupeHighlight } from '@/hooks/use-dedupe-highlight';
 import { useEmailStore } from '@/stores/email-store';
 
@@ -14,6 +15,23 @@ export function DedupeHighlightBanner() {
   const hasMoreEmails = useEmailStore((state) => state.hasMoreEmails);
   const scanningMailboxId = useDedupeHighlightStore((state) => state.scanningMailboxId);
   const clearMailbox = useDedupeHighlightStore((state) => state.clearMailbox);
+  const accountDedupeActive = useDedupeOperationsStore(
+    (state) =>
+      state.scope === 'account' &&
+      (state.phase === 'scanning' || state.phase === 'removing'),
+  );
+  const accountDedupeProgress = useDedupeOperationsStore((state) => state.progress);
+
+  if (accountDedupeActive) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 text-sm border-b border-border bg-muted/40">
+        <Loader2 className="w-4 h-4 shrink-0 animate-spin text-primary" />
+        <p className="flex-1 text-foreground truncate">
+          {accountDedupeProgress || t('scanning')}
+        </p>
+      </div>
+    );
+  }
 
   if (selectedMailbox && scanningMailboxId === selectedMailbox) {
     return (
