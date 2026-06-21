@@ -154,14 +154,18 @@ export function DedupeOperationsView() {
   const [awaitingConfirm, setAwaitingConfirm] = useState<'scan' | 'remove' | null>(null);
   const [folderMessageCount, setFolderMessageCount] = useState<number | null>(null);
 
-  const cancelOperation = useCallback(() => {
-    abortRef.current?.abort();
+  const handleAbort = useCallback(() => {
     abortRef.current = null;
     setScanningMailbox(null);
     reset();
     startedRef.current = null;
     setAwaitingConfirm(null);
   }, [reset, setScanningMailbox]);
+
+  const cancelOperation = useCallback(() => {
+    abortRef.current?.abort();
+    handleAbort();
+  }, [handleAbort]);
 
   const folderParam = searchParams.get('folder');
   const actionParam = (searchParams.get('action') || 'scan') as 'scan' | 'remove';
@@ -205,11 +209,20 @@ export function DedupeOperationsView() {
     });
     setScanningMailbox(isAccount ? null : folderParam);
 
+    const abortIfCancelled = () => {
+      if (signal.aborted) {
+        handleAbort();
+        return true;
+      }
+      return false;
+    };
+
     try {
       if (isAccount) {
         const dryRun = actionParam !== 'remove';
         if (!dryRun) clearAllHighlights();
         const outcome = await runMailboxDedupe(client, dryRun, setProgress, config, signal);
+        if (abortIfCancelled()) return;
         if (dryRun) {
           clearAllHighlights();
           for (const folder of outcome.folderResults) {
@@ -239,11 +252,13 @@ export function DedupeOperationsView() {
 
       if (actionParam === 'remove') {
         const outcome = await runFolderDedupe(client, mailbox.id, setProgress, config, signal);
+        if (abortIfCancelled()) return;
         clearAllHighlights();
         await Promise.all([
           fetchMailboxes(client),
           fetchEmails(client, mailbox.id),
         ]);
+        if (abortIfCancelled()) return;
         selectMailbox(mailbox.id);
         const folderScan = outcome.folderResults[0] ?? {
           mailboxId: outcome.mailboxId,
@@ -267,12 +282,14 @@ export function DedupeOperationsView() {
         false,
         signal,
       );
+      if (abortIfCancelled()) return;
       setScanResult(result);
       selectMailbox(mailbox.id);
       if (result.createdDupesFolder) {
         await fetchMailboxes(client);
       }
       await fetchEmails(client, mailbox.id);
+      if (abortIfCancelled()) return;
       completeFolder(result);
       if (result.duplicateCount > 0) {
         toast.success(t('folder_scan_done', { count: result.duplicateCount, folder: mailbox.name }));
@@ -281,14 +298,17 @@ export function DedupeOperationsView() {
       }
     } catch (err) {
       if (err instanceof DedupeAbortedError) {
+        handleAbort();
         return;
       }
       const message = err instanceof Error ? err.message : t('failed');
       fail(message);
       toast.error(message);
     } finally {
-      abortRef.current = null;
-      setScanningMailbox(null);
+      if (abortRef.current) {
+        abortRef.current = null;
+        setScanningMailbox(null);
+      }
     }
   }, [
     actionParam,
@@ -302,6 +322,7 @@ export function DedupeOperationsView() {
     fetchEmails,
     fetchMailboxes,
     folderParam,
+    handleAbort,
     resolvedMailbox,
     scopeParam,
     selectMailbox,
@@ -353,8 +374,12 @@ export function DedupeOperationsView() {
   }, [client, runOperation, requestScanConfirmation, scopeParam, actionParam, folderParam, resolvedMailbox]);
 
   useEffect(() => () => {
-    abortRef.current?.abort();
-  }, []);
+    const { phase } = useDedupeOperationsStore.getState();
+    if (phase === 'scanning' || phase === 'removing') {
+      abortRef.current?.abort();
+      handleAbort();
+    }
+  }, [handleAbort]);
 
   const elapsedMs =
     startedAt && (completedAt ?? Date.now()) - startedAt;

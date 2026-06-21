@@ -8,6 +8,14 @@ The matching **CLI** lives in the stack `dedupe/` directory (outside this repo).
 
 ---
 
+## 1.6.3 (2026-06-21)
+
+### Bug fixes (high)
+
+- **H1:** Dedupe abort now resets operations store and `startedRef` — fixes stuck “Scanning” sidebar badge after navigate-away or cancel; guards against post-abort completion toasts.
+
+---
+
 ## 1.6.2 (2026-06-21)
 
 ### Bug fixes (high)
