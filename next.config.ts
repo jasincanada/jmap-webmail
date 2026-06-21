@@ -3,6 +3,7 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  serverExternalPackages: ["better-sqlite3"],
   turbopack: {
     root: import.meta.dirname,
   },

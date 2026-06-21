@@ -194,4 +194,21 @@ When you ship a new changelog pass ([`JASMAIL_CHANGELOG.md`](JASMAIL_CHANGELOG.m
 3. Remove or mark **obsolete** rows if behaviour was removed.
 4. Keep **Unread safety (U-*)** rows for any change that touches JMAP `Email/set`, list fetch, or dedupe move paths.
 
-**Last updated:** 2026-06-21 (JasMail v1.6.0 publish — pass 12, fork issue tracking).
+**Last updated:** 2026-06-20 (JasMail v1.7.0 — scan-first dedupe).
+
+---
+
+## v1.7.0 — Scan-first dedupe (2026-06-20)
+
+| ID | Task | Steps | Expected | Result |
+|----|------|-------|----------|--------|
+| V17-1 | Sidebar scan only | Folder context menu → **Scan for duplicates** | Scan runs; no “Remove duplicates” menu item | |
+| V17-2 | Settings scan | Settings → Duplicates → **Scan account** | Navigates to account scan; no remove button | |
+| V17-3 | Scan no writes | Run folder scan on folder with duplicates | Messages stay in place; highlights appear | |
+| V17-4 | Action picker | After scan with duplicates | “Choose action” picker appears; **Apply** requires confirm | |
+| V17-5 | Review only | Pick review only → Apply | Completes with zero moves | |
+| V17-6 | Move to dupes | Pick move to dupes → confirm → Apply | `dupes/` created on apply; duplicates moved | |
+| V17-7 | Delete retention | Pick delete with retention → confirm | Duplicates in `deleted/`; retention copy shown | |
+| V17-8 | Old remove URL | Open `/dedupe?folder=…&action=remove` | Redirects to `action=scan`; no auto-move | |
+| V17-9 | Audit volume | Restart `jasmail` container | `/data/dedupe-audit.db` persists (volume mounted) | |
+| V17-10 | Regression | Run full smoke (S-1–S-3) | Mail list, compose, search unaffected | |

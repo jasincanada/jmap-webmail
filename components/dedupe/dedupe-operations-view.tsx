@@ -15,34 +15,52 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DedupeActionPicker } from '@/components/dedupe/dedupe-action-picker';
 import { useAuthStore } from '@/stores/auth-store';
 import { useEmailStore } from '@/stores/email-store';
+import { useDedupeActionStore } from '@/stores/dedupe-action-store';
 import { useDedupeConfigStore } from '@/stores/dedupe-config-store';
 import { useDedupeHighlightStore } from '@/stores/dedupe-highlight-store';
 import { useDedupeOperationsStore } from '@/stores/dedupe-operations-store';
+import { createBrowserAuditWriter } from '@/lib/dedupe-audit/browser-writer';
+import { dedupeAuditClient } from '@/lib/dedupe-audit/client';
 import {
   dedupeScanNeedsConfirmation,
   hasEnabledCriteria,
 } from '@/lib/dedupe-config';
+import { getExecutor } from '@/lib/dedupe-actions/registry';
+import type { DedupeActionId } from '@/lib/dedupe-actions/types';
 import {
   DedupeAbortedError,
+  applyDuplicateAction,
   getAccountScanMaxFolderCount,
-  runFolderDedupe,
-  runMailboxDedupe,
+  rebuildScanWithKeeperPolicy,
   scanFolderDuplicates,
+  scanMailboxDuplicates,
   type DedupeGroup,
+  type DedupeScanResult,
+  type FolderDedupeScanResult,
 } from '@/lib/mail-dedupe';
 import { getDedupeHighlightClasses, getDedupeStripeColor } from '@/lib/dedupe-highlight-styles';
 import { cn, formatMailboxCount } from '@/lib/utils';
 import { toast } from '@/stores/toast-store';
 
+function folderToScanResult(folder: FolderDedupeScanResult): DedupeScanResult {
+  return {
+    scanned: folder.scanned,
+    duplicateCount: folder.duplicateCount,
+    moves: folder.moves,
+    folderResults: folder.duplicateCount > 0 ? [folder] : [],
+  };
+}
+
 function PhaseBadge({ phase }: { phase: string }) {
   const t = useTranslations('dedupe.operations');
-  if (phase === 'scanning' || phase === 'removing') {
+  if (phase === 'scanning' || phase === 'applying') {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-sm font-medium">
         <Loader2 className="w-4 h-4 animate-spin" />
-        {phase === 'removing' ? t('status_removing') : t('status_scanning')}
+        {phase === 'applying' ? t('status_applying') : t('status_scanning')}
       </span>
     );
   }
@@ -148,11 +166,20 @@ function GroupCard({ group, index }: { group: DedupeGroup; index: number }) {
 
 export function DedupeOperationsView() {
   const t = useTranslations('dedupe.operations');
+  const tActions = useTranslations('dedupe.actions');
   const router = useRouter();
   const searchParams = useSearchParams();
   const { client } = useAuthStore();
   const { mailboxes, selectMailbox, fetchEmails, fetchMailboxes } = useEmailStore();
   const config = useDedupeConfigStore((state) => state.config);
+  const {
+    lastChosenAction,
+    defaultDestinationMailboxId,
+    keeperPolicy,
+    setLastChosenAction,
+    setDefaultDestinationMailboxId,
+    setKeeperPolicy,
+  } = useDedupeActionStore();
   const setScanResult = useDedupeHighlightStore((state) => state.setScanResult);
   const clearMailboxHighlight = useDedupeHighlightStore((state) => state.clearMailbox);
   const clearAllHighlights = useDedupeHighlightStore((state) => state.clearAll);
@@ -170,18 +197,55 @@ export function DedupeOperationsView() {
     error,
     startedAt,
     completedAt,
+    runId,
+    applyResult,
     begin,
+    beginApply,
+    setRunId,
     setProgress,
     completeFolder,
     completeAccount,
+    completeApply,
     fail,
     reset,
   } = useDedupeOperationsStore();
 
   const startedRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const [awaitingConfirm, setAwaitingConfirm] = useState<'scan' | 'remove' | null>(null);
+  const [awaitingConfirm, setAwaitingConfirm] = useState<'scan' | 'apply' | null>(null);
   const [folderMessageCount, setFolderMessageCount] = useState<number | null>(null);
+  const [selectedAction, setSelectedAction] = useState<DedupeActionId>(lastChosenAction);
+  const [destinationMailboxId, setDestinationMailboxId] = useState<string | null>(
+    defaultDestinationMailboxId,
+  );
+
+  const folderParam = searchParams.get('folder');
+  const rawActionParam = searchParams.get('action') || 'scan';
+  const scopeParam = searchParams.get('scope') === 'account' ? 'account' : 'folder';
+  const actionParam = rawActionParam === 'remove' ? 'scan' : rawActionParam;
+
+  useEffect(() => {
+    if (rawActionParam === 'remove') {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('action', 'scan');
+      router.replace(`/dedupe?${params.toString()}`);
+    }
+  }, [rawActionParam, router, searchParams]);
+
+  const resolvedMailbox = useMemo(() => {
+    if (!folderParam) return null;
+    return mailboxes.find((mailbox) => mailbox.id === folderParam) ?? null;
+  }, [folderParam, mailboxes]);
+
+  const scanPayload = useMemo((): DedupeScanResult | null => {
+    if (accountResult) return accountResult;
+    if (folderResult) return folderToScanResult(folderResult);
+    return null;
+  }, [accountResult, folderResult]);
+
+  const duplicateCount = scanPayload?.duplicateCount ?? 0;
+  const showActionPicker =
+    phase === 'complete' && duplicateCount > 0 && !applyResult;
 
   const handleAbort = useCallback(() => {
     abortRef.current = null;
@@ -193,19 +257,13 @@ export function DedupeOperationsView() {
 
   const cancelOperation = useCallback(() => {
     abortRef.current?.abort();
+    if (runId) {
+      void dedupeAuditClient.updateRun(runId, { status: 'cancelled' });
+    }
     handleAbort();
-  }, [handleAbort]);
+  }, [handleAbort, runId]);
 
-  const folderParam = searchParams.get('folder');
-  const actionParam = (searchParams.get('action') || 'scan') as 'scan' | 'remove';
-  const scopeParam = searchParams.get('scope') === 'account' ? 'account' : 'folder';
-
-  const resolvedMailbox = useMemo(() => {
-    if (!folderParam) return null;
-    return mailboxes.find((mailbox) => mailbox.id === folderParam) ?? null;
-  }, [folderParam, mailboxes]);
-
-  const runOperation = useCallback(async () => {
+  const runScan = useCallback(async () => {
     if (!client) {
       fail(t('not_connected'));
       return;
@@ -221,9 +279,7 @@ export function DedupeOperationsView() {
     const { signal } = controller;
 
     const isAccount = scopeParam === 'account';
-    const operationAction = isAccount
-      ? (actionParam === 'remove' ? 'account-remove' : 'account-scan')
-      : (actionParam === 'remove' ? 'remove' : 'scan');
+    const operationAction = isAccount ? 'account-scan' : 'scan';
 
     if (!isAccount && !folderParam) {
       startedRef.current = null;
@@ -239,8 +295,13 @@ export function DedupeOperationsView() {
     });
     setScanningMailbox(isAccount ? null : folderParam);
 
+    let auditRunId: string | null = null;
+
     const abortIfCancelled = () => {
       if (signal.aborted) {
+        if (auditRunId) {
+          void dedupeAuditClient.updateRun(auditRunId, { status: 'cancelled' });
+        }
         handleAbort();
         return true;
       }
@@ -248,33 +309,37 @@ export function DedupeOperationsView() {
     };
 
     try {
-      if (isAccount) {
-        const dryRun = actionParam !== 'remove';
-        if (!dryRun) clearAllHighlights();
-        const outcome = await runMailboxDedupe(client, dryRun, setProgress, config, signal);
-        if (abortIfCancelled()) return;
-        if (dryRun) {
-          clearAllHighlights();
-          for (const folder of outcome.folderResults) {
-            setScanResult(folder);
-          }
-          if (outcome.folderResults.some((folder) => folder.createdDupesFolder)) {
-            await fetchMailboxes(client);
-          }
-        } else if (outcome.moved > 0) {
-          clearAllHighlights();
-          const currentMailbox = useEmailStore.getState().selectedMailbox;
-          await fetchMailboxes(client);
-          if (currentMailbox) {
-            await fetchEmails(client, currentMailbox);
-          }
+      const run = await dedupeAuditClient.createRun({
+        type: 'scan',
+        scope: isAccount ? 'account' : 'folder',
+        mailboxId: isAccount ? null : folderParam,
+      });
+      auditRunId = run.id;
+      setRunId(run.id);
+
+      const progressReporter = (message: string) => {
+        setProgress(message);
+        if (auditRunId) {
+          void dedupeAuditClient.appendProgress(auditRunId, { message });
         }
-        completeAccount(outcome, outcome.moved);
-        toast.success(
-          dryRun
-            ? t('account_scan_done', { count: outcome.duplicateCount })
-            : t('account_remove_done', { count: outcome.moved }),
-        );
+      };
+
+      if (isAccount) {
+        clearAllHighlights();
+        const outcome = await scanMailboxDuplicates(client, config, progressReporter, signal);
+        if (abortIfCancelled()) return;
+        for (const folder of outcome.folderResults) {
+          setScanResult(folder);
+        }
+        await dedupeAuditClient.updateRun(auditRunId, {
+          status: 'complete',
+          stats: {
+            scanned: outcome.scanned,
+            duplicates: outcome.duplicateCount,
+          },
+        });
+        completeAccount(outcome);
+        toast.success(t('account_scan_done', { count: outcome.duplicateCount }));
         return;
       }
 
@@ -285,46 +350,27 @@ export function DedupeOperationsView() {
         return;
       }
 
-      if (actionParam === 'remove') {
-        const outcome = await runFolderDedupe(client, mailbox.id, setProgress, config, signal);
-        if (abortIfCancelled()) return;
-        clearMailboxHighlight(mailbox.id);
-        await Promise.all([
-          fetchMailboxes(client),
-          fetchEmails(client, mailbox.id),
-        ]);
-        if (abortIfCancelled()) return;
-        selectMailbox(mailbox.id);
-        const folderScan = outcome.folderResults[0] ?? {
-          mailboxId: outcome.mailboxId,
-          mailboxName: mailbox.name,
-          scanned: outcome.scanned,
-          duplicateCount: outcome.duplicateCount,
-          groups: [],
-          moves: outcome.moves,
-        };
-        completeFolder(folderScan, outcome.moved);
-        toast.success(t('folder_remove_done', { count: outcome.moved, folder: mailbox.name }));
-        return;
-      }
-
       const result = await scanFolderDuplicates(
         client,
         mailbox.id,
         config,
         undefined,
-        setProgress,
+        progressReporter,
         false,
         signal,
       );
       if (abortIfCancelled()) return;
       setScanResult(result);
       selectMailbox(mailbox.id);
-      if (result.createdDupesFolder) {
-        await fetchMailboxes(client);
-      }
       await fetchEmails(client, mailbox.id);
       if (abortIfCancelled()) return;
+      await dedupeAuditClient.updateRun(auditRunId, {
+        status: 'complete',
+        stats: {
+          scanned: result.scanned,
+          duplicates: result.duplicateCount,
+        },
+      });
       completeFolder(result);
       if (result.duplicateCount > 0) {
         toast.success(t('folder_scan_done', { count: result.duplicateCount, folder: mailbox.name }));
@@ -332,6 +378,9 @@ export function DedupeOperationsView() {
         toast.info(t('folder_scan_none', { folder: mailbox.name }));
       }
     } catch (err) {
+      if (auditRunId) {
+        void dedupeAuditClient.updateRun(auditRunId, { status: 'error' });
+      }
       if (
         err instanceof DedupeAbortedError ||
         (err instanceof Error && err.name === 'AbortError')
@@ -349,26 +398,148 @@ export function DedupeOperationsView() {
       }
     }
   }, [
-    actionParam,
     begin,
     clearAllHighlights,
-    clearMailboxHighlight,
     client,
     completeAccount,
     completeFolder,
     config,
     fail,
     fetchEmails,
-    fetchMailboxes,
     folderParam,
     handleAbort,
     resolvedMailbox,
     scopeParam,
     selectMailbox,
     setProgress,
+    setRunId,
     setScanResult,
     setScanningMailbox,
     t,
+  ]);
+
+  const runApply = useCallback(async () => {
+    if (!client || !scanPayload) return;
+
+    const executor = getExecutor(selectedAction);
+    if (!executor) {
+      fail(t('unknown_action'));
+      return;
+    }
+
+    if (selectedAction === 'move_to_folder' && !destinationMailboxId) {
+      toast.error(tActions('destination_required'));
+      return;
+    }
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const { signal } = controller;
+
+    beginApply(selectedAction);
+    setLastChosenAction(selectedAction);
+    if (destinationMailboxId) {
+      setDefaultDestinationMailboxId(destinationMailboxId);
+    }
+
+    let applyRunId: string | null = null;
+
+    try {
+      const run = await dedupeAuditClient.createRun({
+        type: 'apply',
+        scope: scopeParam === 'account' ? 'account' : 'folder',
+        mailboxId: scopeParam === 'account' ? null : folderParam,
+        actionId: selectedAction,
+      });
+      applyRunId = run.id;
+      setRunId(run.id);
+
+      const audit = createBrowserAuditWriter(applyRunId);
+      const result = await applyDuplicateAction(
+        client,
+        scanPayload,
+        selectedAction,
+        {
+          destinationMailboxId: destinationMailboxId ?? undefined,
+          keeperPolicy,
+          onProgress: setProgress,
+        },
+        signal,
+        audit,
+      );
+      await audit.flush();
+
+      if (signal.aborted) {
+        void dedupeAuditClient.updateRun(applyRunId, { status: 'cancelled' });
+        handleAbort();
+        return;
+      }
+
+      if (result.moved > 0) {
+        clearAllHighlights();
+        const currentMailbox = useEmailStore.getState().selectedMailbox;
+        await fetchMailboxes(client);
+        if (scopeParam === 'folder' && folderParam) {
+          clearMailboxHighlight(folderParam);
+          await fetchEmails(client, folderParam);
+          selectMailbox(folderParam);
+        } else if (currentMailbox) {
+          await fetchEmails(client, currentMailbox);
+        }
+      }
+
+      await dedupeAuditClient.updateRun(applyRunId, {
+        status: 'complete',
+        stats: {
+          moved: result.moved,
+          duplicates: result.duplicateCount,
+          actionId: result.actionId,
+        },
+      });
+
+      completeApply(result);
+      toast.success(t('apply_done', { count: result.moved }));
+    } catch (err) {
+      if (applyRunId) {
+        void dedupeAuditClient.updateRun(applyRunId, { status: 'error' });
+      }
+      if (
+        err instanceof DedupeAbortedError ||
+        (err instanceof Error && err.name === 'AbortError')
+      ) {
+        handleAbort();
+        return;
+      }
+      const message = err instanceof Error ? err.message : t('failed');
+      fail(message);
+      toast.error(message);
+    } finally {
+      abortRef.current = null;
+    }
+  }, [
+    beginApply,
+    clearAllHighlights,
+    clearMailboxHighlight,
+    client,
+    completeApply,
+    destinationMailboxId,
+    fail,
+    fetchEmails,
+    fetchMailboxes,
+    folderParam,
+    handleAbort,
+    keeperPolicy,
+    scanPayload,
+    scopeParam,
+    selectMailbox,
+    selectedAction,
+    setDefaultDestinationMailboxId,
+    setLastChosenAction,
+    setProgress,
+    setRunId,
+    t,
+    tActions,
   ]);
 
   const requestScanConfirmation = useCallback(async (): Promise<boolean> => {
@@ -399,10 +570,24 @@ export function DedupeOperationsView() {
     return true;
   }, [client, folderParam, mailboxes, resolvedMailbox, scopeParam]);
 
-  useEffect(() => {
-    if (!client) return;
+  const requestApplyConfirmation = useCallback(() => {
+    const executor = getExecutor(selectedAction);
+    if (!executor || !scanPayload) return;
+    const preview = executor.preview(scanPayload, {
+      destinationMailboxId: destinationMailboxId ?? undefined,
+      keeperPolicy,
+    });
+    if (!preview.jmapWrites) {
+      void runApply();
+      return;
+    }
+    setAwaitingConfirm('apply');
+  }, [destinationMailboxId, keeperPolicy, runApply, scanPayload, selectedAction]);
 
-    const signature = `${scopeParam}:${actionParam}:${folderParam ?? 'all'}`;
+  useEffect(() => {
+    if (!client || rawActionParam === 'remove') return;
+
+    const signature = `${scopeParam}:scan:${folderParam ?? 'all'}`;
     if (startedRef.current === signature) return;
 
     if (scopeParam === 'folder' && folderParam && mailboxes.length > 0 && !resolvedMailbox) {
@@ -413,11 +598,6 @@ export function DedupeOperationsView() {
 
     if (scopeParam === 'folder' && folderParam && !resolvedMailbox) return;
 
-    const startRemoveFlow = () => {
-      startedRef.current = signature;
-      setAwaitingConfirm('remove');
-    };
-
     const startScanFlow = async () => {
       const confirmed = await requestScanConfirmation();
       if (!confirmed) {
@@ -425,20 +605,15 @@ export function DedupeOperationsView() {
         return;
       }
       startedRef.current = signature;
-      void runOperation();
+      void runScan();
     };
 
-    if (actionParam === 'remove') {
-      startRemoveFlow();
-      return;
-    }
-
     void startScanFlow();
-  }, [client, fail, mailboxes.length, runOperation, requestScanConfirmation, scopeParam, actionParam, folderParam, resolvedMailbox, t]);
+  }, [client, fail, mailboxes.length, runScan, requestScanConfirmation, scopeParam, rawActionParam, folderParam, resolvedMailbox, t]);
 
   useEffect(() => () => {
-    const { phase } = useDedupeOperationsStore.getState();
-    if (phase === 'scanning' || phase === 'removing') {
+    const { phase: currentPhase } = useDedupeOperationsStore.getState();
+    if (currentPhase === 'scanning' || currentPhase === 'applying') {
       abortRef.current?.abort();
       handleAbort();
     }
@@ -458,6 +633,17 @@ export function DedupeOperationsView() {
   const groups = folderResult?.groups ?? [];
   const accountFolders = accountResult?.folderResults ?? [];
 
+  const effectiveScanPayload = scanPayload
+    ? rebuildScanWithKeeperPolicy(scanPayload, keeperPolicy)
+    : null;
+
+  const applyPreview = effectiveScanPayload && selectedAction
+    ? getExecutor(selectedAction)?.preview(effectiveScanPayload, {
+        destinationMailboxId: destinationMailboxId ?? undefined,
+        keeperPolicy,
+      })
+    : null;
+
   return (
     <div className="max-w-4xl mx-auto p-6 lg:p-8 space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -471,35 +657,27 @@ export function DedupeOperationsView() {
         <PhaseBadge phase={phase} />
       </div>
 
-      {awaitingConfirm && (
+      {awaitingConfirm === 'scan' && (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 space-y-4">
           <h2 className="text-lg font-medium text-foreground">
-            {awaitingConfirm === 'scan'
-              ? (scopeParam === 'account' ? t('confirm_scan_account_title') : t('confirm_scan_title'))
-              : scopeParam === 'account'
-                ? t('confirm_remove_account_title')
-                : t('confirm_remove_folder_title', {
-                    folder: mailboxName || resolvedMailbox?.name || folderParam || '—',
-                  })}
+            {scopeParam === 'account' ? t('confirm_scan_account_title') : t('confirm_scan_title')}
           </h2>
           <p className="text-sm text-muted-foreground">
-            {awaitingConfirm === 'scan' && folderMessageCount != null
+            {folderMessageCount != null
               ? (scopeParam === 'account'
                 ? t('confirm_scan_account_body', { count: folderMessageCount })
                 : t('confirm_scan_body', { count: folderMessageCount }))
-              : scopeParam === 'account'
-                ? t('confirm_remove_account_body')
-                : t('confirm_remove_folder_body')}
+              : null}
           </p>
           <div className="flex flex-wrap gap-3">
             <Button
               onClick={() => {
                 setAwaitingConfirm(null);
-                void runOperation();
+                void runScan();
               }}
             >
               <Play className="w-4 h-4 mr-2" />
-              {awaitingConfirm === 'scan' ? t('confirm_scan_start') : t('confirm_remove_start')}
+              {t('confirm_scan_start')}
             </Button>
             <Button
               variant="outline"
@@ -516,18 +694,43 @@ export function DedupeOperationsView() {
         </div>
       )}
 
+      {awaitingConfirm === 'apply' && applyPreview && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 space-y-4">
+          <h2 className="text-lg font-medium text-foreground">{t('confirm_apply_title')}</h2>
+          <p className="text-sm text-muted-foreground">
+            {t('confirm_apply_body', {
+              count: applyPreview.affectedCount,
+              action: tActions(`items.${selectedAction}.label`),
+            })}
+          </p>
+          {selectedAction === 'delete_with_retention' && (
+            <p className="text-sm text-amber-700 dark:text-amber-400">
+              {tActions('retention_notice', { days: 90 })}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-3">
+            <Button
+              onClick={() => {
+                setAwaitingConfirm(null);
+                void runApply();
+              }}
+            >
+              <Play className="w-4 h-4 mr-2" />
+              {t('confirm_apply_start')}
+            </Button>
+            <Button variant="outline" onClick={() => setAwaitingConfirm(null)}>
+              {t('confirm_cancel')}
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-lg border border-border bg-card p-4 space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('operation')}</p>
             <p className="text-sm font-medium text-foreground">
-              {action === 'account-remove'
-                ? t('action_account_remove')
-                : action === 'account-scan'
-                  ? t('action_account_scan')
-                  : action === 'remove'
-                    ? t('action_folder_remove')
-                    : t('action_folder_scan')}
+              {action === 'account-scan' ? t('action_account_scan') : t('action_folder_scan')}
             </p>
           </div>
           <div>
@@ -540,7 +743,7 @@ export function DedupeOperationsView() {
           </div>
         </div>
 
-        {(phase === 'scanning' || phase === 'removing') && (
+        {(phase === 'scanning' || phase === 'applying') && (
           <div className="flex flex-wrap items-center gap-2 rounded-md bg-primary/5 px-3 py-2 text-sm text-foreground">
             <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
             <span className="flex-1 min-w-0">{progress || t('working')}</span>
@@ -595,10 +798,30 @@ export function DedupeOperationsView() {
             </p>
           </div>
           <div className="rounded-lg border border-border p-4">
-            <p className="text-xs text-muted-foreground">{t('stat_moved')}</p>
+            <p className="text-xs text-muted-foreground">{t('stat_applied')}</p>
             <p className="text-2xl font-semibold tabular-nums">{formatMailboxCount(moved)}</p>
           </div>
         </div>
+      )}
+
+      {showActionPicker && (
+        <>
+          <DedupeActionPicker
+            mailboxes={mailboxes}
+            selectedAction={selectedAction}
+            onActionChange={setSelectedAction}
+            destinationMailboxId={destinationMailboxId}
+            onDestinationChange={setDestinationMailboxId}
+            keeperPolicy={keeperPolicy}
+            onKeeperPolicyChange={setKeeperPolicy}
+          />
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={requestApplyConfirmation}>
+              <Play className="w-4 h-4 mr-2" />
+              {t('apply_action')}
+            </Button>
+          </div>
+        </>
       )}
 
       {phase === 'complete' && groups.length > 0 && (
@@ -667,38 +890,20 @@ export function DedupeOperationsView() {
             onClick={() => {
               reset();
               setAwaitingConfirm(null);
-              const signature = `${scopeParam}:${actionParam}:${folderParam ?? 'all'}`;
+              const signature = `${scopeParam}:scan:${folderParam ?? 'all'}`;
               startedRef.current = signature;
-              if (actionParam === 'remove') {
-                setAwaitingConfirm('remove');
-              } else {
-                void (async () => {
-                  const confirmed = await requestScanConfirmation();
-                  if (confirmed) {
-                    void runOperation();
-                  }
-                })();
-              }
+              void (async () => {
+                const confirmed = await requestScanConfirmation();
+                if (confirmed) {
+                  void runScan();
+                }
+              })();
             }}
           >
             <RotateCcw className="w-4 h-4 mr-2" />
             {t('run_again')}
           </Button>
         ) : null}
-
-        {scope === 'folder' && folderParam && actionParam === 'scan' && phase === 'complete' && (folderResult?.duplicateCount ?? 0) > 0 && (
-          <Button onClick={() => router.push(`/dedupe?folder=${encodeURIComponent(folderParam)}&action=remove`)}>
-            <Play className="w-4 h-4 mr-2" />
-            {t('remove_duplicates')}
-          </Button>
-        )}
-
-        {scope === 'account' && actionParam === 'scan' && phase === 'complete' && (accountResult?.duplicateCount ?? 0) > 0 && (
-          <Button onClick={() => router.push('/dedupe?scope=account&action=remove')}>
-            <Play className="w-4 h-4 mr-2" />
-            {t('remove_all_duplicates')}
-          </Button>
-        )}
       </div>
     </div>
   );

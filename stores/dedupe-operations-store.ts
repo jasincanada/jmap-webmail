@@ -1,8 +1,10 @@
 import { create } from 'zustand';
+import type { DedupeApplyResult } from '@/lib/dedupe-actions/types';
+import type { DedupeActionId } from '@/lib/dedupe-actions/types';
 import type { DedupeScanResult, FolderDedupeScanResult } from '@/lib/mail-dedupe';
 
-export type DedupeOperationPhase = 'idle' | 'scanning' | 'removing' | 'complete' | 'error';
-export type DedupeOperationAction = 'scan' | 'remove' | 'account-scan' | 'account-remove';
+export type DedupeOperationPhase = 'idle' | 'scanning' | 'applying' | 'complete' | 'error';
+export type DedupeOperationAction = 'scan' | 'account-scan';
 
 interface DedupeOperationsStore {
   phase: DedupeOperationPhase;
@@ -17,6 +19,9 @@ interface DedupeOperationsStore {
   error: string | null;
   startedAt: number | null;
   completedAt: number | null;
+  runId: string | null;
+  pendingAction: DedupeActionId | null;
+  applyResult: DedupeApplyResult | null;
 
   begin: (params: {
     action: DedupeOperationAction;
@@ -24,9 +29,12 @@ interface DedupeOperationsStore {
     mailboxId?: string | null;
     mailboxName?: string | null;
   }) => void;
+  beginApply: (actionId: DedupeActionId) => void;
+  setRunId: (runId: string | null) => void;
   setProgress: (message: string) => void;
   completeFolder: (result: FolderDedupeScanResult, moved?: number) => void;
   completeAccount: (result: DedupeScanResult, moved?: number) => void;
+  completeApply: (result: DedupeApplyResult) => void;
   fail: (message: string) => void;
   reset: () => void;
 }
@@ -44,6 +52,9 @@ const initialState = {
   error: null,
   startedAt: null,
   completedAt: null,
+  runId: null,
+  pendingAction: null,
+  applyResult: null,
 };
 
 export const useDedupeOperationsStore = create<DedupeOperationsStore>((set) => ({
@@ -52,7 +63,7 @@ export const useDedupeOperationsStore = create<DedupeOperationsStore>((set) => (
   begin: ({ action, scope, mailboxId = null, mailboxName = null }) => {
     set({
       ...initialState,
-      phase: action === 'remove' || action === 'account-remove' ? 'removing' : 'scanning',
+      phase: 'scanning',
       action,
       scope,
       mailboxId,
@@ -60,6 +71,18 @@ export const useDedupeOperationsStore = create<DedupeOperationsStore>((set) => (
       startedAt: Date.now(),
     });
   },
+
+  beginApply: (actionId) => {
+    set({
+      phase: 'applying',
+      pendingAction: actionId,
+      progress: null,
+      error: null,
+      applyResult: null,
+    });
+  },
+
+  setRunId: (runId) => set({ runId }),
 
   setProgress: (message) => set({ progress: message }),
 
@@ -82,6 +105,16 @@ export const useDedupeOperationsStore = create<DedupeOperationsStore>((set) => (
       folderResult: null,
       accountResult: result,
       moved,
+      progress: null,
+      completedAt: Date.now(),
+    });
+  },
+
+  completeApply: (result) => {
+    set({
+      phase: 'complete',
+      moved: result.moved,
+      applyResult: result,
       progress: null,
       completedAt: Date.now(),
     });

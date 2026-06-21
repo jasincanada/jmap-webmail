@@ -1,5 +1,23 @@
 # Changelog
 
+## JasMail 1.7.0 (2026-06-20) — scan-first dedupe
+
+Full addon notes: [`docs/JASMAIL_CHANGELOG.md`](docs/JASMAIL_CHANGELOG.md). Plan: [`docs/plans/DEDUPE_V1.7.md`](docs/plans/DEDUPE_V1.7.md).
+
+### Changed
+
+- Duplicate handling is **scan-first**: no JMAP mailbox writes until the user chooses an action and confirms.
+- Removed one-click “Remove duplicates” entry points; `?action=remove` redirects to scan + action picker.
+
+### Added
+
+- Dedupe **action framework** (review only, move to folder, dupes/, trash, archive, delete with retention).
+- Server-side **SQLite audit** (`/api/dedupe/`) with progress and per-message change log.
+- `deleted/` subfolder with **90-day retention** before permanent purge (`POST /api/dedupe/purge`).
+- JasMail **development OS** skills under `.grok/skills/jasmail-*`.
+
+---
+
 ## JasMail 1.6.0 (2026-06-21) — fork release
 
 Fork of upstream 1.5.2. Full addon history: [`docs/JASMAIL_CHANGELOG.md`](docs/JASMAIL_CHANGELOG.md).

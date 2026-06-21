@@ -241,7 +241,7 @@ function MailboxTreeItem({
   );
   const isScanningDuplicates = useDedupeOperationsStore(
     (state) =>
-      (state.phase === 'scanning' || state.phase === 'removing') &&
+      (state.phase === 'scanning' || state.phase === 'applying') &&
       state.mailboxId === node.id,
   );
   const tFolder = useTranslations('sidebar.folder_management');
@@ -776,7 +776,7 @@ export function Sidebar({
   const [creatingSubfolder, setCreatingSubfolder] = useState<{ parentId: string } | null>(null);
   const [creatingTopLevel, setCreatingTopLevel] = useState(false);
   const [deleteFolderTarget, setDeleteFolderTarget] = useState<Mailbox | null>(null);
-  const [removeDedupeTarget, setRemoveDedupeTarget] = useState<Mailbox | null>(null);
+
   const sidebarRef = useRef<HTMLDivElement>(null);
   const t = useTranslations('sidebar');
   const tFolder = useTranslations('sidebar.folder_management');
@@ -933,19 +933,7 @@ export function Sidebar({
     router.push(`/dedupe?folder=${encodeURIComponent(mailbox.id)}&action=scan`);
   }, [dedupeConfig, router, tDedupe]);
 
-  const handleConfirmRemoveDuplicates = useCallback(() => {
-    if (!removeDedupeTarget) return;
 
-    if (!hasEnabledCriteria(dedupeConfig)) {
-      toast.error(tDedupe('criteria_disabled'));
-      setRemoveDedupeTarget(null);
-      return;
-    }
-
-    const mailbox = removeDedupeTarget;
-    setRemoveDedupeTarget(null);
-    router.push(`/dedupe?folder=${encodeURIComponent(mailbox.id)}&action=remove`);
-  }, [removeDedupeTarget, dedupeConfig, router, tDedupe]);
 
   const handleEmptyFolder = useCallback(async () => {
     if (!emptyFolderTarget || !client) return;
@@ -1230,16 +1218,6 @@ export function Sidebar({
                   <Search className="w-4 h-4 mr-2" />
                   {tDedupe('scan_for_duplicates')}
                 </button>
-                <button
-                  onClick={() => {
-                    setContextMenu(null);
-                    setRemoveDedupeTarget(contextMenu.mailbox);
-                  }}
-                  className="flex items-center w-full px-3 py-2 text-sm hover:bg-muted transition-colors"
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  {tDedupe('remove_duplicates')}
-                </button>
               </>
             )}
 
@@ -1304,25 +1282,7 @@ export function Sidebar({
         document.body
       )}
 
-      {removeDedupeTarget && (() => {
-        const cached = getMailboxHighlight(removeDedupeTarget.id);
-        const wasScanned = !!cached;
-        const count = cached?.duplicateCount ?? 0;
-        const message = wasScanned && count > 0
-          ? tDedupe('remove_confirm_scanned', { count })
-          : tDedupe('remove_confirm_unscanned');
 
-        return (
-          <ConfirmDialog
-            isOpen={true}
-            onClose={() => setRemoveDedupeTarget(null)}
-            onConfirm={handleConfirmRemoveDuplicates}
-            title={tDedupe('remove_confirm_title', { folder: removeDedupeTarget.name })}
-            message={message}
-            confirmText={tDedupe('remove_duplicates')}
-          />
-        );
-      })()}
 
       {/* Empty Folder Confirmation Dialog */}
       {emptyFolderTarget && (

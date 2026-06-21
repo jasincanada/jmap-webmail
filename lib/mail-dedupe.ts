@@ -6,6 +6,13 @@ import {
   validateDedupeScan,
   type DedupeMatchConfig,
 } from '@/lib/dedupe-config';
+import type {
+  DedupeActionId,
+  DedupeApplyOptions,
+  DedupeApplyResult,
+  DedupeAuditWriter,
+  DedupeKeeperPolicy,
+} from '@/lib/dedupe-actions/types';
 import type { JMAPClient } from '@/lib/jmap/client';
 import type { Email, Mailbox } from '@/lib/jmap/types';
 
@@ -13,10 +20,18 @@ import type { Email, Mailbox } from '@/lib/jmap/types';
 // Stalwart over HTTP/JSON. Server language (Rust) does not dictate client choice;
 // see dedupe/dedupe.py for the same rationale on the CLI tool.
 
-const DUPES_FOLDER = 'dupes';
+export const DUPES_FOLDER = 'dupes';
+export const DELETED_FOLDER = 'deleted';
+export const DEDUPE_DELETED_RETENTION_DAYS = 90;
 const SKIP_ROLES = new Set(['trash', 'junk']);
 const BATCH = 500;
 const SCAN_CONCURRENCY = 3;
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+export function computeDeletedRetentionPurgeAfter(fromMs: number = Date.now()): number {
+  return fromMs + DEDUPE_DELETED_RETENTION_DAYS * MS_PER_DAY;
+}
 
 export class DedupeAbortedError extends Error {
   constructor() {
@@ -73,10 +88,25 @@ interface MailboxJmapRef {
   accountId?: string;
 }
 
-interface DupesMailboxRef {
+interface ManagedMailboxRef {
   storeId: string;
   jmapId: string;
   created: boolean;
+}
+
+export interface BatchApplyDuplicateMovesParams {
+  client: JMAPClient;
+  moves: DedupeMove[];
+  mailboxes: Mailbox[];
+  resolveDestination: (
+    move: DedupeMove,
+    mailboxes: Mailbox[],
+  ) => Promise<{ storeId: string; jmapId: string; accountId?: string }>;
+  actionId: DedupeActionId;
+  audit: DedupeAuditWriter;
+  onProgress?: (message: string) => void;
+  signal?: AbortSignal;
+  purgeAfter?: number;
 }
 
 function isDupesMailbox(mailbox: Mailbox): boolean {
@@ -135,7 +165,7 @@ function jmapMailboxIdToStoreId(jmapId: string, parentMailbox: Mailbox): string 
   return jmapId;
 }
 
-function buildDupesByParentMap(mailboxes: Mailbox[]): Map<string, string> {
+export function buildDupesByParentMap(mailboxes: Mailbox[]): Map<string, string> {
   const dupesByParent = new Map<string, string>();
   for (const mailbox of mailboxes) {
     if (mailbox.name === DUPES_FOLDER && mailbox.parentId) {
@@ -143,6 +173,16 @@ function buildDupesByParentMap(mailboxes: Mailbox[]): Map<string, string> {
     }
   }
   return dupesByParent;
+}
+
+export function buildDeletedByParentMap(mailboxes: Mailbox[]): Map<string, string> {
+  const deletedByParent = new Map<string, string>();
+  for (const mailbox of mailboxes) {
+    if (mailbox.name === DELETED_FOLDER && mailbox.parentId) {
+      deletedByParent.set(mailbox.parentId, mailbox.id);
+    }
+  }
+  return deletedByParent;
 }
 
 function slimEmailForDedupe(email: Email): Email {
@@ -225,12 +265,12 @@ function groupsToScanResult(
   };
 }
 
-async function ensureDupesMailbox(
+export async function ensureDupesMailbox(
   client: JMAPClient,
   parentMailbox: Mailbox,
   dupesByParent: Map<string, string>,
   mailboxes?: Mailbox[],
-): Promise<DupesMailboxRef> {
+): Promise<ManagedMailboxRef> {
   const parentStoreId = parentMailbox.id;
   const cachedStoreId = dupesByParent.get(parentStoreId);
   if (cachedStoreId) {
@@ -282,6 +322,247 @@ async function ensureDupesMailbox(
     }
     throw error;
   }
+}
+
+export async function ensureDeletedMailbox(
+  client: JMAPClient,
+  parentMailbox: Mailbox,
+  deletedByParent: Map<string, string>,
+  mailboxes?: Mailbox[],
+): Promise<ManagedMailboxRef> {
+  const parentStoreId = parentMailbox.id;
+  const cachedStoreId = deletedByParent.get(parentStoreId);
+  if (cachedStoreId) {
+    const cachedMailbox = (mailboxes ?? []).find((mb) => mb.id === cachedStoreId);
+    return {
+      storeId: cachedStoreId,
+      jmapId: cachedMailbox?.originalId || cachedStoreId,
+      created: false,
+    };
+  }
+
+  const list = mailboxes ?? await client.getAllMailboxes();
+  const existing = list.find(
+    (mailbox) => mailbox.name === DELETED_FOLDER && mailbox.parentId === parentStoreId,
+  );
+  if (existing) {
+    deletedByParent.set(parentStoreId, existing.id);
+    return {
+      storeId: existing.id,
+      jmapId: existing.originalId || existing.id,
+      created: false,
+    };
+  }
+
+  const parentJmapId = parentMailbox.originalId || parentMailbox.id;
+  const accountId = parentMailbox.isShared ? parentMailbox.accountId : undefined;
+
+  try {
+    const createdJmapId = await client.createMailbox(DELETED_FOLDER, parentJmapId, accountId);
+    const deletedStoreId = jmapMailboxIdToStoreId(createdJmapId, parentMailbox);
+    deletedByParent.set(parentStoreId, deletedStoreId);
+    return {
+      storeId: deletedStoreId,
+      jmapId: createdJmapId,
+      created: true,
+    };
+  } catch (error) {
+    const refreshed = await client.getAllMailboxes();
+    const concurrent = refreshed.find(
+      (mailbox) => mailbox.name === DELETED_FOLDER && mailbox.parentId === parentStoreId,
+    );
+    if (concurrent) {
+      deletedByParent.set(parentStoreId, concurrent.id);
+      return {
+        storeId: concurrent.id,
+        jmapId: concurrent.originalId || concurrent.id,
+        created: false,
+      };
+    }
+    throw error;
+  }
+}
+
+export async function batchApplyDuplicateMoves(
+  params: BatchApplyDuplicateMovesParams,
+): Promise<number> {
+  const {
+    client,
+    moves,
+    mailboxes,
+    resolveDestination,
+    actionId,
+    audit,
+    onProgress,
+    signal,
+    purgeAfter,
+  } = params;
+
+  if (moves.length === 0) {
+    return 0;
+  }
+
+  const destinationByMove = new Map<string, { storeId: string; jmapId: string; accountId?: string }>();
+  for (const move of moves) {
+    if (!destinationByMove.has(move.emailId)) {
+      destinationByMove.set(move.emailId, await resolveDestination(move, mailboxes));
+    }
+  }
+
+  const pending = new Map<string, {
+    fromMailboxRef: MailboxJmapRef;
+    destinationJmapId: string;
+    destinationStoreId: string;
+    emailIds: string[];
+    movesByEmailId: Map<string, DedupeMove>;
+  }>();
+
+  for (const move of moves) {
+    const destination = destinationByMove.get(move.emailId);
+    if (!destination) {
+      throw new Error(`Failed to resolve destination for email ${move.emailId}`);
+    }
+
+    const fromMailboxRef = resolveMailboxJmapRef(move.fromMailboxId, mailboxes);
+    if (!fromMailboxRef) {
+      throw new Error(`Failed to resolve mailbox ${move.fromMailboxId} for move`);
+    }
+
+    const bucketKey = `${move.fromMailboxId}:${destination.storeId}`;
+    const bucket = pending.get(bucketKey) ?? {
+      fromMailboxRef,
+      destinationJmapId: destination.jmapId,
+      destinationStoreId: destination.storeId,
+      emailIds: [],
+      movesByEmailId: new Map<string, DedupeMove>(),
+    };
+    bucket.emailIds.push(move.emailId);
+    bucket.movesByEmailId.set(move.emailId, move);
+    pending.set(bucketKey, bucket);
+  }
+
+  let moved = 0;
+  for (const bucket of pending.values()) {
+    for (let offset = 0; offset < bucket.emailIds.length; offset += BATCH) {
+      throwIfAborted(signal);
+      const chunk = bucket.emailIds.slice(offset, offset + BATCH);
+      onProgress?.(`Moving ${chunk.length} duplicate(s)`);
+      await client.moveEmailsBetweenMailboxes(
+        chunk,
+        bucket.fromMailboxRef.jmapId,
+        bucket.destinationJmapId,
+        bucket.fromMailboxRef.accountId,
+        signal,
+      );
+
+      for (const emailId of chunk) {
+        const move = bucket.movesByEmailId.get(emailId);
+        if (!move) continue;
+        audit.recordChange({
+          emailId,
+          groupKey: move.key,
+          fromMailboxId: move.fromMailboxId,
+          toMailboxId: bucket.destinationStoreId,
+          actionId,
+          keeper: false,
+          purgeAfter,
+        });
+      }
+
+      moved += chunk.length;
+    }
+  }
+
+  return moved;
+}
+
+const noopAuditWriter: DedupeAuditWriter = {
+  recordChange: () => {},
+};
+
+/** Rebuild moves/groups when user picks newest keeper (scan always ranks oldest first). */
+export function rebuildScanWithKeeperPolicy(
+  scan: DedupeScanResult,
+  policy: DedupeKeeperPolicy = 'oldest',
+): DedupeScanResult {
+  if (policy === 'oldest') {
+    return scan;
+  }
+
+  const folderResults = scan.folderResults.map((folder) => {
+    const groups: DedupeGroup[] = [];
+    const moves: DedupeMove[] = [];
+
+    for (const group of folder.groups) {
+      if (group.emailIds.length < 2) continue;
+      const keeperId = group.emailIds[group.emailIds.length - 1];
+      const duplicateIds = group.emailIds.filter((id) => id !== keeperId);
+
+      groups.push({
+        key: group.key,
+        keeperId,
+        emailIds: group.emailIds,
+        duplicateIds,
+      });
+
+      for (const emailId of duplicateIds) {
+        const priorMove = folder.moves.find((move) => move.emailId === emailId);
+        moves.push({
+          emailId,
+          subject: priorMove?.subject ?? '(no subject)',
+          fromMailboxId: folder.mailboxId,
+          fromMailboxName: folder.mailboxName,
+          key: group.key,
+        });
+      }
+    }
+
+    return {
+      ...folder,
+      groups,
+      moves,
+      duplicateCount: moves.length,
+    };
+  });
+
+  const moves = folderResults.flatMap((folder) => folder.moves);
+
+  return {
+    scanned: scan.scanned,
+    duplicateCount: moves.length,
+    moves,
+    folderResults,
+  };
+}
+
+export async function applyDuplicateAction(
+  client: JMAPClient,
+  scan: DedupeScanResult,
+  actionId: DedupeActionId,
+  opts: DedupeApplyOptions = {},
+  signal?: AbortSignal,
+  auditWriter: DedupeAuditWriter = noopAuditWriter,
+): Promise<DedupeApplyResult> {
+  const { getExecutor } = await import('@/lib/dedupe-actions/registry');
+  const executor = getExecutor(actionId);
+  if (!executor) {
+    throw new Error(`Unknown dedupe action: ${actionId}`);
+  }
+
+  const effectiveScan = rebuildScanWithKeeperPolicy(scan, opts.keeperPolicy);
+
+  if (opts.dryRun) {
+    const preview = executor.preview(effectiveScan, opts);
+    return {
+      actionId: preview.actionId,
+      affectedCount: preview.affectedCount,
+      duplicateCount: preview.duplicateCount,
+      moved: 0,
+      dryRun: true,
+    };
+  }
+
+  return executor.execute(client, effectiveScan, opts, signal, auditWriter);
 }
 
 export async function scanFolderDuplicates(
@@ -470,6 +751,7 @@ export async function scanMailboxDuplicates(
   };
 }
 
+/** @deprecated Use scanMailboxDuplicates + applyDuplicateAction instead. */
 export async function runMailboxDedupe(
   client: JMAPClient,
   dryRun: boolean,
@@ -545,6 +827,7 @@ export async function runMailboxDedupe(
   return { ...scan, moved };
 }
 
+/** @deprecated Use scanFolderDuplicates + applyDuplicateAction instead. */
 export async function runFolderDedupe(
   client: JMAPClient,
   mailboxId: string,

@@ -1039,9 +1039,9 @@
     "discard": "Descartar",
     "keep_editing": "Continuar editando",
     "dedupe": {
-      "title": "Remove Duplicates",
-      "description": "Find duplicate messages in each folder and move extras into a dupes subfolder.",
-      "how_it_works": "Choose which fields must match. The oldest copy in each folder is kept; newer copies move to a dupes subfolder.",
+      "title": "Duplicates",
+      "description": "Scan for duplicate messages and choose what to do — nothing is moved until you apply an action.",
+      "how_it_works": "Choose which fields must match. Scan first to review groups, then pick an action (trash, archive, dupes/, deleted/ retention, or review only).",
       "criteria_title": "Match criteria",
       "criteria_description": "Enable the fields that should match for two messages to be treated as duplicates.",
       "match_mode_label": "Match mode",
@@ -1087,7 +1087,7 @@
           "label": "Body",
           "description": "Message preview text only in the browser (not full body). Disabled for folders over 2,000 messages."
         },
-        "body_warning": "A correspondência por corpo usa apenas a pré-visualização curta e pode gerar falsos positivos quando as pré-visualizações diferem. Para correspondência completa em caixas grandes, use a CLI mail-dedupe.",
+        "body_warning": "Body matching uses the short preview only and may produce false positives when previews differ. For full-body matching on large mailboxes, use the mail-dedupe CLI.",
         "threadId": {
           "label": "Thread",
           "description": "JMAP thread ID (messages in the same conversation)."
@@ -1107,12 +1107,13 @@
       "duplicates": "Found {count, plural, one {# duplicate} other {# duplicates}}.",
       "move_to": "Move to {folder}",
       "more": "And {count} more...",
-      "operations_hint": "Scans and moves run on the duplicate operations page with live progress and grouped results.",
+      "operations_hint": "Scans run on the duplicate operations page. After a scan, choose an action and confirm before any mailbox writes.",
       "open_operations": "Open operations",
-      "confirm_remove_title": "Remover duplicados em toda a conta?",
-      "confirm_remove_body": "Cada pasta elegível será analisada e os duplicados movidos para a subpasta dupes/. Nada é eliminado permanentemente. Execute primeiro uma análise para ver as contagens.",
-      "confirm_remove_start": "Confirmar e remover",
-      "confirm_remove_cancel": "Cancelar"
+      "confirm_remove_title": "Remove duplicates account-wide?",
+      "confirm_remove_body": "This scans every eligible folder and moves duplicates to each folder's dupes/ subfolder. Nothing is permanently deleted. Run a scan first to preview counts.",
+      "confirm_remove_start": "Confirm and remove",
+      "confirm_remove_cancel": "Cancel",
+      "retention_readonly": "Delete with retention: duplicates move to a deleted/ subfolder and are permanently removed after {days} days."
     }
   },
   "errors": {
@@ -1637,9 +1638,9 @@
   "dedupe": {
     "operations": {
       "title": "Duplicate operations",
-      "description": "Live status and results for duplicate scans and moves.",
+      "description": "Live status and results for duplicate scans. Apply an action only when you are ready.",
       "status_scanning": "Scanning",
-      "status_removing": "Moving duplicates",
+      "status_applying": "Applying action",
       "status_complete": "Complete",
       "status_error": "Failed",
       "operation": "Operation",
@@ -1651,9 +1652,13 @@
       "stat_duplicates": "Duplicates found",
       "stat_groups": "Duplicate groups",
       "stat_moved": "Duplicates moved",
+      "stat_applied": "Messages affected",
       "groups_title": "Duplicate groups",
-      "groups_hint": "Each group shares the same match key. The keeper (lighter row) stays in the folder; duplicates can be moved to dupes/.",
+      "groups_hint": "Each group shares the same match key. The keeper stays in place; choose an action above to handle duplicates.",
       "group_unknown_key": "(no match key)",
+      "copy_key": "Copy match key",
+      "copy_done": "Match key copied to clipboard",
+      "copy_failed": "Could not copy match key",
       "group_summary": "{total} messages · {duplicates} duplicate(s)",
       "keeper": "Keeper",
       "duplicate": "Duplicate",
@@ -1664,16 +1669,15 @@
       "back_to_mail": "Back to mail",
       "view_in_mailbox": "View highlights in mailbox",
       "run_again": "Run again",
-      "remove_duplicates": "Remove duplicates",
-      "remove_all_duplicates": "Remove all duplicates",
+      "apply_action": "Apply action",
+      "apply_done": "Applied action to {count, plural, one {# message} other {# messages}}.",
+      "unknown_action": "Unknown action.",
       "not_connected": "Not connected to the mail server.",
       "criteria_disabled": "Enable match criteria in Settings → Duplicates first.",
       "missing_folder": "Folder not found.",
       "failed": "Operation failed.",
       "action_folder_scan": "Folder scan",
-      "action_folder_remove": "Folder remove",
       "action_account_scan": "Account-wide scan",
-      "action_account_remove": "Account-wide remove",
       "folder_scan_done": "Found {count, plural, one {# duplicate} other {# duplicates}} in {folder}.",
       "folder_scan_none": "No duplicates in {folder}.",
       "folder_remove_done": "Moved {count, plural, one {# duplicate} other {# duplicates}} from {folder}.",
@@ -1682,19 +1686,52 @@
       "status_idle": "Ready",
       "confirm_scan_title": "Scan a large folder?",
       "confirm_scan_body": "This folder has {count, plural, one {# message} other {# messages}}. The scan runs in batches but may take several minutes.",
+      "confirm_scan_account_title": "Scan a large account?",
+      "confirm_scan_account_body": "At least one folder has {count, plural, one {# message} other {# messages}}. Account scans run in parallel batches but may take several minutes.",
       "confirm_scan_start": "Start scan",
-      "confirm_remove_folder_title": "Remove duplicates from {folder}?",
-      "confirm_remove_folder_body": "Duplicates will be detected and moved to a dupes subfolder (not deleted). The oldest copy in each group is kept.",
-      "confirm_remove_account_title": "Remove duplicates account-wide?",
-      "confirm_remove_account_body": "This scans every eligible folder and moves duplicates to each folder's dupes/ subfolder. Nothing is permanently deleted. Run a scan first to preview counts.",
-      "confirm_remove_start": "Confirm and remove",
+      "confirm_apply_title": "Apply duplicate action?",
+      "confirm_apply_body": "This will affect {count, plural, one {# message} other {# messages}} using “{action}”. You can cancel while the operation runs.",
+      "confirm_apply_start": "Confirm and apply",
       "confirm_cancel": "Cancel",
-      "cancel_operation": "Cancel",
-      "copy_key": "Copiar chave de correspondência",
-      "copy_done": "Chave copiada para a área de transferência",
-      "copy_failed": "Não foi possível copiar a chave",
-      "confirm_scan_account_title": "Analisar uma conta grande?",
-      "confirm_scan_account_body": "Pelo menos uma pasta tem {count, plural, one {# mensagem} other {# mensagens}}. As análises de conta correm em lotes paralelos mas podem demorar vários minutos."
+      "cancel_operation": "Cancel"
+    },
+    "actions": {
+      "title": "Choose action",
+      "description": "Pick what to do with the duplicates found. Nothing is written to your mailboxes until you apply.",
+      "action_label": "Action",
+      "destination_label": "Destination folder",
+      "destination_placeholder": "Select a folder…",
+      "destination_required": "Select a destination folder first.",
+      "keeper_label": "Keeper policy",
+      "keeper_oldest": "Keep oldest",
+      "keeper_newest": "Keep newest",
+      "retention_notice": "Duplicates move to deleted/ and are permanently removed after {days} days.",
+      "items": {
+        "review_only": {
+          "label": "Review only",
+          "description": "Log the scan only — no messages are moved."
+        },
+        "move_to_folder": {
+          "label": "Move to folder",
+          "description": "Move duplicates into a folder you choose."
+        },
+        "move_to_dupes": {
+          "label": "Move to dupes/",
+          "description": "Move duplicates into a dupes subfolder under each source folder."
+        },
+        "move_to_trash": {
+          "label": "Move to Trash",
+          "description": "Move duplicates to your account Trash folder."
+        },
+        "move_to_archive": {
+          "label": "Move to Archive",
+          "description": "Move duplicates to your account Archive folder."
+        },
+        "delete_with_retention": {
+          "label": "Delete with retention",
+          "description": "Move duplicates to deleted/ and purge after the retention period."
+        }
+      }
     }
   }
 }

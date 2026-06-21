@@ -288,7 +288,15 @@ This document tracks the development status and planned features for JMAP Webmai
 - [ ] PWA manifest, service worker, maskable icons, installable app
 - [ ] Browser badge API for installed-app unread count
 
-### Push notifications and mobile polish (1.7.0)
+### Duplicate handling redesign (1.7.0) — JasMail fork
+- [x] Scan-first, user-confirmed duplicate handling (no auto-remove)
+- [x] Action framework with built-in executors (review, folder, dupes/, trash, archive, delete with retention)
+- [x] Server-side SQLite audit (`/api/dedupe/`) with Docker volume
+- [x] `deleted/` subfolder with 90-day retention and purge API
+- [x] Development OS maintainer skills (`.grok/skills/jasmail-*`)
+- Plan: [`docs/plans/DEDUPE_V1.7.md`](docs/plans/DEDUPE_V1.7.md)
+
+### Push notifications and mobile polish (1.8.0)
 - [ ] Web Push notifications with VAPID
 - [ ] Pull-to-refresh on mobile
 - [ ] Configurable swipe actions (archive, delete, mark read)

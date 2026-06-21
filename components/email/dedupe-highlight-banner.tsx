@@ -18,7 +18,7 @@ export function DedupeHighlightBanner() {
   const accountDedupeActive = useDedupeOperationsStore(
     (state) =>
       state.scope === 'account' &&
-      (state.phase === 'scanning' || state.phase === 'removing'),
+      (state.phase === 'scanning' || state.phase === 'applying'),
   );
   const accountDedupeProgress = useDedupeOperationsStore((state) => state.progress);
 

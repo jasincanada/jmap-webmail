@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
-import { ExternalLink, Play, RotateCcw, Search } from 'lucide-react';
+import { ExternalLink, RotateCcw, Search } from 'lucide-react';
 import { SettingsSection, SettingItem, ToggleSwitch, RadioGroup } from './settings-section';
 import { Button } from '@/components/ui/button';
 import { useDedupeConfigStore } from '@/stores/dedupe-config-store';
+import { DEDUPE_DELETED_RETENTION_DAYS } from '@/lib/mail-dedupe';
 import { hasEnabledCriteria, type DedupeCriteriaKey } from '@/lib/dedupe-config';
 
 const CRITERIA_KEYS: DedupeCriteriaKey[] = [
@@ -26,7 +26,6 @@ export function DedupeSettings() {
   const t = useTranslations('settings.dedupe');
   const router = useRouter();
   const { config, setMode, setCriterion, resetConfig } = useDedupeConfigStore();
-  const [awaitingRemoveConfirm, setAwaitingRemoveConfirm] = useState(false);
 
   const criteriaEnabled = hasEnabledCriteria(config);
 
@@ -76,32 +75,9 @@ export function DedupeSettings() {
       <SettingsSection title={t('title')} description={t('description')}>
         <p className="text-sm text-muted-foreground">{t('how_it_works')}</p>
         <p className="text-sm text-muted-foreground pt-2">{t('operations_hint')}</p>
-
-        {awaitingRemoveConfirm && (
-          <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 space-y-4 mt-4">
-            <h3 className="text-base font-medium text-foreground">{t('confirm_remove_title')}</h3>
-            <p className="text-sm text-muted-foreground">{t('confirm_remove_body')}</p>
-            <div className="flex flex-wrap gap-3">
-              <Button
-                size="sm"
-                onClick={() => {
-                  setAwaitingRemoveConfirm(false);
-                  router.push('/dedupe?scope=account&action=remove');
-                }}
-              >
-                <Play className="w-4 h-4 mr-1" />
-                {t('confirm_remove_start')}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setAwaitingRemoveConfirm(false)}
-              >
-                {t('confirm_remove_cancel')}
-              </Button>
-            </div>
-          </div>
-        )}
+        <p className="text-sm text-muted-foreground pt-2">
+          {t('retention_readonly', { days: DEDUPE_DELETED_RETENTION_DAYS })}
+        </p>
 
         <div className="flex flex-wrap items-center gap-3 py-3">
           <Button
@@ -112,14 +88,6 @@ export function DedupeSettings() {
           >
             <Search className="w-4 h-4 mr-1" />
             {t('scan')}
-          </Button>
-          <Button
-            size="sm"
-            disabled={!criteriaEnabled || awaitingRemoveConfirm}
-            onClick={() => setAwaitingRemoveConfirm(true)}
-          >
-            <Play className="w-4 h-4 mr-1" />
-            {t('run')}
           </Button>
           <Button
             variant="ghost"

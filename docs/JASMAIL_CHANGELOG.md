@@ -8,6 +8,21 @@ The matching **CLI** lives in the stack `dedupe/` directory (outside this repo).
 
 ---
 
+## 1.7.0 (2026-06-20)
+
+### Feature — scan-first duplicate handling (v1.7 plan)
+
+- **Scan/apply split:** scans never write to JMAP; apply requires action picker + tiered confirmation.
+- **Action framework:** `lib/dedupe-actions/` with built-ins: `review_only`, `move_to_folder`, `move_to_dupes`, `move_to_trash`, `move_to_archive`, `delete_with_retention`.
+- **SQLite audit:** server-side `better-sqlite3` at `/data/dedupe-audit.db` (Docker volume); API routes under `/api/dedupe/`.
+- **`deleted/` retention:** soft-delete moves with 90-day `purge_after`; purge via `POST /api/dedupe/purge`.
+- **UX:** removed auto-remove from sidebar, settings, and operations page; `?action=remove` redirects safely.
+- **Keeper policy:** oldest (default) or newest, applied at apply time.
+- **Dev OS:** `.grok/skills/jasmail-dev-os` orchestrator + reviewer, bugfixer, issues, release-notes, tester-docs, product-features bots.
+- **Tests:** 748 unit tests (dedupe-audit, dedupe-actions, keeper policy).
+
+---
+
 ## 1.6.5 (2026-06-20)
 
 Three review→fix cycles after v1.6.4. Highlights:
