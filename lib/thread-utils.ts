@@ -1,3 +1,4 @@
+import type { ListSort } from "./list-query-utils";
 import type { Email, ThreadGroup } from "./jmap/types";
 
 /**
@@ -54,13 +55,34 @@ export function groupEmailsByThread(emails: Email[]): ThreadGroup[] {
   return threadGroups;
 }
 
+function senderSortKey(email: Email): string {
+  const sender = email.from?.[0];
+  return (sender?.name || sender?.email || '').toLowerCase();
+}
+
 /**
- * Sorts thread groups by their latest email's receivedAt date (newest first).
+ * Sorts thread groups using the active list sort option.
  */
-export function sortThreadGroups(groups: ThreadGroup[]): ThreadGroup[] {
-  return [...groups].sort(
-    (a, b) => new Date(b.latestEmail.receivedAt).getTime() - new Date(a.latestEmail.receivedAt).getTime()
-  );
+export function sortThreadGroups(
+  groups: ThreadGroup[],
+  listSort: ListSort = 'date-desc',
+): ThreadGroup[] {
+  return [...groups].sort((a, b) => {
+    switch (listSort) {
+      case 'date-asc':
+        return new Date(a.latestEmail.receivedAt).getTime() - new Date(b.latestEmail.receivedAt).getTime();
+      case 'subject-asc':
+        return (a.latestEmail.subject || '').localeCompare(b.latestEmail.subject || '', undefined, { sensitivity: 'base' });
+      case 'subject-desc':
+        return (b.latestEmail.subject || '').localeCompare(a.latestEmail.subject || '', undefined, { sensitivity: 'base' });
+      case 'sender-asc':
+        return senderSortKey(a.latestEmail).localeCompare(senderSortKey(b.latestEmail));
+      case 'sender-desc':
+        return senderSortKey(b.latestEmail).localeCompare(senderSortKey(a.latestEmail));
+      default:
+        return new Date(b.latestEmail.receivedAt).getTime() - new Date(a.latestEmail.receivedAt).getTime();
+    }
+  });
 }
 
 /**

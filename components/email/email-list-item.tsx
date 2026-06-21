@@ -12,6 +12,9 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useEmailDrag } from "@/hooks/use-email-drag";
 import { useLongPress } from "@/hooks/use-long-press";
 import { EmailIdentityBadge } from "./email-identity-badge";
+import { useDedupeEmailHighlight } from "@/hooks/use-dedupe-highlight";
+import { getDedupeHighlightClasses } from "@/lib/dedupe-highlight-styles";
+import { Copy } from "lucide-react";
 
 interface EmailListItemProps {
   email: Email;
@@ -55,6 +58,8 @@ export function EmailListItem({ email, selected, onClick, onContextMenu }: Email
   const isImportant = email.keywords?.["$important"];
   const sender = email.from?.[0];
   const colorTag = getEmailColor(email.keywords);
+  const dedupeHighlight = useDedupeEmailHighlight(email.id);
+  const dedupeClasses = getDedupeHighlightClasses(dedupeHighlight);
 
   // Drag and drop functionality
   const { dragHandlers, isDragging } = useEmailDrag({
@@ -93,19 +98,19 @@ export function EmailListItem({ email, selected, onClick, onContextMenu }: Email
       {...longPressHandlers}
       className={cn(
         "email-list-item relative group cursor-pointer transition-all duration-200 border-b border-border",
-        // Apply color tag as background, with selected and unread states
-        colorTag ? colorTag : (
-          selected
-            ? "bg-accent"
-            : "bg-background"
+        dedupeClasses || (
+          colorTag ? colorTag : (
+            selected
+              ? "bg-accent"
+              : "bg-background"
+          )
         ),
-        selected && !colorTag && "shadow-sm",
-        !colorTag && !selected && "hover:bg-muted hover:shadow-sm",
-        colorTag && "hover:brightness-95 dark:hover:brightness-110",
-        isUnread && !colorTag && "bg-accent/30",
-        // Add visual feedback for checked state
+        dedupeClasses && selected && "brightness-95",
+        selected && !colorTag && !dedupeClasses && "shadow-sm",
+        !colorTag && !dedupeClasses && !selected && "hover:bg-muted hover:shadow-sm",
+        colorTag && !dedupeClasses && "hover:brightness-95 dark:hover:brightness-110",
+        isUnread && !colorTag && !dedupeClasses && "bg-accent/30",
         isChecked && "ring-2 ring-primary/20 bg-accent/40",
-        // Drag state visual feedback
         isDragging && "opacity-50 scale-[0.98] ring-2 ring-primary/30"
       )}
       onClick={onClick}
@@ -173,6 +178,14 @@ export function EmailListItem({ email, selected, onClick, onContextMenu }: Email
                   </span>
                 )}
                 <EmailIdentityBadge email={email} identities={identities} compact={true} />
+                {dedupeHighlight && !dedupeHighlight.isKeeper && (
+                  <span
+                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded bg-background/80 text-muted-foreground border border-border"
+                    title="Duplicate"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </span>
+                )}
                 {!isExtraCompact && email.hasAttachment && (
                   <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
                 )}

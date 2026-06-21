@@ -3,7 +3,41 @@ import { Email, Mailbox, StateChange, ThreadGroup } from "@/lib/jmap/types";
 import { JMAPClient } from "@/lib/jmap/client";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useCalendarStore } from "@/stores/calendar-store";
-import { SearchFilters, DEFAULT_SEARCH_FILTERS, buildJMAPFilter, isFilterEmpty } from "@/lib/jmap/search-utils";
+import {
+  SearchFilters,
+  DEFAULT_SEARCH_FILTERS,
+  buildJMAPFilter,
+  isFilterEmpty,
+  isMailboxListViewActive,
+} from "@/lib/jmap/search-utils";
+import {
+  buildListJMAPFilter,
+  buildServerListJMAPSort,
+  mergeJMAPFilters,
+} from "@/lib/list-query-utils";
+
+function resolveMailboxListQuery(
+  jmapMailboxId: string,
+  searchQuery: string,
+  searchFilters: SearchFilters,
+): { filter: Record<string, unknown>; sort: { property: string; isAscending: boolean }[] } {
+  const { listSort, listFilter } = useSettingsStore.getState();
+  const listMailboxFilter = buildListJMAPFilter(jmapMailboxId, listFilter);
+  const sort = buildServerListJMAPSort(listSort);
+
+  if (isMailboxListViewActive(searchQuery, searchFilters)) {
+    return {
+      filter: listMailboxFilter,
+      sort,
+    };
+  }
+
+  const searchFilter = buildJMAPFilter(searchQuery, searchFilters, jmapMailboxId);
+  return {
+    filter: mergeJMAPFilters(listMailboxFilter, searchFilter),
+    sort,
+  };
+}
 
 interface EmailStore {
   emails: Email[];
@@ -277,8 +311,10 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
       // Get emails per page from settings
       const emailsPerPage = useSettingsStore.getState().emailsPerPage;
+      const { searchQuery, searchFilters } = get();
+      const queryOptions = resolveMailboxListQuery(jmapMailboxId, searchQuery, searchFilters);
 
-      const result = await client.getEmails(jmapMailboxId, accountId, emailsPerPage, 0);
+      const result = await client.getEmails(jmapMailboxId, accountId, emailsPerPage, 0, queryOptions);
       set({
         emails: result.emails,
         hasMoreEmails: result.hasMore,
@@ -307,35 +343,19 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       // Get emails per page from settings
       const emailsPerPage = useSettingsStore.getState().emailsPerPage;
 
-      let result;
-
+      const mailboxes = get().mailboxes;
+      const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
+      const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
+      const jmapMailboxId = mailbox?.originalId || selectedMailbox;
       const { searchFilters } = get();
-      const hasFilters = !isFilterEmpty(searchFilters);
-
-      if (searchQuery || hasFilters) {
-        const mailboxes = get().mailboxes;
-        const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
-        const jmapMailboxId = mailbox?.originalId || selectedMailbox;
-        const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
-
-        if (hasFilters) {
-          const filter = buildJMAPFilter(searchQuery, searchFilters, jmapMailboxId);
-          result = await client.advancedSearchEmails(filter, accountId, emailsPerPage, emails.length);
-        } else {
-          result = await client.searchEmails(searchQuery, jmapMailboxId, accountId, emailsPerPage, emails.length);
-        }
-      } else {
-        // Load more from mailbox
-        // Find the mailbox to get its accountId (for shared folder support)
-        const mailboxes = get().mailboxes;
-        const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
-        // Only pass accountId for shared mailboxes, not for primary account
-        const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
-        // Use originalId for JMAP queries (shared mailboxes use namespaced IDs in the store)
-        const jmapMailboxId = mailbox?.originalId || selectedMailbox;
-
-        result = await client.getEmails(jmapMailboxId, accountId, emailsPerPage, emails.length);
-      }
+      const queryOptions = resolveMailboxListQuery(jmapMailboxId, searchQuery, searchFilters);
+      const result = await client.getEmails(
+        jmapMailboxId,
+        accountId,
+        emailsPerPage,
+        emails.length,
+        queryOptions,
+      );
 
       set({
         emails: [...emails, ...result.emails],
@@ -1159,10 +1179,19 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   },
 
   refreshCurrentMailbox: async (client) => {
-    const { selectedMailbox } = get();
+    const { selectedMailbox, searchQuery, searchFilters } = get();
 
     // Only refresh if a mailbox is currently selected
     if (!selectedMailbox) return;
+
+    if (searchQuery) {
+      await get().searchEmails(client, searchQuery);
+      return;
+    }
+    if (!isFilterEmpty(searchFilters)) {
+      await get().advancedSearch(client);
+      return;
+    }
 
     try {
       // Fetch emails for the current mailbox without clearing the list first
@@ -1172,10 +1201,10 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
       const jmapMailboxId = mailbox?.originalId || selectedMailbox;
 
-      // Get emails per page from settings
       const emailsPerPage = useSettingsStore.getState().emailsPerPage;
+      const queryOptions = resolveMailboxListQuery(jmapMailboxId, searchQuery, searchFilters);
 
-      const result = await client.getEmails(jmapMailboxId, accountId, emailsPerPage, 0);
+      const result = await client.getEmails(jmapMailboxId, accountId, emailsPerPage, 0, queryOptions);
 
       const currentEmails = get().emails;
 
@@ -1353,11 +1382,27 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
     set({ mailboxes: [...mailboxes, tempMailbox] });
 
     try {
-      const realId = await client.createMailbox(name, parentId);
+      const parentMailbox = parentId
+        ? get().mailboxes.find((mb) => mb.id === parentId)
+        : undefined;
+      const jmapParentId = parentMailbox?.originalId || parentId;
+      const accountId = parentMailbox?.isShared ? parentMailbox.accountId : undefined;
+      const createdJmapId = await client.createMailbox(name, jmapParentId, accountId);
+      const realId = parentMailbox?.isShared && accountId
+        ? `${accountId}:${createdJmapId}`
+        : createdJmapId;
 
       set((state) => {
         const updated = state.mailboxes.map(mb =>
-          mb.id === tempId ? { ...mb, id: realId } : mb
+          mb.id === tempId
+            ? {
+                ...mb,
+                id: realId,
+                originalId: createdJmapId,
+                accountId: parentMailbox?.accountId,
+                isShared: parentMailbox?.isShared,
+              }
+            : mb
         );
         const newState: Partial<EmailStore> = { mailboxes: updated };
         if (state.selectedMailbox === tempId) {
@@ -1407,6 +1452,10 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
     const previousParentId = mailbox.parentId;
     const jmapId = mailbox.originalId || mailboxId;
+    const newParentMailbox = newParentId
+      ? mailboxes.find((mb) => mb.id === newParentId)
+      : undefined;
+    const jmapParentId = newParentMailbox?.originalId || newParentId;
 
     set({
       mailboxes: mailboxes.map(mb =>
@@ -1415,7 +1464,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
     });
 
     try {
-      await client.updateMailbox(jmapId, { parentId: newParentId });
+      await client.updateMailbox(jmapId, { parentId: jmapParentId ?? null });
       return true;
     } catch (error) {
       set({

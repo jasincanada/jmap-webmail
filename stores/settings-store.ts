@@ -1,5 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import {
+  DEFAULT_LIST_FILTER,
+  DEFAULT_LIST_SORT,
+  normalizeListFilter,
+  normalizeListSort,
+  type ListFilter,
+  type ListSort,
+} from '@/lib/list-query-utils';
 
 export type FontSize = 'small' | 'medium' | 'large';
 export type ListDensity = 'extra-compact' | 'compact' | 'regular' | 'comfortable';
@@ -26,6 +34,8 @@ interface SettingsState {
   deleteAction: DeleteAction;
   showPreview: boolean;
   emailsPerPage: number;
+  listSort: ListSort;
+  listFilter: ListFilter;
   externalContentPolicy: ExternalContentPolicy;
 
   // Composer
@@ -79,6 +89,8 @@ const DEFAULT_SETTINGS = {
   deleteAction: 'trash' as DeleteAction,
   showPreview: true,
   emailsPerPage: 50,
+  listSort: DEFAULT_LIST_SORT,
+  listFilter: DEFAULT_LIST_FILTER,
   externalContentPolicy: 'ask' as ExternalContentPolicy,
 
   // Composer
@@ -217,7 +229,16 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'settings-storage',
-      version: 1,
+      version: 2,
+      migrate: (persisted) => {
+        const state = persisted as Partial<SettingsState>;
+        return {
+          ...DEFAULT_SETTINGS,
+          ...state,
+          listSort: normalizeListSort(state.listSort),
+          listFilter: normalizeListFilter(state.listFilter),
+        };
+      },
     }
   )
 );

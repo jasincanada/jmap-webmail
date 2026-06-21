@@ -132,7 +132,29 @@
       "enter_to_create": "Enter om aan te maken · Escape om te annuleren",
       "no_available_targets": "Geen beschikbare mappen",
       "move_to_top_level": "Hoogste niveau"
-    }
+    },
+    "dedupe": {
+      "scan_for_duplicates": "Scan for duplicates",
+      "remove_duplicates": "Remove duplicates",
+      "scanning": "Scanning folder for duplicates...",
+      "removing": "Moving duplicates to dupes folder...",
+      "scan_done": "Found {count, plural, one {# duplicate} other {# duplicates}} in {folder}.",
+      "scan_none": "No duplicates found in {folder}.",
+      "scan_failed": "Duplicate scan failed.",
+      "remove_confirm_title": "Remove duplicates from {folder}?",
+      "remove_confirm_scanned": "Move {count, plural, one {# duplicate} other {# duplicates}} to the dupes subfolder? The oldest copy in each group will be kept.",
+      "remove_confirm_unscanned": "Duplicates will be detected and moved to a dupes subfolder (not deleted). The oldest copy in each group will be kept. Scan first to preview highlighted duplicates.",
+      "remove_done": "Moved {count, plural, one {# duplicate} other {# duplicates}} to dupes.",
+      "remove_none": "No duplicates to remove in {folder}.",
+      "remove_failed": "Failed to remove duplicates.",
+      "criteria_disabled": "Enable match criteria in Settings → Duplicates first.",
+      "highlight_banner": "Showing {duplicates} duplicate(s) in {groups} group(s). Colored rows match the same message.",
+      "highlight_legend": "Lighter = kept, stronger = duplicate",
+      "highlight_load_more": "Scroll to load more rows for additional highlights.",
+      "clear_highlights": "Clear highlights",
+      "folder_badge": "{count} dupes"
+    },
+    "folder_total": "{count, number} messages"
   },
   "email_list": {
     "no_emails": "Geen e-mails",
@@ -176,6 +198,38 @@
       "no_results": "Geen mappen gevonden",
       "no_other_folders": "Geen andere mappen beschikbaar",
       "custom_folders": "Aangepaste mappen"
+    },
+    "stats": {
+      "total_emails": "{count} emails total",
+      "unread": "{count} unread",
+      "duplicates": "{count} duplicates",
+      "matching": "{count} matching"
+    },
+    "list_filter": {
+      "label": "Filter",
+      "all": "All mail",
+      "unread": "Unread",
+      "starred": "Starred",
+      "attachments": "Has attachment",
+      "all_hint": "Show every message in this folder",
+      "unread_hint": "Only messages you have not opened",
+      "read": "Read",
+      "read_hint": "Only messages marked as read",
+      "starred_hint": "Only flagged messages",
+      "attachments_hint": "Only messages with files attached"
+    },
+    "list_sort": {
+      "label": "Sort",
+      "date_desc": "Newest first",
+      "date_asc": "Oldest first",
+      "subject_asc": "Subject A–Z",
+      "subject_desc": "Subject Z–A",
+      "sender_asc": "Sender A–Z",
+      "sender_desc": "Sender Z–A"
+    },
+    "list_controls": {
+      "search_active_hint": "Also applies to search results",
+      "updating": "Updating…"
     }
   },
   "email_viewer": {
@@ -550,7 +604,8 @@
       "advanced": "Geavanceerd",
       "calendar": "Agenda",
       "filters": "Filters",
-      "templates": "Sjablonen"
+      "templates": "Sjablonen",
+      "dedupe": "Duplicates"
     },
     "appearance": {
       "title": "Uiterlijk",
@@ -981,7 +1036,78 @@
     "unsaved_changes": "U heeft niet-opgeslagen wijzigingen",
     "discard_changes": "Wijzigingen verwerpen?",
     "discard": "Verwerpen",
-    "keep_editing": "Doorgaan met bewerken"
+    "keep_editing": "Doorgaan met bewerken",
+    "dedupe": {
+      "title": "Remove Duplicates",
+      "description": "Find duplicate messages in each folder and move extras into a dupes subfolder.",
+      "how_it_works": "Choose which fields must match. The oldest copy in each folder is kept; newer copies move to a dupes subfolder.",
+      "criteria_title": "Match criteria",
+      "criteria_description": "Enable the fields that should match for two messages to be treated as duplicates.",
+      "match_mode_label": "Match mode",
+      "match_mode_description": "Message-ID first uses Message-ID when present, otherwise falls back to other enabled fields. All enabled requires every enabled field to match.",
+      "match_mode_messageIdFirst": "Message-ID first",
+      "match_mode_allEnabled": "All enabled",
+      "reset_criteria": "Reset to defaults",
+      "criteria_none_enabled": "Enable at least one match criterion.",
+      "criteria": {
+        "messageId": {
+          "label": "Message-ID",
+          "description": "RFC Message-ID header (recommended)."
+        },
+        "subject": {
+          "label": "Subject",
+          "description": "Subject line, case-insensitive."
+        },
+        "from": {
+          "label": "From",
+          "description": "Sender email address(es)."
+        },
+        "to": {
+          "label": "To",
+          "description": "Recipient email address(es)."
+        },
+        "receivedAt": {
+          "label": "Received date",
+          "description": "When the server received the message."
+        },
+        "sentAt": {
+          "label": "Sent date",
+          "description": "Date from the Date header."
+        },
+        "size": {
+          "label": "Size",
+          "description": "Message size in bytes."
+        },
+        "hasAttachment": {
+          "label": "Has attachment",
+          "description": "Whether the message has attachments."
+        },
+        "body": {
+          "label": "Body",
+          "description": "Message body text (fetches full text; slower on large mailboxes)."
+        },
+        "threadId": {
+          "label": "Thread",
+          "description": "JMAP thread ID (messages in the same conversation)."
+        }
+      },
+      "scan": "Scan",
+      "run": "Remove duplicates",
+      "scanning": "Scanning mailboxes...",
+      "running": "Removing duplicates...",
+      "not_connected": "Connect to your mail account first.",
+      "failed": "Duplicate cleanup failed.",
+      "scan_done": "Found {count, plural, one {# duplicate} other {# duplicates}}.",
+      "move_done": "Moved {count, plural, one {# duplicate} other {# duplicates}}.",
+      "results_title": "Scan results",
+      "results_description": "Messages that would be moved, or were moved, into each folder's dupes subfolder.",
+      "scanned": "Scanned {count, plural, one {# message} other {# messages}}.",
+      "duplicates": "Found {count, plural, one {# duplicate} other {# duplicates}}.",
+      "move_to": "Move to {folder}",
+      "more": "And {count} more...",
+      "operations_hint": "Scans and moves run on the duplicate operations page with live progress and grouped results.",
+      "open_operations": "Open operations"
+    }
   },
   "errors": {
     "page_error_title": "Er is iets misgegaan",
@@ -1501,5 +1627,52 @@
     "tip_settings": "Pas uw ervaring aan in Instellingen",
     "got_it": "Begrepen",
     "dismiss": "Sluiten"
+  },
+  "dedupe": {
+    "operations": {
+      "title": "Duplicate operations",
+      "description": "Live status and results for duplicate scans and moves.",
+      "status_scanning": "Scanning",
+      "status_removing": "Moving duplicates",
+      "status_complete": "Complete",
+      "status_error": "Failed",
+      "operation": "Operation",
+      "target": "Target",
+      "target_account": "All eligible folders",
+      "working": "Working…",
+      "elapsed": "Elapsed: {seconds}s",
+      "stat_scanned": "Messages scanned",
+      "stat_duplicates": "Duplicates found",
+      "stat_groups": "Duplicate groups",
+      "stat_moved": "Duplicates moved",
+      "groups_title": "Duplicate groups",
+      "groups_hint": "Each group shares the same match key. The keeper (lighter row) stays in the folder; duplicates can be moved to dupes/.",
+      "group_unknown_key": "(no match key)",
+      "group_summary": "{total} messages · {duplicates} duplicate(s)",
+      "keeper": "Keeper",
+      "duplicate": "Duplicate",
+      "folders_title": "Folders with duplicates",
+      "folder_row": "Scanned {scanned} · {duplicates} duplicate(s) · {groups} group(s)",
+      "open_folder_scan": "Open scan",
+      "no_duplicates": "No duplicates matched your criteria in this folder.",
+      "back_to_mail": "Back to mail",
+      "view_in_mailbox": "View highlights in mailbox",
+      "run_again": "Run again",
+      "remove_duplicates": "Remove duplicates",
+      "remove_all_duplicates": "Remove all duplicates",
+      "not_connected": "Not connected to the mail server.",
+      "criteria_disabled": "Enable match criteria in Settings → Duplicates first.",
+      "missing_folder": "Folder not found.",
+      "failed": "Operation failed.",
+      "action_folder_scan": "Folder scan",
+      "action_folder_remove": "Folder remove",
+      "action_account_scan": "Account-wide scan",
+      "action_account_remove": "Account-wide remove",
+      "folder_scan_done": "Found {count, plural, one {# duplicate} other {# duplicates}} in {folder}.",
+      "folder_scan_none": "No duplicates in {folder}.",
+      "folder_remove_done": "Moved {count, plural, one {# duplicate} other {# duplicates}} from {folder}.",
+      "account_scan_done": "Found {count, plural, one {# duplicate} other {# duplicates}} across your mailboxes.",
+      "account_remove_done": "Moved {count, plural, one {# duplicate} other {# duplicates}} to dupes folders."
+    }
   }
 }

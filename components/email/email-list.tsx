@@ -12,14 +12,19 @@ import { useEmailStore } from "@/stores/email-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSettingsStore } from "@/stores/settings-store";
 import { groupEmailsByThread, sortThreadGroups } from "@/lib/thread-utils";
+import { EmailListControls } from "@/components/email/email-list-controls";
+import { useDedupeHighlightStore } from "@/stores/dedupe-highlight-store";
+import { formatMailboxCount } from "@/lib/utils";
 import { useContextMenu } from "@/hooks/use-context-menu";
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog";
 import { useTranslations } from "next-intl";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { SearchChips } from "@/components/search/search-chips";
-import { isFilterEmpty, DEFAULT_SEARCH_FILTERS } from "@/lib/jmap/search-utils";
+import { isFilterEmpty, isMailboxListViewActive, DEFAULT_SEARCH_FILTERS } from "@/lib/jmap/search-utils";
+import { isListFilterActive } from "@/lib/list-query-utils";
 import { SelectionDropdown } from "./selection-dropdown";
 import { MoveToPopover } from "./move-to-popover";
+import { DedupeHighlightBanner } from "./dedupe-highlight-banner";
 
 interface EmailListProps {
   emails: Email[];
@@ -87,6 +92,7 @@ export function EmailList({
     toggleThreadExpansion,
     fetchThreadEmails,
     searchFilters,
+    searchQuery,
     setSearchFilters,
     clearSearchFilters,
     advancedSearch,
@@ -102,18 +108,26 @@ export function EmailList({
     return () => clearTimeout(timer);
   }, [isLoading, emails.length]);
 
+  const listDensity = useSettingsStore((state) => state.listDensity);
+  const showPreview = useSettingsStore((state) => state.showPreview);
+  const listSort = useSettingsStore((state) => state.listSort);
+  const listFilter = useSettingsStore((state) => state.listFilter);
+  const mailboxListViewActive = isMailboxListViewActive(searchQuery, searchFilters);
+  const duplicateCount = useDedupeHighlightStore(
+    (state) => (selectedMailbox ? state.byMailbox[selectedMailbox]?.duplicateCount ?? 0 : 0),
+  );
+  const currentMailbox = mailboxes.find((mailbox) => mailbox.id === selectedMailbox);
+
   const threadGroups = useMemo(() => {
     const groups = groupEmailsByThread(emails);
-    return sortThreadGroups(groups);
-  }, [emails]);
+    return sortThreadGroups(groups, listSort);
+  }, [emails, listSort]);
 
   const { contextMenu, openContextMenu, closeContextMenu, menuRef } = useContextMenu<Email>();
   const { dialogProps: confirmDialogProps, confirm: confirmDialog } = useConfirmDialog();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const parentRef = useRef<HTMLDivElement>(null);
-  const listDensity = useSettingsStore((state) => state.listDensity);
-  const showPreview = useSettingsStore((state) => state.showPreview);
 
   const estimateSize = useCallback(() => {
     const base = { 'extra-compact': 44, compact: 72, regular: 88, comfortable: 104 }[listDensity];
@@ -278,6 +292,8 @@ export function EmailList({
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
+      <DedupeHighlightBanner />
+
       {/* Batch Actions Toolbar */}
       <div
         className={cn(
@@ -372,24 +388,56 @@ export function EmailList({
       )}
 
       {/* List Header */}
-      <div className="px-4 py-3 border-b bg-muted/50 border-border flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="px-4 py-3 border-b bg-muted/50 border-border space-y-2.5 relative z-10">
+        <div className="flex items-start gap-2 min-w-0">
           <SelectionDropdown
             hasSelection={hasSelection}
             allSelected={allSelected}
             onSelectByFilter={(filter, groups) => selectByFilter(filter, groups)}
             threadGroups={threadGroups}
           />
-          <h2 className="text-sm font-medium text-foreground">
-            {isLoading ? t('loading') : threadGroups.length > 0
-              ? (totalEmails !== undefined && totalEmails > threadGroups.length
-                  ? t('conversations_count', { count: threadGroups.length, total: totalEmails })
-                  : hasMoreEmails
-                    ? t('conversations_count_plus', { count: threadGroups.length })
-                    : t('conversations_count_simple', { count: threadGroups.length }))
-              : t('no_conversations')}
-          </h2>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-medium text-foreground truncate">
+              {isLoading ? t('loading') : threadGroups.length > 0
+                ? (totalEmails > 0 && (hasMoreEmails || totalEmails > threadGroups.length)
+                    ? t('conversations_count', { count: threadGroups.length, total: totalEmails })
+                    : hasMoreEmails
+                      ? t('conversations_count_plus', { count: threadGroups.length })
+                      : t('conversations_count_simple', { count: threadGroups.length }))
+                : t('no_conversations')}
+            </h2>
+            {!isLoading && (
+              <p className="text-xs text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <span>
+                  {t('stats.total_emails', {
+                    count: formatMailboxCount(currentMailbox?.totalEmails ?? totalEmails),
+                  })}
+                </span>
+                {isListFilterActive(listFilter) && (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    <span>
+                      {t('stats.matching', { count: formatMailboxCount(totalEmails) })}
+                    </span>
+                  </>
+                )}
+                {mailboxListViewActive && (
+                  <>
+                    <span aria-hidden="true">·</span>
+                    <span>
+                      {t('stats.unread', { count: formatMailboxCount(currentMailbox?.unreadEmails ?? 0) })}
+                    </span>
+                    <span aria-hidden="true">·</span>
+                    <span className={duplicateCount > 0 ? 'text-amber-700 dark:text-amber-400' : undefined}>
+                      {t('stats.duplicates', { count: formatMailboxCount(duplicateCount) })}
+                    </span>
+                  </>
+                )}
+              </p>
+            )}
+          </div>
         </div>
+        <EmailListControls />
       </div>
 
       {/* Email List */}

@@ -4,7 +4,9 @@ import { formatDate } from "@/lib/utils";
 import { Email } from "@/lib/jmap/types";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
-import { Paperclip, Star, Circle } from "lucide-react";
+import { Paperclip, Star, Circle, Copy } from "lucide-react";
+import { useDedupeEmailHighlight } from "@/hooks/use-dedupe-highlight";
+import { getDedupeHighlightClasses } from "@/lib/dedupe-highlight-styles";
 
 interface ThreadEmailItemProps {
   email: Email;
@@ -24,6 +26,8 @@ export function ThreadEmailItem({
   const isUnread = !email.keywords?.$seen;
   const isStarred = email.keywords?.$flagged;
   const sender = email.from?.[0];
+  const dedupeHighlight = useDedupeEmailHighlight(email.id);
+  const dedupeClasses = getDedupeHighlightClasses(dedupeHighlight);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     onContextMenu?.(e, email);
@@ -33,12 +37,12 @@ export function ThreadEmailItem({
     <div
       className={cn(
         "relative cursor-pointer transition-all duration-150",
-        "pl-12 pr-4 py-2.5", // Indented for thread hierarchy
-        "border-l-2 border-l-transparent",
-        selected
-          ? "bg-accent border-l-primary"
-          : "hover:bg-muted/50",
-        isUnread && !selected && "bg-accent/20",
+        "pl-12 pr-4 py-2.5",
+        dedupeClasses || "border-l-2 border-l-transparent",
+        !dedupeClasses && selected && "bg-accent border-l-primary",
+        !dedupeClasses && !selected && "hover:bg-muted/50",
+        !dedupeClasses && isUnread && !selected && "bg-accent/20",
+        dedupeClasses && selected && "brightness-95",
         !isLast && "border-b border-border/30"
       )}
       onClick={onClick}
@@ -80,6 +84,9 @@ export function ThreadEmailItem({
               )}
               {email.hasAttachment && (
                 <Paperclip className="w-3 h-3 text-muted-foreground" />
+              )}
+              {dedupeHighlight && !dedupeHighlight.isKeeper && (
+                <Copy className="w-3 h-3 text-muted-foreground" />
               )}
             </div>
 

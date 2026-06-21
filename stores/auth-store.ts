@@ -7,6 +7,8 @@ import { useContactStore } from './contact-store';
 import { useVacationStore } from './vacation-store';
 import { useCalendarStore } from './calendar-store';
 import { useFilterStore } from './filter-store';
+import { useDedupeHighlightStore } from './dedupe-highlight-store';
+import { useDedupeOperationsStore } from './dedupe-operations-store';
 import { debug } from '@/lib/debug';
 import type { Identity } from '@/lib/jmap/types';
 
@@ -315,6 +317,8 @@ export const useAuthStore = create<AuthState>()(
         useVacationStore.getState().clearState();
         useCalendarStore.getState().clearState();
         useFilterStore.getState().clearState();
+        useDedupeHighlightStore.getState().clearAll();
+        useDedupeOperationsStore.getState().reset();
 
         fetch('/api/auth/session', { method: 'DELETE' }).catch((err) => {
           debug.error('Failed to clear session cookie:', err);

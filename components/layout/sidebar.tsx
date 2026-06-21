@@ -32,8 +32,16 @@ import {
   FolderPlus,
   Edit3,
   FolderInput,
+  Copy,
+  Loader2,
+  Play,
 } from "lucide-react";
-import { cn, buildMailboxTree, flattenMailboxTree, MailboxNode, formatFileSize } from "@/lib/utils";
+import { canDedupeMailbox } from "@/lib/mail-dedupe";
+import { hasEnabledCriteria } from "@/lib/dedupe-config";
+import { useDedupeConfigStore } from "@/stores/dedupe-config-store";
+import { useDedupeHighlightStore } from "@/stores/dedupe-highlight-store";
+import { useDedupeOperationsStore } from "@/stores/dedupe-operations-store";
+import { cn, buildMailboxTree, flattenMailboxTree, MailboxNode, formatFileSize, formatMailboxCount } from "@/lib/utils";
 import { Mailbox } from "@/lib/jmap/types";
 import { useDragDropContext } from "@/contexts/drag-drop-context";
 import { useMailboxDrop } from "@/hooks/use-mailbox-drop";
@@ -228,6 +236,14 @@ function MailboxTreeItem({
   onCreateCancel: () => void;
 }) {
   const t = useTranslations('sidebar');
+  const duplicateCount = useDedupeHighlightStore(
+    (state) => state.byMailbox[node.id]?.duplicateCount ?? 0,
+  );
+  const isScanningDuplicates = useDedupeOperationsStore(
+    (state) =>
+      (state.phase === 'scanning' || state.phase === 'removing') &&
+      state.mailboxId === node.id,
+  );
   const tFolder = useTranslations('sidebar.folder_management');
   const tNotifications = useTranslations('notifications');
   const hasChildren = node.children.length > 0;
@@ -370,6 +386,34 @@ function MailboxTreeItem({
                   }}
                 >
                   {node.name}
+                </span>
+              )}
+              {!isRenaming && !isVirtualNode && !node.id.startsWith('temp-') && node.totalEmails > 0 && (
+                <span
+                  className={cn(
+                    'text-xs tabular-nums ml-1 shrink-0',
+                    node.unreadEmails > 0 ? 'text-muted-foreground/70' : 'text-muted-foreground',
+                  )}
+                  title={t('folder_total', { count: node.totalEmails })}
+                >
+                  {formatMailboxCount(node.totalEmails)}
+                </span>
+              )}
+              {!isRenaming && isScanningDuplicates && (
+                <span
+                  className="text-xs rounded-full px-2 py-0.5 ml-2 font-medium bg-primary/10 text-primary inline-flex items-center gap-1"
+                  title={t('dedupe.scanning')}
+                >
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                </span>
+              )}
+              {!isRenaming && !isScanningDuplicates && duplicateCount > 0 && (
+                <span
+                  className="text-xs rounded-full px-2 py-0.5 ml-2 font-medium bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                  title={t('dedupe.folder_badge', { count: duplicateCount })}
+                >
+                  <Copy className="w-3 h-3 inline mr-0.5" />
+                  {duplicateCount}
                 </span>
               )}
               {!isRenaming && node.unreadEmails > 0 && (
@@ -732,12 +776,18 @@ export function Sidebar({
   const [creatingSubfolder, setCreatingSubfolder] = useState<{ parentId: string } | null>(null);
   const [creatingTopLevel, setCreatingTopLevel] = useState(false);
   const [deleteFolderTarget, setDeleteFolderTarget] = useState<Mailbox | null>(null);
+  const [removeDedupeTarget, setRemoveDedupeTarget] = useState<Mailbox | null>(null);
+  const [dedupeBusy, setDedupeBusy] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const t = useTranslations('sidebar');
   const tFolder = useTranslations('sidebar.folder_management');
+  const tDedupe = useTranslations('sidebar.dedupe');
+  const router = useRouter();
   const { dragType, endDrag: globalEndDrag } = useDragDropContext();
   const { client } = useAuthStore();
-  const { emptyFolder, createMailbox, renameMailbox, moveMailbox, deleteMailbox } = useEmailStore();
+  const dedupeConfig = useDedupeConfigStore((state) => state.config);
+  const { getMailboxHighlight } = useDedupeHighlightStore();
+  const { emptyFolder, createMailbox, renameMailbox, moveMailbox, deleteMailbox, fetchEmails, fetchMailboxes } = useEmailStore();
   const { sidebarWidth, updateSetting } = useSettingsStore();
 
   const handleSidebarResize = useCallback((width: number) => {
@@ -872,6 +922,31 @@ export function Sidebar({
       toast.error(tFolder('delete_error'));
     }
   }, [deleteFolderTarget, client, deleteMailbox, tFolder]);
+
+  const handleScanDuplicates = useCallback((mailbox: Mailbox) => {
+    if (!hasEnabledCriteria(dedupeConfig)) {
+      toast.error(tDedupe('criteria_disabled'));
+      setContextMenu(null);
+      return;
+    }
+
+    setContextMenu(null);
+    router.push(`/dedupe?folder=${encodeURIComponent(mailbox.id)}&action=scan`);
+  }, [dedupeConfig, router, tDedupe]);
+
+  const handleConfirmRemoveDuplicates = useCallback(() => {
+    if (!removeDedupeTarget) return;
+
+    if (!hasEnabledCriteria(dedupeConfig)) {
+      toast.error(tDedupe('criteria_disabled'));
+      setRemoveDedupeTarget(null);
+      return;
+    }
+
+    const mailbox = removeDedupeTarget;
+    setRemoveDedupeTarget(null);
+    router.push(`/dedupe?folder=${encodeURIComponent(mailbox.id)}&action=remove`);
+  }, [removeDedupeTarget, dedupeConfig, router, tDedupe]);
 
   const handleEmptyFolder = useCallback(async () => {
     if (!emptyFolderTarget || !client) return;
@@ -1146,6 +1221,31 @@ export function Sidebar({
               </button>
             )}
 
+            {canDedupeMailbox(contextMenu.mailbox) && (
+              <>
+                <div className="h-px bg-border mx-2 my-1" />
+                <button
+                  disabled={dedupeBusy}
+                  onClick={() => handleScanDuplicates(contextMenu.mailbox)}
+                  className="flex items-center w-full px-3 py-2 text-sm hover:bg-muted transition-colors disabled:opacity-50"
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  {tDedupe('scan_for_duplicates')}
+                </button>
+                <button
+                  disabled={dedupeBusy}
+                  onClick={() => {
+                    setContextMenu(null);
+                    setRemoveDedupeTarget(contextMenu.mailbox);
+                  }}
+                  className="flex items-center w-full px-3 py-2 text-sm hover:bg-muted transition-colors disabled:opacity-50"
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  {tDedupe('remove_duplicates')}
+                </button>
+              </>
+            )}
+
             {/* Move to */}
             {!contextMenu.mailbox.role && (
               <MoveToSubmenu
@@ -1206,6 +1306,26 @@ export function Sidebar({
         </>,
         document.body
       )}
+
+      {removeDedupeTarget && (() => {
+        const cached = getMailboxHighlight(removeDedupeTarget.id);
+        const wasScanned = !!cached;
+        const count = cached?.duplicateCount ?? 0;
+        const message = wasScanned && count > 0
+          ? tDedupe('remove_confirm_scanned', { count })
+          : tDedupe('remove_confirm_unscanned');
+
+        return (
+          <ConfirmDialog
+            isOpen={true}
+            onClose={() => setRemoveDedupeTarget(null)}
+            onConfirm={handleConfirmRemoveDuplicates}
+            title={tDedupe('remove_confirm_title', { folder: removeDedupeTarget.name })}
+            message={message}
+            confirmText={tDedupe('remove_duplicates')}
+          />
+        );
+      })()}
 
       {/* Empty Folder Confirmation Dialog */}
       {emptyFolderTarget && (

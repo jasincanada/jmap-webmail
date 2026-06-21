@@ -100,6 +100,10 @@ export function buildJMAPFilter(
   };
 }
 
+export function isMailboxListViewActive(searchQuery: string, filters: SearchFilters): boolean {
+  return !searchQuery && isFilterEmpty(filters);
+}
+
 export function isFilterEmpty(filters: SearchFilters): boolean {
   return (
     !filters.from &&

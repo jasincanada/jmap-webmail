@@ -1,3 +1,9 @@
+import {
+  DEFAULT_DEDUPE_MATCH_CONFIG,
+  dedupeFetchNeedsBody,
+  dedupeFetchProperties,
+  type DedupeMatchConfig,
+} from '@/lib/dedupe-config';
 import type { Email, Mailbox, StateChange, AccountStates, Thread, Identity, EmailAddress, ContactCard, AddressBook, VacationResponse, Calendar, CalendarEvent, CalendarEventFilter } from "./types";
 import type { SieveScript, SieveCapabilities } from "./sieve-types";
 import { retryWithBackoff } from './retry';
@@ -499,19 +505,28 @@ export class JMAPClient {
     }
   }
 
-  async getEmails(mailboxId?: string, accountId?: string, limit: number = 50, position: number = 0): Promise<{ emails: Email[], hasMore: boolean, total: number }> {
+  async getEmails(
+    mailboxId?: string,
+    accountId?: string,
+    limit: number = 50,
+    position: number = 0,
+    queryOptions?: {
+      filter?: Record<string, unknown>;
+      sort?: { property: string; isAscending: boolean }[];
+    },
+  ): Promise<{ emails: Email[], hasMore: boolean, total: number }> {
     try {
       const targetAccountId = accountId || this.accountId;
-      const filter: { inMailbox?: string } = {};
-      if (mailboxId) {
-        filter.inMailbox = mailboxId;
-      }
+      const filter: Record<string, unknown> = queryOptions?.filter
+        ?? (mailboxId ? { inMailbox: mailboxId } : {});
+      const sort = queryOptions?.sort ?? [{ property: "receivedAt", isAscending: false }];
 
       const response = await this.request([
         ["Email/query", {
           accountId: targetAccountId,
           filter,
-          sort: [{ property: "receivedAt", isAscending: false }],
+          sort,
+          calculateTotal: true,
           limit,
           position,
         }, "0"],
@@ -764,6 +779,123 @@ export class JMAPClient {
     };
   }
 
+  async queryAllMailboxEmailIds(
+    mailboxId: string,
+    batchSize: number = 500,
+    accountId?: string,
+  ): Promise<string[]> {
+    const targetAccountId = accountId || this.accountId;
+    const allIds: string[] = [];
+    let position = 0;
+
+    while (true) {
+      const response = await this.request([
+        ["Email/query", {
+          accountId: targetAccountId,
+          filter: { inMailbox: mailboxId },
+          sort: [{ property: "receivedAt", isAscending: true }],
+          calculateTotal: true,
+          limit: batchSize,
+          position,
+        }, "0"],
+      ]);
+
+      const queryResult = response.methodResponses?.[0]?.[1];
+      const ids: string[] = queryResult?.ids || [];
+      allIds.push(...ids);
+
+      const total = queryResult?.total ?? allIds.length;
+      position += ids.length;
+      if (position >= total || ids.length === 0) {
+        break;
+      }
+    }
+
+    return allIds;
+  }
+
+  async getEmailsForDedupe(
+    ids: string[],
+    config: DedupeMatchConfig = DEFAULT_DEDUPE_MATCH_CONFIG,
+    accountId?: string,
+  ): Promise<Email[]> {
+    if (ids.length === 0) return [];
+
+    const targetAccountId = accountId || this.accountId;
+    const properties = dedupeFetchProperties(config);
+    const fetchBody = dedupeFetchNeedsBody(config);
+
+    const emails: Email[] = [];
+
+    for (let offset = 0; offset < ids.length; offset += 500) {
+      const chunk = ids.slice(offset, offset + 500);
+      const getArgs: Record<string, unknown> = {
+        accountId: targetAccountId,
+        ids: chunk,
+        properties,
+      };
+
+      if (fetchBody) {
+        getArgs.fetchTextBodyValues = true;
+        getArgs.maxBodyValueBytes = 256000;
+      }
+
+      const response = await this.request([
+        ["Email/get", getArgs, "0"],
+      ]);
+
+      const [method, result] = response.methodResponses?.[0] ?? [];
+      if (method !== "Email/get") {
+        throw new Error('Email/get failed while loading messages for dedupe');
+      }
+      emails.push(...(result?.list || []));
+    }
+
+    return emails;
+  }
+
+  async moveEmailsBetweenMailboxes(
+    emailIds: string[],
+    fromMailboxId: string,
+    toMailboxId: string,
+    accountId?: string,
+  ): Promise<void> {
+    if (emailIds.length === 0) return;
+
+    const targetAccountId = accountId || this.accountId;
+    const updates = Object.fromEntries(
+      emailIds.map((id) => [
+        id,
+        {
+          mailboxIds: {
+            [toMailboxId]: true,
+            [fromMailboxId]: false,
+          },
+        },
+      ]),
+    );
+
+    const response = await this.request([
+      ["Email/set", { accountId: targetAccountId, update: updates }, "0"],
+    ]);
+
+    const [method, result] = response.methodResponses?.[0] ?? [];
+    if (method !== 'Email/set') {
+      throw new JMAPSetError('unknown', 'Email/set failed while moving duplicates');
+    }
+
+    const updated = (result?.updated ?? {}) as Record<string, unknown>;
+    const notUpdated = result?.notUpdated as Record<string, { type?: string; description?: string }> | undefined;
+    const missing = emailIds.filter((id) => !(id in updated));
+    if (missing.length > 0) {
+      const first = notUpdated ? Object.values(notUpdated)[0] : undefined;
+      throw new JMAPSetError(
+        first?.type || 'partialUpdate',
+        first?.description || `Failed to move ${missing.length} message(s)`,
+      );
+    }
+  }
+
   async batchMoveEmails(emailIds: string[], toMailboxId: string, accountId?: string): Promise<void> {
     if (emailIds.length === 0) return;
 
@@ -793,13 +925,14 @@ export class JMAPClient {
     return ids;
   }
 
-  async createMailbox(name: string, parentId?: string): Promise<string> {
+  async createMailbox(name: string, parentId?: string, accountId?: string): Promise<string> {
+    const targetAccountId = accountId || this.accountId;
     const create: Record<string, unknown> = { name };
     if (parentId) create.parentId = parentId;
 
     const response = await this.request([
       ["Mailbox/set", {
-        accountId: this.accountId,
+        accountId: targetAccountId,
         create: { "new-mailbox": create },
       }, "0"],
     ]);
@@ -924,6 +1057,7 @@ export class JMAPClient {
           accountId: targetAccountId,
           filter,
           sort: [{ property: "receivedAt", isAscending: false }],
+          calculateTotal: true,
           limit,
           position,
         }, "0"],
@@ -958,6 +1092,7 @@ export class JMAPClient {
         accountId: targetAccountId,
         filter,
         sort: [{ property: "receivedAt", isAscending: false }],
+        calculateTotal: true,
         limit,
         position,
       }, "0"],

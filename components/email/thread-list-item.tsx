@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { formatDate } from "@/lib/utils";
 import { Email, ThreadGroup } from "@/lib/jmap/types";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,9 @@ import { useUIStore } from "@/stores/ui-store";
 import { getThreadColorTag } from "@/lib/thread-utils";
 import { ThreadEmailItem } from "./thread-email-item";
 import { useTranslations } from "next-intl";
+import { useDedupeEmailHighlight, useThreadDedupeHighlight } from "@/hooks/use-dedupe-highlight";
+import { getDedupeHighlightClasses } from "@/lib/dedupe-highlight-styles";
+import { Copy } from "lucide-react";
 
 interface ThreadListItemProps {
   thread: ThreadGroup;
@@ -52,6 +55,8 @@ const SingleEmailItem = React.forwardRef<HTMLDivElement, SingleEmailItemProps>(
     const isUnread = !email.keywords?.$seen;
     const isStarred = email.keywords?.$flagged;
     const sender = email.from?.[0];
+    const dedupeHighlight = useDedupeEmailHighlight(email.id);
+    const dedupeClasses = getDedupeHighlightClasses(dedupeHighlight);
 
     const handleContextMenu = (e: React.MouseEvent) => {
       onContextMenu?.(e, email);
@@ -62,15 +67,18 @@ const SingleEmailItem = React.forwardRef<HTMLDivElement, SingleEmailItemProps>(
         ref={ref}
         className={cn(
           "relative group cursor-pointer transition-all duration-200 border-b border-border",
-          colorTag ? colorTag : (
-            selected
-              ? "bg-accent"
-              : "bg-background"
+          dedupeClasses || (
+            colorTag ? colorTag : (
+              selected
+                ? "bg-accent"
+                : "bg-background"
+            )
           ),
-          selected && !colorTag && "shadow-sm",
-          !colorTag && !selected && "hover:bg-muted hover:shadow-sm",
-          colorTag && "hover:brightness-95 dark:hover:brightness-110",
-          isUnread && !colorTag && "bg-accent/30",
+          dedupeClasses && selected && "brightness-95",
+          selected && !colorTag && !dedupeClasses && "shadow-sm",
+          !colorTag && !dedupeClasses && !selected && "hover:bg-muted hover:shadow-sm",
+          colorTag && !dedupeClasses && "hover:brightness-95 dark:hover:brightness-110",
+          isUnread && !colorTag && !dedupeClasses && "bg-accent/30",
           isChecked && "ring-2 ring-primary/20 bg-accent/40"
         )}
         onClick={onClick}
@@ -127,6 +135,9 @@ const SingleEmailItem = React.forwardRef<HTMLDivElement, SingleEmailItemProps>(
                   )}
                   {email.hasAttachment && (
                     <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
+                  )}
+                  {dedupeHighlight && !dedupeHighlight.isKeeper && (
+                    <Copy className="w-3.5 h-3.5 text-muted-foreground" />
                   )}
                 </div>
               </div>
@@ -187,6 +198,12 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
 
     const threadColor = getThreadColorTag(thread.emails);
     const colorTag = threadColor ? colorTags[threadColor as keyof typeof colorTags] : null;
+    const threadEmailIds = useMemo(
+      () => thread.emails.map((email) => email.id),
+      [thread.emails],
+    );
+    const threadDedupeHighlight = useThreadDedupeHighlight(threadEmailIds);
+    const threadDedupeClasses = getDedupeHighlightClasses(threadDedupeHighlight);
 
     const isSelected = selectedEmailId === latestEmail.id ||
       thread.emails.some(e => e.id === selectedEmailId);
@@ -235,15 +252,18 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
         <div
           className={cn(
             "relative group cursor-pointer transition-all duration-200",
-            colorTag ? colorTag : (
-              isSelected
-                ? "bg-accent"
-                : "bg-background"
+            threadDedupeClasses || (
+              colorTag ? colorTag : (
+                isSelected
+                  ? "bg-accent"
+                  : "bg-background"
+              )
             ),
-            isSelected && !colorTag && "shadow-sm",
-            !colorTag && !isSelected && "hover:bg-muted hover:shadow-sm",
-            colorTag && "hover:brightness-95 dark:hover:brightness-110",
-            hasUnread && !colorTag && !isSelected && "bg-accent/30",
+            threadDedupeClasses && isSelected && "brightness-95",
+            isSelected && !colorTag && !threadDedupeClasses && "shadow-sm",
+            !colorTag && !threadDedupeClasses && !isSelected && "hover:bg-muted hover:shadow-sm",
+            colorTag && !threadDedupeClasses && "hover:brightness-95 dark:hover:brightness-110",
+            hasUnread && !colorTag && !threadDedupeClasses && !isSelected && "bg-accent/30",
             isExpanded && "border-b border-border/50",
             isChecked && "ring-2 ring-primary/20 bg-accent/40"
           )}
@@ -341,6 +361,9 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
                     )}
                     {hasAttachment && (
                       <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
+                    )}
+                    {threadDedupeHighlight && !threadDedupeHighlight.isKeeper && (
+                      <Copy className="w-3.5 h-3.5 text-muted-foreground" />
                     )}
                   </div>
                 </div>
