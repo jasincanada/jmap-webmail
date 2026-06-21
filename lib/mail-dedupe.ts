@@ -16,6 +16,7 @@ import type { Email, Mailbox } from '@/lib/jmap/types';
 const DUPES_FOLDER = 'dupes';
 const SKIP_ROLES = new Set(['trash', 'junk']);
 const BATCH = 500;
+const SCAN_CONCURRENCY = 3;
 
 export class DedupeAbortedError extends Error {
   constructor() {
@@ -80,6 +81,23 @@ interface DupesMailboxRef {
 
 function isDupesMailbox(mailbox: Mailbox): boolean {
   return mailbox.name === DUPES_FOLDER;
+}
+
+export async function getAccountScanMaxFolderCount(
+  client: JMAPClient,
+  mailboxes: Mailbox[],
+  signal?: AbortSignal,
+): Promise<number> {
+  let max = 0;
+  for (const mailbox of mailboxes) {
+    throwIfAborted(signal);
+    if (!canDedupeMailbox(mailbox)) continue;
+    const jmapId = mailbox.originalId || mailbox.id;
+    const accountId = mailbox.isShared ? mailbox.accountId : undefined;
+    const total = await client.countMailboxEmails(jmapId, accountId, signal);
+    max = Math.max(max, total);
+  }
+  return max;
 }
 
 export function canDedupeMailbox(mailbox: Mailbox): boolean {
@@ -315,7 +333,7 @@ export async function scanFolderDuplicates(
   const displayName = mailboxDisplayName(mailbox, byId);
   onProgress?.(`Querying messages in ${displayName}…`);
 
-  const total = await client.countMailboxEmails(mailboxRef.jmapId, mailboxRef.accountId);
+  const total = await client.countMailboxEmails(mailboxRef.jmapId, mailboxRef.accountId, signal);
   if (total === 0) {
     return {
       mailboxId,
@@ -340,6 +358,7 @@ export async function scanFolderDuplicates(
       position,
       BATCH,
       mailboxRef.accountId,
+      signal,
     );
     if (page.ids.length === 0) {
       if (position < total) {
@@ -354,7 +373,7 @@ export async function scanFolderDuplicates(
       `Analyzing ${Math.min(position + page.ids.length, total).toLocaleString()} / ${total.toLocaleString()} in ${displayName}…`,
     );
 
-    const emails = await client.getEmailsForDedupe(page.ids, config, mailboxRef.accountId);
+    const emails = await client.getEmailsForDedupe(page.ids, config, mailboxRef.accountId, signal);
     mergeDuplicateGroups(groups, emails, mailboxRef.jmapId, config);
     position += page.ids.length;
   }
@@ -363,7 +382,7 @@ export async function scanFolderDuplicates(
     mailbox,
     displayName,
     groups,
-    total,
+    position,
   );
 
   if (prepareDupesFolder && scanResult.duplicateCount > 0) {
@@ -403,23 +422,31 @@ export async function scanMailboxDuplicates(
   const folderResults: FolderDedupeScanResult[] = [];
   let scanned = 0;
 
-  for (const mailbox of mailboxes) {
-    throwIfAborted(signal);
-    if (!canDedupeMailbox(mailbox)) continue;
+  const eligible = mailboxes.filter((mailbox) => canDedupeMailbox(mailbox));
 
-    const folderResult = await scanFolderDuplicates(
-      client,
-      mailbox.id,
-      config,
-      mailboxes,
-      onProgress ? (message) => onProgress(`${mailbox.name}: ${message}`) : undefined,
-      false,
-      signal,
+  for (let offset = 0; offset < eligible.length; offset += SCAN_CONCURRENCY) {
+    throwIfAborted(signal);
+    const batch = eligible.slice(offset, offset + SCAN_CONCURRENCY);
+    const results = await Promise.all(
+      batch.map((mailbox) =>
+        scanFolderDuplicates(
+          client,
+          mailbox.id,
+          config,
+          mailboxes,
+          onProgress ? (message) => onProgress(`${mailbox.name}: ${message}`) : undefined,
+          false,
+          signal,
+        ),
+      ),
     );
-    scanned += folderResult.scanned;
-    moves.push(...folderResult.moves);
-    if (folderResult.duplicateCount > 0) {
-      folderResults.push(folderResult);
+
+    for (const folderResult of results) {
+      scanned += folderResult.scanned;
+      moves.push(...folderResult.moves);
+      if (folderResult.duplicateCount > 0) {
+        folderResults.push(folderResult);
+      }
     }
   }
 
@@ -497,6 +524,7 @@ export async function runMailboxDedupe(
         bucket.fromMailboxRef.jmapId,
         bucket.dupesJmapId,
         bucket.fromMailboxRef.accountId,
+        signal,
       );
       moved += chunk.length;
     }
@@ -552,6 +580,7 @@ export async function runFolderDedupe(
       fromMailboxRef.jmapId,
       dupes.jmapId,
       fromMailboxRef.accountId,
+      signal,
     );
     moved += chunk.length;
   }

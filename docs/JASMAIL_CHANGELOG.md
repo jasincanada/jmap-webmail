@@ -8,6 +8,26 @@ The matching **CLI** lives in the stack `dedupe/` directory (outside this repo).
 
 ---
 
+## 1.6.4 (2026-06-20)
+
+### Bug fixes (medium)
+
+- **#13:** Folder remove clears only that mailbox's highlight banner (not stale duplicate count).
+- **#14:** GroupCard copy button copies match key to clipboard with toast.
+- **#15:** `startedRef` cleared on every `/dedupe` unmount so re-run works on same URL.
+- **#16:** `mergeJMAPFilters` deduplicates identical conditions (e.g. duplicate `inMailbox`).
+- **#17:** Account scan runs up to 3 folders in parallel.
+- **#18:** List filter/sort/control strings translated in all 9 non-en locales.
+- **#19:** Settings "Remove duplicates" shows confirmation before navigating.
+- **M1:** Advanced search abort signal passed through `fetchEmails` → `getEmails` → `request()`.
+- **M2:** Server list query uses date sort for subject/sender; client re-sorts thread groups.
+- **M3:** Dedupe JMAP calls (`count`, `query`, `get`, `move`) honour abort `signal`.
+- **N4:** Account-wide scan confirms when any eligible folder exceeds 10k messages.
+- **N5:** Body criterion warning notes preview false-positive risk.
+- **N6:** `scanned` stat reflects actual messages processed, not initial folder total.
+
+---
+
 ## 1.6.3 (2026-06-21)
 
 ### Bug fixes (high)

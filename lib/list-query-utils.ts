@@ -42,8 +42,11 @@ export function normalizeListFilter(value: unknown): ListFilter {
     : DEFAULT_LIST_FILTER;
 }
 
-/** @deprecated Use buildListJMAPSort — kept for tests referencing the old date-only path. */
+/** Server query sort — subject/sender use receivedAt (client re-sorts thread groups). */
 export function buildServerListJMAPSort(listSort: ListSort): { property: string; isAscending: boolean }[] {
+  if (isPartialListSort(listSort)) {
+    return [{ property: 'receivedAt', isAscending: listSort === 'date-asc' }];
+  }
   return buildListJMAPSort(listSort);
 }
 
@@ -90,6 +93,7 @@ export function buildListJMAPFilter(
 }
 
 export function mergeJMAPFilters(...filters: Record<string, unknown>[]): Record<string, unknown> {
+  const seen = new Set<string>();
   const conditions = filters.flatMap((filter) => {
     if (
       filter &&
@@ -100,6 +104,11 @@ export function mergeJMAPFilters(...filters: Record<string, unknown>[]): Record<
       return filter.conditions as Record<string, unknown>[];
     }
     return [filter];
+  }).filter((condition) => {
+    const key = JSON.stringify(condition);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
 
   if (conditions.length === 0) {

@@ -200,37 +200,37 @@
       "custom_folders": "Пользовательские папки"
     },
     "stats": {
-      "total_emails": "{count} emails total",
-      "unread": "{count} unread",
-      "duplicates": "{count} duplicates",
-      "matching": "{count} matching"
+      "total_emails": "{count} писем всего",
+      "unread": "{count} непрочитанных",
+      "duplicates": "{count} дубликатов",
+      "matching": "{count} совпадений"
     },
     "list_filter": {
-      "label": "Filter",
-      "all": "All mail",
-      "unread": "Unread",
-      "starred": "Starred",
-      "attachments": "Has attachment",
-      "all_hint": "Show every message in this folder",
-      "unread_hint": "Only messages you have not opened",
-      "read": "Read",
-      "read_hint": "Only messages marked as read",
-      "starred_hint": "Only flagged messages",
-      "attachments_hint": "Only messages with files attached"
+      "label": "Фильтр",
+      "all": "Вся почта",
+      "unread": "Непрочитанные",
+      "starred": "Помеченные",
+      "attachments": "С вложением",
+      "all_hint": "Показать все сообщения в этой папке",
+      "unread_hint": "Только неоткрытые сообщения",
+      "read": "Прочитанные",
+      "read_hint": "Только помеченные как прочитанные",
+      "starred_hint": "Только помеченные сообщения",
+      "attachments_hint": "Только сообщения с файлами"
     },
     "list_sort": {
-      "label": "Sort",
-      "date_desc": "Newest first",
-      "date_asc": "Oldest first",
-      "subject_asc": "Subject A–Z",
-      "subject_desc": "Subject Z–A",
-      "sender_asc": "Sender A–Z",
-      "sender_desc": "Sender Z–A",
-      "partial_hint": "Scroll to load more for full sort order."
+      "label": "Сортировка",
+      "date_desc": "Сначала новые",
+      "date_asc": "Сначала старые",
+      "subject_asc": "Тема А–Я",
+      "subject_desc": "Тема Я–А",
+      "sender_asc": "Отправитель А–Я",
+      "sender_desc": "Отправитель Я–А",
+      "partial_hint": "Прокрутите, чтобы загрузить больше для полной сортировки."
     },
     "list_controls": {
-      "search_active_hint": "Also applies to search results",
-      "updating": "Updating…"
+      "search_active_hint": "Также применяется к результатам поиска",
+      "updating": "Обновление…"
     }
   },
   "email_viewer": {
@@ -1091,7 +1091,7 @@
           "label": "Body",
           "description": "Message preview text only in the browser (not full body). Disabled for folders over 2,000 messages."
         },
-        "body_warning": "Body matching uses the short preview only. For full-body matching on large mailboxes, use the mail-dedupe CLI.",
+        "body_warning": "Сопоставление по телу использует только краткий предпросмотр и может давать ложные срабатывания при разных предпросмотрах. Для полного сопоставления в больших ящиках используйте CLI mail-dedupe.",
         "threadId": {
           "label": "Thread",
           "description": "JMAP thread ID (messages in the same conversation)."
@@ -1112,7 +1112,11 @@
       "move_to": "Move to {folder}",
       "more": "And {count} more...",
       "operations_hint": "Scans and moves run on the duplicate operations page with live progress and grouped results.",
-      "open_operations": "Open operations"
+      "open_operations": "Open operations",
+      "confirm_remove_title": "Удалить дубликаты по всему аккаунту?",
+      "confirm_remove_body": "Будет просканирована каждая подходящая папка, дубликаты перемещаются в подпапку dupes/. Ничего не удаляется навсегда. Сначала запустите сканирование для предпросмотра.",
+      "confirm_remove_start": "Подтвердить и удалить",
+      "confirm_remove_cancel": "Отмена"
     }
   },
   "errors": {
@@ -1685,7 +1689,12 @@
       "confirm_remove_account_body": "This scans every eligible folder and moves duplicates to each folder's dupes/ subfolder. Nothing is permanently deleted. Run a scan first to preview counts.",
       "confirm_remove_start": "Confirm and remove",
       "confirm_cancel": "Cancel",
-      "cancel_operation": "Cancel"
+      "cancel_operation": "Cancel",
+      "copy_key": "Копировать ключ совпадения",
+      "copy_done": "Ключ скопирован в буфер обмена",
+      "copy_failed": "Не удалось скопировать ключ",
+      "confirm_scan_account_title": "Сканировать большой аккаунт?",
+      "confirm_scan_account_body": "Как минимум в одной папке {count, plural, one {# сообщение} other {# сообщений}}. Сканирование аккаунта выполняется параллельными пакетами, но может занять несколько минут."
     }
   }
 }

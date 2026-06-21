@@ -1093,12 +1093,16 @@
           "label": "Body",
           "description": "Message preview text only in the browser (not full body). Disabled for folders over 2,000 messages."
         },
-        "body_warning": "Body matching uses the short preview only. For full-body matching on large mailboxes, use the mail-dedupe CLI.",
+        "body_warning": "Body matching uses the short preview only and may produce false positives when previews differ. For full-body matching on large mailboxes, use the mail-dedupe CLI.",
         "threadId": {
           "label": "Thread",
           "description": "JMAP thread ID (messages in the same conversation)."
         }
       },
+      "confirm_remove_title": "Remove duplicates account-wide?",
+      "confirm_remove_body": "This scans every eligible folder and moves duplicates to each folder's dupes/ subfolder. Nothing is permanently deleted. Run a scan first to preview counts.",
+      "confirm_remove_start": "Confirm and remove",
+      "confirm_remove_cancel": "Cancel",
       "scan": "Scan",
       "run": "Remove duplicates",
       "scanning": "Scanning mailboxes...",
@@ -1650,6 +1654,9 @@
       "groups_title": "Duplicate groups",
       "groups_hint": "Each group shares the same match key. The keeper (lighter row) stays in the folder; duplicates can be moved to dupes/.",
       "group_unknown_key": "(no match key)",
+      "copy_key": "Copy match key",
+      "copy_done": "Match key copied to clipboard",
+      "copy_failed": "Could not copy match key",
       "group_summary": "{total} messages · {duplicates} duplicate(s)",
       "keeper": "Keeper",
       "duplicate": "Duplicate",
@@ -1678,6 +1685,8 @@
       "status_idle": "Ready",
       "confirm_scan_title": "Scan a large folder?",
       "confirm_scan_body": "This folder has {count, plural, one {# message} other {# messages}}. The scan runs in batches but may take several minutes.",
+      "confirm_scan_account_title": "Scan a large account?",
+      "confirm_scan_account_body": "At least one folder has {count, plural, one {# message} other {# messages}}. Account scans run in parallel batches but may take several minutes.",
       "confirm_scan_start": "Start scan",
       "confirm_remove_folder_title": "Remove duplicates from {folder}?",
       "confirm_remove_folder_body": "Duplicates will be detected and moved to a dupes subfolder (not deleted). The oldest copy in each group is kept.",

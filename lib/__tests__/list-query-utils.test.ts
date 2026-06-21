@@ -17,12 +17,12 @@ describe('list-query-utils', () => {
     });
   });
 
-  it('uses full server sort properties', () => {
+  it('uses date sort on server for subject/sender (client re-sorts)', () => {
     expect(buildServerListJMAPSort('subject-asc')).toEqual([
-      { property: 'subject', isAscending: true },
+      { property: 'receivedAt', isAscending: false },
     ]);
     expect(buildServerListJMAPSort('sender-desc')).toEqual([
-      { property: 'from', isAscending: false },
+      { property: 'receivedAt', isAscending: false },
     ]);
     expect(buildServerListJMAPSort('date-asc')).toEqual([
       { property: 'receivedAt', isAscending: true },
@@ -41,7 +41,7 @@ describe('list-query-utils', () => {
     });
   });
 
-  it('merges list and search filters', () => {
+  it('merges list and search filters and deduplicates conditions', () => {
     expect(
       mergeJMAPFilters(
         { operator: 'AND', conditions: [{ inMailbox: 'mbox-1' }, { notKeyword: '$seen' }] },
@@ -52,7 +52,6 @@ describe('list-query-utils', () => {
       conditions: [
         { inMailbox: 'mbox-1' },
         { notKeyword: '$seen' },
-        { inMailbox: 'mbox-1' },
         { text: 'invoice' },
       ],
     });

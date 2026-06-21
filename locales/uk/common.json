@@ -200,37 +200,37 @@
       "custom_folders": "Спеціальні папки"
     },
     "stats": {
-      "total_emails": "{count} emails total",
-      "unread": "{count} unread",
-      "duplicates": "{count} duplicates",
-      "matching": "{count} matching"
+      "total_emails": "{count} листів загалом",
+      "unread": "{count} непрочитаних",
+      "duplicates": "{count} дублікатів",
+      "matching": "{count} збігів"
     },
     "list_filter": {
-      "label": "Filter",
-      "all": "All mail",
-      "unread": "Unread",
-      "starred": "Starred",
-      "attachments": "Has attachment",
-      "all_hint": "Show every message in this folder",
-      "unread_hint": "Only messages you have not opened",
-      "read": "Read",
-      "read_hint": "Only messages marked as read",
-      "starred_hint": "Only flagged messages",
-      "attachments_hint": "Only messages with files attached"
+      "label": "Фільтр",
+      "all": "Уся пошта",
+      "unread": "Непрочитані",
+      "starred": "Позначені",
+      "attachments": "З вкладенням",
+      "all_hint": "Показати всі повідомлення в цій теці",
+      "unread_hint": "Лише не відкриті повідомлення",
+      "read": "Прочитані",
+      "read_hint": "Лише позначені як прочитані",
+      "starred_hint": "Лише позначені повідомлення",
+      "attachments_hint": "Лише повідомлення з файлами"
     },
     "list_sort": {
-      "label": "Sort",
-      "date_desc": "Newest first",
-      "date_asc": "Oldest first",
-      "subject_asc": "Subject A–Z",
-      "subject_desc": "Subject Z–A",
-      "sender_asc": "Sender A–Z",
-      "sender_desc": "Sender Z–A",
-      "partial_hint": "Scroll to load more for full sort order."
+      "label": "Сортування",
+      "date_desc": "Спочатку нові",
+      "date_asc": "Спочатку старі",
+      "subject_asc": "Тема А–Я",
+      "subject_desc": "Тема Я–А",
+      "sender_asc": "Відправник А–Я",
+      "sender_desc": "Відправник Я–А",
+      "partial_hint": "Прокрутіть, щоб завантажити більше для повного сортування."
     },
     "list_controls": {
-      "search_active_hint": "Also applies to search results",
-      "updating": "Updating…"
+      "search_active_hint": "Також застосовується до результатів пошуку",
+      "updating": "Оновлення…"
     }
   },
   "email_viewer": {
@@ -1091,7 +1091,7 @@
           "label": "Body",
           "description": "Message preview text only in the browser (not full body). Disabled for folders over 2,000 messages."
         },
-        "body_warning": "Body matching uses the short preview only. For full-body matching on large mailboxes, use the mail-dedupe CLI.",
+        "body_warning": "Зіставлення за тілом використовує лише короткий попередній перегляд і може давати хибні спрацювання. Для повного зіставлення у великих скриньках використовуйте CLI mail-dedupe.",
         "threadId": {
           "label": "Thread",
           "description": "JMAP thread ID (messages in the same conversation)."
@@ -1112,7 +1112,11 @@
       "move_to": "Move to {folder}",
       "more": "And {count} more...",
       "operations_hint": "Scans and moves run on the duplicate operations page with live progress and grouped results.",
-      "open_operations": "Open operations"
+      "open_operations": "Open operations",
+      "confirm_remove_title": "Видалити дублікати по всьому обліковому запису?",
+      "confirm_remove_body": "Буде проскановано кожну придатну теку, дублікати переміщуються в підтеку dupes/. Нічого не видаляється назавжди. Спочатку запустіть сканування для перегляду.",
+      "confirm_remove_start": "Підтвердити й видалити",
+      "confirm_remove_cancel": "Скасувати"
     }
   },
   "errors": {
@@ -1685,7 +1689,12 @@
       "confirm_remove_account_body": "This scans every eligible folder and moves duplicates to each folder's dupes/ subfolder. Nothing is permanently deleted. Run a scan first to preview counts.",
       "confirm_remove_start": "Confirm and remove",
       "confirm_cancel": "Cancel",
-      "cancel_operation": "Cancel"
+      "cancel_operation": "Cancel",
+      "copy_key": "Копіювати ключ збігу",
+      "copy_done": "Ключ скопійовано в буфер обміну",
+      "copy_failed": "Не вдалося скопіювати ключ",
+      "confirm_scan_account_title": "Сканувати великий обліковий запис?",
+      "confirm_scan_account_body": "Щонайменше в одній теці {count, plural, one {# повідомлення} other {# повідомлень}}. Сканування облікового запису виконується паралельними пакетами, але може тривати кілька хвилин."
     }
   }
 }

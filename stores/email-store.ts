@@ -11,7 +11,7 @@ import {
 } from "@/lib/jmap/search-utils";
 import {
   buildListJMAPFilter,
-  buildListJMAPSort,
+  buildServerListJMAPSort,
   mergeJMAPFilters,
 } from "@/lib/list-query-utils";
 
@@ -22,7 +22,7 @@ function resolveMailboxListQuery(
 ): { filter: Record<string, unknown>; sort: { property: string; isAscending: boolean }[] } {
   const { listSort, listFilter } = useSettingsStore.getState();
   const listMailboxFilter = buildListJMAPFilter(jmapMailboxId, listFilter);
-  const sort = buildListJMAPSort(listSort);
+  const sort = buildServerListJMAPSort(listSort);
 
   if (isMailboxListViewActive(searchQuery, searchFilters)) {
     return {
@@ -310,8 +310,11 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
       // Get emails per page from settings
       const emailsPerPage = useSettingsStore.getState().emailsPerPage;
-      const { searchQuery, searchFilters } = get();
-      const queryOptions = resolveMailboxListQuery(jmapMailboxId, searchQuery, searchFilters);
+      const { searchQuery, searchFilters, searchAbortController } = get();
+      const queryOptions = {
+        ...resolveMailboxListQuery(jmapMailboxId, searchQuery, searchFilters),
+        signal: searchAbortController?.signal,
+      };
 
       const result = await client.getEmails(jmapMailboxId, accountId, emailsPerPage, 0, queryOptions);
       set({
@@ -321,6 +324,10 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         isLoading: false
       });
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        set({ isLoading: false });
+        return;
+      }
       set({
         error: error instanceof Error ? error.message : "Failed to fetch emails",
         isLoading: false,

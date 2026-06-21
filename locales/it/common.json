@@ -200,37 +200,37 @@
       "custom_folders": "Cartelle personalizzate"
     },
     "stats": {
-      "total_emails": "{count} emails total",
-      "unread": "{count} unread",
-      "duplicates": "{count} duplicates",
-      "matching": "{count} matching"
+      "total_emails": "{count} email totali",
+      "unread": "{count} non lette",
+      "duplicates": "{count} duplicati",
+      "matching": "{count} corrispondenze"
     },
     "list_filter": {
-      "label": "Filter",
-      "all": "All mail",
-      "unread": "Unread",
-      "starred": "Starred",
-      "attachments": "Has attachment",
-      "all_hint": "Show every message in this folder",
-      "unread_hint": "Only messages you have not opened",
-      "read": "Read",
-      "read_hint": "Only messages marked as read",
-      "starred_hint": "Only flagged messages",
-      "attachments_hint": "Only messages with files attached"
+      "label": "Filtro",
+      "all": "Tutta la posta",
+      "unread": "Non lette",
+      "starred": "Speciali",
+      "attachments": "Con allegato",
+      "all_hint": "Mostra tutti i messaggi in questa cartella",
+      "unread_hint": "Solo messaggi non aperti",
+      "read": "Lette",
+      "read_hint": "Solo messaggi segnati come letti",
+      "starred_hint": "Solo messaggi contrassegnati",
+      "attachments_hint": "Solo messaggi con file allegati"
     },
     "list_sort": {
-      "label": "Sort",
-      "date_desc": "Newest first",
-      "date_asc": "Oldest first",
-      "subject_asc": "Subject A–Z",
-      "subject_desc": "Subject Z–A",
-      "sender_asc": "Sender A–Z",
-      "sender_desc": "Sender Z–A",
-      "partial_hint": "Scroll to load more for full sort order."
+      "label": "Ordina",
+      "date_desc": "Più recenti prima",
+      "date_asc": "Più vecchie prima",
+      "subject_asc": "Oggetto A–Z",
+      "subject_desc": "Oggetto Z–A",
+      "sender_asc": "Mittente A–Z",
+      "sender_desc": "Mittente Z–A",
+      "partial_hint": "Scorri per caricare altro e completare l'ordinamento."
     },
     "list_controls": {
-      "search_active_hint": "Also applies to search results",
-      "updating": "Updating…"
+      "search_active_hint": "Si applica anche ai risultati di ricerca",
+      "updating": "Aggiornamento…"
     }
   },
   "email_viewer": {
@@ -693,11 +693,11 @@
         "description": "Visualizza l'anteprima del messaggio nell'elenco"
       },
       "emails_per_page": {
-        "label": "Messaggi per pagina",
-        "description": "Numero di messaggi da caricare alla volta",
         "25": "25 messaggi",
         "50": "50 messaggi",
-        "100": "100 messaggi"
+        "100": "100 messaggi",
+        "label": "Messaggi per pagina",
+        "description": "Numero di messaggi da caricare alla volta"
       },
       "external_content": {
         "label": "Contenuti esterni",
@@ -1087,7 +1087,7 @@
           "label": "Body",
           "description": "Message preview text only in the browser (not full body). Disabled for folders over 2,000 messages."
         },
-        "body_warning": "Body matching uses the short preview only. For full-body matching on large mailboxes, use the mail-dedupe CLI.",
+        "body_warning": "La corrispondenza sul corpo usa solo l'anteprima breve e può dare falsi positivi se le anteprime differiscono. Per corrispondenza completa su caselle grandi, usa la CLI mail-dedupe.",
         "threadId": {
           "label": "Thread",
           "description": "JMAP thread ID (messages in the same conversation)."
@@ -1108,7 +1108,11 @@
       "move_to": "Move to {folder}",
       "more": "And {count} more...",
       "operations_hint": "Scans and moves run on the duplicate operations page with live progress and grouped results.",
-      "open_operations": "Open operations"
+      "open_operations": "Open operations",
+      "confirm_remove_title": "Rimuovere duplicati su tutto l'account?",
+      "confirm_remove_body": "Ogni cartella idonea verrà analizzata e i duplicati spostati nella sottocartella dupes/. Nulla viene eliminato definitivamente. Esegui prima una scansione per vedere i conteggi.",
+      "confirm_remove_start": "Conferma e rimuovi",
+      "confirm_remove_cancel": "Annulla"
     }
   },
   "errors": {
@@ -1685,7 +1689,12 @@
       "confirm_remove_account_body": "This scans every eligible folder and moves duplicates to each folder's dupes/ subfolder. Nothing is permanently deleted. Run a scan first to preview counts.",
       "confirm_remove_start": "Confirm and remove",
       "confirm_cancel": "Cancel",
-      "cancel_operation": "Cancel"
+      "cancel_operation": "Cancel",
+      "copy_key": "Copia chiave di corrispondenza",
+      "copy_done": "Chiave copiata negli appunti",
+      "copy_failed": "Impossibile copiare la chiave",
+      "confirm_scan_account_title": "Scansionare un account grande?",
+      "confirm_scan_account_body": "Almeno una cartella ha {count, plural, one {# messaggio} other {# messaggi}}. Le scansioni dell'account vengono eseguite in batch paralleli ma possono richiedere diversi minuti."
     }
   }
 }

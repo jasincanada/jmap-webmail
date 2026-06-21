@@ -200,37 +200,37 @@
       "custom_folders": "Aangepaste mappen"
     },
     "stats": {
-      "total_emails": "{count} emails total",
-      "unread": "{count} unread",
-      "duplicates": "{count} duplicates",
-      "matching": "{count} matching"
+      "total_emails": "{count} e-mails totaal",
+      "unread": "{count} ongelezen",
+      "duplicates": "{count} duplicaten",
+      "matching": "{count} overeenkomsten"
     },
     "list_filter": {
       "label": "Filter",
-      "all": "All mail",
-      "unread": "Unread",
-      "starred": "Starred",
-      "attachments": "Has attachment",
-      "all_hint": "Show every message in this folder",
-      "unread_hint": "Only messages you have not opened",
-      "read": "Read",
-      "read_hint": "Only messages marked as read",
-      "starred_hint": "Only flagged messages",
-      "attachments_hint": "Only messages with files attached"
+      "all": "Alle e-mail",
+      "unread": "Ongelezen",
+      "starred": "Met ster",
+      "attachments": "Met bijlage",
+      "all_hint": "Alle berichten in deze map tonen",
+      "unread_hint": "Alleen berichten die u niet hebt geopend",
+      "read": "Gelezen",
+      "read_hint": "Alleen als gelezen gemarkeerde berichten",
+      "starred_hint": "Alleen gemarkeerde berichten",
+      "attachments_hint": "Alleen berichten met bijlagen"
     },
     "list_sort": {
-      "label": "Sort",
-      "date_desc": "Newest first",
-      "date_asc": "Oldest first",
-      "subject_asc": "Subject A–Z",
-      "subject_desc": "Subject Z–A",
-      "sender_asc": "Sender A–Z",
-      "sender_desc": "Sender Z–A",
-      "partial_hint": "Scroll to load more for full sort order."
+      "label": "Sorteren",
+      "date_desc": "Nieuwste eerst",
+      "date_asc": "Oudste eerst",
+      "subject_asc": "Onderwerp A–Z",
+      "subject_desc": "Onderwerp Z–A",
+      "sender_asc": "Afzender A–Z",
+      "sender_desc": "Afzender Z–A",
+      "partial_hint": "Scroll om meer te laden voor de volledige sorteervolgorde."
     },
     "list_controls": {
-      "search_active_hint": "Also applies to search results",
-      "updating": "Updating…"
+      "search_active_hint": "Geldt ook voor zoekresultaten",
+      "updating": "Bijwerken…"
     }
   },
   "email_viewer": {
@@ -693,11 +693,11 @@
         "description": "E-mailvoorbeeld weergeven in de lijst"
       },
       "emails_per_page": {
-        "label": "E-mails per pagina",
-        "description": "Aantal e-mails dat in één keer wordt geladen",
         "25": "25 e-mails",
         "50": "50 e-mails",
-        "100": "100 e-mails"
+        "100": "100 e-mails",
+        "label": "E-mails per pagina",
+        "description": "Aantal e-mails dat in één keer wordt geladen"
       },
       "external_content": {
         "label": "Externe inhoud",
@@ -1087,7 +1087,7 @@
           "label": "Body",
           "description": "Message preview text only in the browser (not full body). Disabled for folders over 2,000 messages."
         },
-        "body_warning": "Body matching uses the short preview only. For full-body matching on large mailboxes, use the mail-dedupe CLI.",
+        "body_warning": "Body-vergelijking gebruikt alleen de korte voorvertoning en kan valse positieven geven als voorvertoningen verschillen. Voor volledige body-vergelijking op grote mailboxen, gebruik de mail-dedupe CLI.",
         "threadId": {
           "label": "Thread",
           "description": "JMAP thread ID (messages in the same conversation)."
@@ -1108,7 +1108,11 @@
       "move_to": "Move to {folder}",
       "more": "And {count} more...",
       "operations_hint": "Scans and moves run on the duplicate operations page with live progress and grouped results.",
-      "open_operations": "Open operations"
+      "open_operations": "Open operations",
+      "confirm_remove_title": "Duplicaten accountbreed verwijderen?",
+      "confirm_remove_body": "Elke geschikte map wordt gescand en duplicaten worden verplaatst naar de dupes/-submap. Niets wordt permanent verwijderd. Voer eerst een scan uit om aantallen te bekijken.",
+      "confirm_remove_start": "Bevestigen en verwijderen",
+      "confirm_remove_cancel": "Annuleren"
     }
   },
   "errors": {
@@ -1685,7 +1689,12 @@
       "confirm_remove_account_body": "This scans every eligible folder and moves duplicates to each folder's dupes/ subfolder. Nothing is permanently deleted. Run a scan first to preview counts.",
       "confirm_remove_start": "Confirm and remove",
       "confirm_cancel": "Cancel",
-      "cancel_operation": "Cancel"
+      "cancel_operation": "Cancel",
+      "copy_key": "Match-sleutel kopiëren",
+      "copy_done": "Match-sleutel gekopieerd naar klembord",
+      "copy_failed": "Kon match-sleutel niet kopiëren",
+      "confirm_scan_account_title": "Groot account scannen?",
+      "confirm_scan_account_body": "Minstens één map heeft {count, plural, one {# bericht} other {# berichten}}. Accountscans draaien in parallelle batches maar kunnen enkele minuten duren."
     }
   }
 }

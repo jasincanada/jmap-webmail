@@ -200,37 +200,37 @@
       "custom_folders": "カスタムフォルダ"
     },
     "stats": {
-      "total_emails": "{count} emails total",
-      "unread": "{count} unread",
-      "duplicates": "{count} duplicates",
-      "matching": "{count} matching"
+      "total_emails": "合計 {count} 件",
+      "unread": "未読 {count} 件",
+      "duplicates": "重複 {count} 件",
+      "matching": "{count} 件一致"
     },
     "list_filter": {
-      "label": "Filter",
-      "all": "All mail",
-      "unread": "Unread",
-      "starred": "Starred",
-      "attachments": "Has attachment",
-      "all_hint": "Show every message in this folder",
-      "unread_hint": "Only messages you have not opened",
-      "read": "Read",
-      "read_hint": "Only messages marked as read",
-      "starred_hint": "Only flagged messages",
-      "attachments_hint": "Only messages with files attached"
+      "label": "フィルター",
+      "all": "すべてのメール",
+      "unread": "未読",
+      "starred": "スター付き",
+      "attachments": "添付あり",
+      "all_hint": "このフォルダーのすべてのメッセージを表示",
+      "unread_hint": "開いていないメッセージのみ",
+      "read": "既読",
+      "read_hint": "既読としてマークされたメッセージのみ",
+      "starred_hint": "フラグ付きメッセージのみ",
+      "attachments_hint": "ファイルが添付されたメッセージのみ"
     },
     "list_sort": {
-      "label": "Sort",
-      "date_desc": "Newest first",
-      "date_asc": "Oldest first",
-      "subject_asc": "Subject A–Z",
-      "subject_desc": "Subject Z–A",
-      "sender_asc": "Sender A–Z",
-      "sender_desc": "Sender Z–A",
-      "partial_hint": "Scroll to load more for full sort order."
+      "label": "並べ替え",
+      "date_desc": "新しい順",
+      "date_asc": "古い順",
+      "subject_asc": "件名 A–Z",
+      "subject_desc": "件名 Z–A",
+      "sender_asc": "送信者 A–Z",
+      "sender_desc": "送信者 Z–A",
+      "partial_hint": "スクロールしてさらに読み込むと完全な並び順になります。"
     },
     "list_controls": {
-      "search_active_hint": "Also applies to search results",
-      "updating": "Updating…"
+      "search_active_hint": "検索結果にも適用されます",
+      "updating": "更新中…"
     }
   },
   "email_viewer": {
@@ -693,11 +693,11 @@
         "description": "リストにメールのプレビューを表示"
       },
       "emails_per_page": {
-        "label": "ページごとのメール数",
-        "description": "一度に読み込むメールの数",
         "25": "25件",
         "50": "50件",
-        "100": "100件"
+        "100": "100件",
+        "label": "ページごとのメール数",
+        "description": "一度に読み込むメールの数"
       },
       "external_content": {
         "label": "外部コンテンツ",
@@ -1087,7 +1087,7 @@
           "label": "Body",
           "description": "Message preview text only in the browser (not full body). Disabled for folders over 2,000 messages."
         },
-        "body_warning": "Body matching uses the short preview only. For full-body matching on large mailboxes, use the mail-dedupe CLI.",
+        "body_warning": "本文の照合は短いプレビューのみを使用し、プレビューが異なると誤検出する場合があります。大きなメールボックスで全文照合するには mail-dedupe CLI を使用してください。",
         "threadId": {
           "label": "Thread",
           "description": "JMAP thread ID (messages in the same conversation)."
@@ -1108,7 +1108,11 @@
       "move_to": "Move to {folder}",
       "more": "And {count} more...",
       "operations_hint": "Scans and moves run on the duplicate operations page with live progress and grouped results.",
-      "open_operations": "Open operations"
+      "open_operations": "Open operations",
+      "confirm_remove_title": "アカウント全体の重複を削除しますか？",
+      "confirm_remove_body": "対象フォルダーをすべてスキャンし、重複を各 dupes/ サブフォルダーに移動します。完全には削除されません。まずスキャンで件数を確認してください。",
+      "confirm_remove_start": "確認して削除",
+      "confirm_remove_cancel": "キャンセル"
     }
   },
   "errors": {
@@ -1685,7 +1689,12 @@
       "confirm_remove_account_body": "This scans every eligible folder and moves duplicates to each folder's dupes/ subfolder. Nothing is permanently deleted. Run a scan first to preview counts.",
       "confirm_remove_start": "Confirm and remove",
       "confirm_cancel": "Cancel",
-      "cancel_operation": "Cancel"
+      "cancel_operation": "Cancel",
+      "copy_key": "一致キーをコピー",
+      "copy_done": "一致キーをクリップボードにコピーしました",
+      "copy_failed": "一致キーをコピーできませんでした",
+      "confirm_scan_account_title": "大きなアカウントをスキャンしますか？",
+      "confirm_scan_account_body": "少なくとも1つのフォルダーに {count, plural, other {# 件}}のメッセージがあります。アカウントスキャンは並列バッチで実行されますが、数分かかる場合があります。"
     }
   }
 }

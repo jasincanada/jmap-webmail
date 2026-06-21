@@ -26,6 +26,7 @@ import {
 } from '@/lib/dedupe-config';
 import {
   DedupeAbortedError,
+  getAccountScanMaxFolderCount,
   runFolderDedupe,
   runMailboxDedupe,
   scanFolderDuplicates,
@@ -67,6 +68,16 @@ function PhaseBadge({ phase }: { phase: string }) {
 function GroupCard({ group, index }: { group: DedupeGroup; index: number }) {
   const t = useTranslations('dedupe.operations');
   const [open, setOpen] = useState(index < 3);
+
+  const copyKey = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(group.key);
+      toast.success(t('copy_done'));
+    } catch {
+      toast.error(t('copy_failed'));
+    }
+  };
   const keeperClasses = getDedupeHighlightClasses({
     colorIndex: index,
     isKeeper: true,
@@ -94,7 +105,15 @@ function GroupCard({ group, index }: { group: DedupeGroup; index: number }) {
             {t('group_summary', { total: group.emailIds.length, duplicates: group.duplicateIds.length })}
           </p>
         </div>
-        <Copy className="w-4 h-4 text-muted-foreground shrink-0" />
+        <button
+          type="button"
+          onClick={copyKey}
+          className="p-1 rounded hover:bg-muted text-muted-foreground shrink-0"
+          title={t('copy_key')}
+          aria-label={t('copy_key')}
+        >
+          <Copy className="w-4 h-4" />
+        </button>
       </button>
       {open && (
         <div className="border-t border-border divide-y divide-border">
@@ -126,6 +145,7 @@ export function DedupeOperationsView() {
   const { mailboxes, selectMailbox, fetchEmails, fetchMailboxes } = useEmailStore();
   const config = useDedupeConfigStore((state) => state.config);
   const setScanResult = useDedupeHighlightStore((state) => state.setScanResult);
+  const clearMailboxHighlight = useDedupeHighlightStore((state) => state.clearMailbox);
   const clearAllHighlights = useDedupeHighlightStore((state) => state.clearAll);
   const setScanningMailbox = useDedupeHighlightStore((state) => state.setScanning);
   const {
@@ -253,7 +273,7 @@ export function DedupeOperationsView() {
       if (actionParam === 'remove') {
         const outcome = await runFolderDedupe(client, mailbox.id, setProgress, config, signal);
         if (abortIfCancelled()) return;
-        clearAllHighlights();
+        clearMailboxHighlight(mailbox.id);
         await Promise.all([
           fetchMailboxes(client),
           fetchEmails(client, mailbox.id),
@@ -314,6 +334,7 @@ export function DedupeOperationsView() {
     actionParam,
     begin,
     clearAllHighlights,
+    clearMailboxHighlight,
     client,
     completeAccount,
     completeFolder,
@@ -333,7 +354,9 @@ export function DedupeOperationsView() {
   ]);
 
   const requestScanConfirmation = useCallback(async (): Promise<boolean> => {
-    if (scopeParam === 'folder' && folderParam && resolvedMailbox && client) {
+    if (!client) return true;
+
+    if (scopeParam === 'folder' && folderParam && resolvedMailbox) {
       const mailboxRef = resolvedMailbox.originalId || resolvedMailbox.id;
       const accountId = resolvedMailbox.isShared ? resolvedMailbox.accountId : undefined;
       const total = await client.countMailboxEmails(mailboxRef, accountId);
@@ -342,9 +365,20 @@ export function DedupeOperationsView() {
         setAwaitingConfirm('scan');
         return false;
       }
+      return true;
     }
+
+    if (scopeParam === 'account') {
+      const maxCount = await getAccountScanMaxFolderCount(client, mailboxes);
+      setFolderMessageCount(maxCount);
+      if (dedupeScanNeedsConfirmation(maxCount)) {
+        setAwaitingConfirm('scan');
+        return false;
+      }
+    }
+
     return true;
-  }, [client, folderParam, resolvedMailbox, scopeParam]);
+  }, [client, folderParam, mailboxes, resolvedMailbox, scopeParam]);
 
   useEffect(() => {
     if (!client) return;
@@ -379,6 +413,7 @@ export function DedupeOperationsView() {
       abortRef.current?.abort();
       handleAbort();
     }
+    startedRef.current = null;
   }, [handleAbort]);
 
   const elapsedMs =
@@ -411,7 +446,7 @@ export function DedupeOperationsView() {
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 space-y-4">
           <h2 className="text-lg font-medium text-foreground">
             {awaitingConfirm === 'scan'
-              ? t('confirm_scan_title')
+              ? (scopeParam === 'account' ? t('confirm_scan_account_title') : t('confirm_scan_title'))
               : scopeParam === 'account'
                 ? t('confirm_remove_account_title')
                 : t('confirm_remove_folder_title', {
@@ -420,7 +455,9 @@ export function DedupeOperationsView() {
           </h2>
           <p className="text-sm text-muted-foreground">
             {awaitingConfirm === 'scan' && folderMessageCount != null
-              ? t('confirm_scan_body', { count: folderMessageCount })
+              ? (scopeParam === 'account'
+                ? t('confirm_scan_account_body', { count: folderMessageCount })
+                : t('confirm_scan_body', { count: folderMessageCount }))
               : scopeParam === 'account'
                 ? t('confirm_remove_account_body')
                 : t('confirm_remove_folder_body')}

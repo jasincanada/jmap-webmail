@@ -517,6 +517,7 @@ export class JMAPClient {
     queryOptions?: {
       filter?: Record<string, unknown>;
       sort?: { property: string; isAscending: boolean }[];
+      signal?: AbortSignal;
     },
   ): Promise<{ emails: Email[], hasMore: boolean, total: number }> {
     try {
@@ -539,7 +540,7 @@ export class JMAPClient {
           "#ids": { resultOf: "0", name: "Email/query", path: "/ids" },
           properties: [...EMAIL_LIST_PROPERTIES],
         }, "1"],
-      ]);
+      ], undefined, { signal: queryOptions?.signal });
 
       const queryResponse = response.methodResponses?.[0]?.[1];
       const getResponse = response.methodResponses?.[1]?.[1];
@@ -557,7 +558,10 @@ export class JMAPClient {
       }
 
       return { emails: [], hasMore: false, total: 0 };
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw error;
+      }
       return { emails: [], hasMore: false, total: 0 };
     }
   }
@@ -783,7 +787,11 @@ export class JMAPClient {
     };
   }
 
-  async countMailboxEmails(mailboxId: string, accountId?: string): Promise<number> {
+  async countMailboxEmails(
+    mailboxId: string,
+    accountId?: string,
+    signal?: AbortSignal,
+  ): Promise<number> {
     const targetAccountId = accountId || this.accountId;
     const response = await this.request([
       ['Email/query', {
@@ -792,7 +800,7 @@ export class JMAPClient {
         limit: 0,
         calculateTotal: true,
       }, '0'],
-    ]);
+    ], undefined, { signal });
     const queryResult = response.methodResponses?.[0]?.[1];
     return queryResult?.total ?? 0;
   }
@@ -802,6 +810,7 @@ export class JMAPClient {
     position: number,
     limit: number = 500,
     accountId?: string,
+    signal?: AbortSignal,
   ): Promise<{ ids: string[]; total: number }> {
     const targetAccountId = accountId || this.accountId;
     const response = await this.request([
@@ -813,7 +822,7 @@ export class JMAPClient {
         limit,
         position,
       }, '0'],
-    ]);
+    ], undefined, { signal });
     const queryResult = response.methodResponses?.[0]?.[1];
     return {
       ids: queryResult?.ids || [],
@@ -860,6 +869,7 @@ export class JMAPClient {
     ids: string[],
     config: DedupeMatchConfig = DEFAULT_DEDUPE_MATCH_CONFIG,
     accountId?: string,
+    signal?: AbortSignal,
   ): Promise<Email[]> {
     if (ids.length === 0) return [];
 
@@ -880,7 +890,7 @@ export class JMAPClient {
 
       const response = await this.request([
         ["Email/get", getArgs, "0"],
-      ]);
+      ], undefined, { signal });
 
       const [method, result] = response.methodResponses?.[0] ?? [];
       if (method !== "Email/get") {
@@ -901,6 +911,7 @@ export class JMAPClient {
     fromMailboxId: string,
     toMailboxId: string,
     accountId?: string,
+    signal?: AbortSignal,
   ): Promise<void> {
     if (emailIds.length === 0) return;
 
@@ -919,7 +930,7 @@ export class JMAPClient {
 
     const response = await this.request([
       ["Email/set", { accountId: targetAccountId, update: updates }, "0"],
-    ]);
+    ], undefined, { signal });
 
     const [method, result] = response.methodResponses?.[0] ?? [];
     if (method !== 'Email/set') {
