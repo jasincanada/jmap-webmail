@@ -10,6 +10,7 @@ Update this file at the **start** of each development cycle. All reviewer bots r
 | Repo | `/home/jas/dockersites/email/jmap-webmail/` |
 | Compose stack | `/home/jas/dockersites/email/docker-compose.yml` |
 | Remote | `fork` → `https://github.com/jasincanada/JasMail.git` |
+| Upstream | `origin` (fetch) → `root-fr/jmap-webmail` @ **1.5.2** (`3ea7441`) |
 
 ## Success criteria (inherit from active plan)
 

@@ -8,6 +8,7 @@
 | New defect class found | Add row to `review-patterns.md` with prevention owner |
 | New milestone | Update `ACTIVE_MILESTONE.md` + plan in `docs/plans/` |
 | New specialist needed | Add `.grok/skills/jasmail-<name>/SKILL.md`; update skill README + orchestrator roster |
+| Upstream release merged | Update `UPSTREAM_VERSION` + `docs/upstream/MERGE_LOG.md` |
 | Gate command changes | Update `scripts/ship-gate.mjs` + `DEV_OS.md` + CI workflow |
 | Breaking OS change | Bump `DEV_OS_VERSION`; entry in `DEV_OS_CHANGELOG.md` |
 

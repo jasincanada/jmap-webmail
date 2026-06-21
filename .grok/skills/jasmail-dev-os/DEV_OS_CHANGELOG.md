@@ -1,5 +1,31 @@
 # Development OS changelog
 
+## 2.2.0 (2026-06-20)
+
+### Option C — Maximum Quality (binding policy)
+
+- `docs/DEV_OS_POLICY.md` — solo-dev maximum quality policy
+- `DEV_OS_MODE=maximum` — all 7 specialists on every release (no skips)
+- `npm run check:ship:maximum` — build + dedupe suite + Playwright E2E + upstream CVE check
+- `npm run upstream:triage` — weekly mandatory upstream review
+- `upstream-status.mjs` — CVE detection, `--strict` blocks tags when CVE pending
+- `e2e/dedupe-smoke.spec.ts` — dedupe route smoke tests
+- Pre-push hook uses `--maximum` for tags
+- CI main branch runs maximum gate; weekly `upstream-triage.yml` workflow
+- CVE = same full pipeline as features (no fast lane)
+
+## 2.1.0 (2026-06-20)
+
+### Upstream merge workflow
+
+- `jasmail-upstream-maintainer` skill — fetch, classify, merge, regression
+- `docs/UPSTREAM_MERGE.md` + `docs/UPSTREAM_MERGE_CHECKLIST.md`
+- `UPSTREAM_VERSION` baseline pin + `docs/upstream/MERGE_LOG.md`
+- `docs/upstream/fork-only-paths.json` — conflict resolution manifest
+- `scripts/upstream-status.mjs` — `npm run upstream:status`
+- `diff-scope.mjs` — `UPSTREAM_MERGE=1` forces full specialist round
+- Orchestrator Phase 0 upstream gate before feature milestones
+
 ## 2.0.0 (2026-06-20)
 
 ### Tooling & automation (A+)

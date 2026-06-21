@@ -1,11 +1,14 @@
 import { defineConfig } from '@playwright/test';
 
+const e2ePort = Number(process.env.E2E_PORT || 3456);
+const baseURL = `http://localhost:${e2ePort}`;
+
 export default defineConfig({
   testDir: './e2e',
-  timeout: 30000,
+  timeout: 60000,
   retries: 0,
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
   },
@@ -13,8 +16,13 @@ export default defineConfig({
     { name: 'chromium', use: { browserName: 'chromium' } },
   ],
   webServer: {
-    command: 'npm run dev',
-    port: 3000,
-    reuseExistingServer: true,
+    command: `npm run dev -- -p ${e2ePort}`,
+    url: `${baseURL}/api/health`,
+    reuseExistingServer: !process.env.CI,
+    timeout: 120000,
+    env: {
+      APP_NAME: 'JasMail',
+      JMAP_SERVER_URL: 'https://mail.example.test',
+    },
   },
 });

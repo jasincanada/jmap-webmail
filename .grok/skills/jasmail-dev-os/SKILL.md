@@ -21,6 +21,8 @@ You **coordinate only**. You do not implement features, fix bugs, or tag release
 2. `references/review-patterns.md`
 3. Active plan in `docs/plans/`
 4. `docs/RELEASE_CHECKLIST.md`
+5. `docs/DEV_OS_POLICY.md` — **Option C (maximum)** is binding
+6. `npm run upstream:triage` — if `cve-pending`, **stop** all feature work until upstream-maintainer clears it
 
 ## Tool-call discipline
 
@@ -42,6 +44,22 @@ You **coordinate only**. You do not implement features, fix bugs, or tag release
 | `ship` | commit, tag, push |
 
 Mark exactly one `in_progress` at a time. Append new round ids as needed.
+
+---
+
+## Phase 0 — Upstream gate (Option C — mandatory)
+
+```bash
+npm run upstream:triage
+```
+
+| `status` | Action |
+|----------|--------|
+| `current` | Proceed to Phase 1 |
+| `cve-pending` | **Block.** `/jasmail-upstream-maintainer` full pipeline immediately |
+| `updates-available` / `major-drift` | Operator reviews and decides: merge, cherry-pick (full checklist), or defer with `MERGE_LOG` |
+
+Upstream merges use `docs/UPSTREAM_MERGE_CHECKLIST.md`. Cherry-picks get the **same** gates as full merges.
 
 ---
 
@@ -82,9 +100,9 @@ Launch **all** applicable specialists concurrently:
 | `jasmail-security-reviewer` | Yes | — |
 | `jasmail-test-reviewer` | Yes | — |
 | `jasmail-plan-reviewer` | Yes | — |
-| `jasmail-a11y-reviewer` | If UI changed | diff has no `components/` or `app/` UI |
-| `jasmail-i18n-reviewer` | If strings changed | diff has no `locales/` or new `t()` strings |
-| `jasmail-stack-maintainer` | If infra changed | no Dockerfile/compose/api/dedupe-audit |
+| `jasmail-a11y-reviewer` | **Always** (Option C) | never skip |
+| `jasmail-i18n-reviewer` | **Always** (Option C) | never skip |
+| `jasmail-stack-maintainer` | **Always** (Option C) | never skip |
 
 ### Merge findings
 
@@ -131,14 +149,15 @@ SHIP BLOCKED: N | SHIP CLEAR: 0
 npm run diff:scope
 ```
 
-Use JSON `specialists.conditional` / `specialists.skip` — do not guess from memory.
+Option C (`DEV_OS_MODE=maximum`): all specialists in `reviewers` — **ignore** `skip` list.
 
 ## Phase 5 — Build gates (mechanical — orchestrator runs directly)
 
 ```bash
 cd /home/jas/dockersites/email/jmap-webmail
-npm run check:ship                              # quick gate
-npm run check:ship:full -- --version X.Y.Z      # build + review artifact validation
+npm run check:ship                              # quick gate (pre-commit)
+npm run check:ship:maximum -- --version X.Y.Z   # build + dedupe + E2E + CVE + artifact
+cd /home/jas/dockersites/email && docker compose build jasmail   # every release
 ```
 
 Scripts: `scripts/ship-gate.mjs`, `scripts/validate-review-artifact.mjs`
@@ -197,6 +216,7 @@ Human hub: `docs/DEV_OS.md` · Maintenance: `docs/DEV_OS_MAINTENANCE.md`
 | `jasmail-tester-docs` | QA tasks |
 | `jasmail-product-features` | Feature catalog |
 | `jasmail-github-issues` | Issue tracker sync |
+| `jasmail-upstream-maintainer` | Fork ↔ upstream merge |
 
 ## Repo paths
 

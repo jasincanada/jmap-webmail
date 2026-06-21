@@ -23,7 +23,7 @@ jobs:
       - name: Quick ship gate
         run: node scripts/ship-gate.mjs
 
-      - name: Diff scope (log reviewers)
+      - name: Diff scope (maximum mode)
         run: node scripts/diff-scope.mjs origin/main || node scripts/diff-scope.mjs HEAD~1
 
   ship-gate-full:
@@ -40,5 +40,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Full ship gate (includes build)
-        run: node scripts/ship-gate.mjs --full
+      - name: Install Playwright browser
+        run: npx playwright install chromium --with-deps
+
+      - name: Maximum ship gate (build + dedupe + E2E)
+        run: node scripts/ship-gate.mjs --maximum

@@ -1,0 +1,74 @@
+{
+  "description": "Paths owned by JasMail. On merge conflicts, prefer fork (ours) unless upstream fixes a shared bug we also need.",
+  "categories": {
+    "dev_os": [
+      ".grok/skills/",
+      "docs/DEV_OS.md",
+      "docs/DEV_OS_MAINTENANCE.md",
+      "docs/RELEASE_CHECKLIST.md",
+      "docs/UPSTREAM_MERGE.md",
+      "docs/UPSTREAM_MERGE_CHECKLIST.md",
+      "docs/reviews/",
+      "scripts/ship-gate.mjs",
+      "scripts/validate-review-artifact.mjs",
+      "scripts/diff-scope.mjs",
+      "scripts/upstream-status.mjs",
+      "scripts/check-locales.mjs",
+      "scripts/sync-locales.mjs",
+      "scripts/record-review-metrics.mjs",
+      ".husky/"
+    ],
+    "dedupe_addon": [
+      "lib/mail-dedupe.ts",
+      "lib/dedupe-actions/",
+      "lib/dedupe-audit/",
+      "lib/dedupe-config.ts",
+      "app/api/dedupe/",
+      "app/[locale]/dedupe/",
+      "components/dedupe/",
+      "components/settings/dedupe-settings.tsx",
+      "components/email/dedupe-highlight-banner.tsx",
+      "stores/dedupe-action-store.ts",
+      "stores/dedupe-config-store.ts",
+      "stores/dedupe-highlight-store.ts",
+      "stores/dedupe-operations-store.ts",
+      "hooks/use-dedupe-highlight.ts"
+    ],
+    "jasmail_docs": [
+      "docs/JASMAIL_CHANGELOG.md",
+      "docs/PRODUCT_FEATURES.md",
+      "docs/TESTER_TASKS.md",
+      "docs/plans/",
+      "UPSTREAM_VERSION",
+      "VERSION"
+    ],
+    "branding": [
+      "hooks/use-config.ts"
+    ]
+  },
+  "shared_hotspots": [
+    "stores/email-store.ts",
+    "stores/auth-store.ts",
+    "lib/jmap/client.ts",
+    "lib/list-query-utils.ts",
+    "lib/thread-utils.ts",
+    "components/email/email-list.tsx",
+    "components/email/email-list-item.tsx",
+    "components/layout/sidebar.tsx",
+    "app/layout.tsx",
+    "app/[locale]/settings/page.tsx",
+    "locales/",
+    "instrumentation.node.ts",
+    "app/api/config/route.ts",
+    "package.json",
+    "package-lock.json",
+    "Dockerfile",
+    "next.config.ts"
+  ],
+  "upstream_owned": [
+    "CHANGELOG.md",
+    "ROADMAP.md",
+    "CONTRIBUTING.md",
+    "screenshots/"
+  ]
+}

@@ -1,25 +1,31 @@
 import { test, expect } from '@playwright/test';
 
+async function waitForLoginForm(page: import('@playwright/test').Page) {
+  await page.goto('/en/login', { waitUntil: 'networkidle' });
+  await expect(page.locator('#username')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('#password')).toBeVisible({ timeout: 20000 });
+}
+
 test.describe('Login', () => {
   test('loads login page', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.locator('input[type="text"]')).toBeVisible();
-    await expect(page.locator('input[type="password"]')).toBeVisible();
+    await waitForLoginForm(page);
   });
 
   test('shows error on invalid credentials', async ({ page }) => {
-    await page.goto('/');
-    await page.fill('input[type="text"]', 'invalid@test.com');
-    await page.fill('input[type="password"]', 'wrongpassword');
-    await page.click('button[type="submit"]');
-    await expect(page.locator('[role="alert"], .text-red-600, .text-destructive')).toBeVisible({ timeout: 10000 });
+    await waitForLoginForm(page);
+    await page.locator('#username').fill('invalid@test.com');
+    await page.locator('#password').fill('wrongpassword');
+    await page.locator('button[type="submit"]').click();
+    await expect(
+      page.locator('.text-red-600, .text-red-400, [role="alert"]'),
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test.skip('logs in with valid credentials', async ({ page }) => {
-    await page.goto('/');
-    await page.fill('input[type="text"]', process.env.TEST_USER || '');
-    await page.fill('input[type="password"]', process.env.TEST_PASS || '');
-    await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/\/en/, { timeout: 15000 });
+    await waitForLoginForm(page);
+    await page.locator('#username').fill(process.env.TEST_USER || '');
+    await page.locator('#password').fill(process.env.TEST_PASS || '');
+    await page.locator('button[type="submit"]').click();
+    await expect(page).toHaveURL(/\/en\/?$/, { timeout: 15000 });
   });
 });

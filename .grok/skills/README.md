@@ -1,12 +1,13 @@
 # JasMail agent skills index
 
-**Dev OS version:** see [jasmail-dev-os/DEV_OS_VERSION](jasmail-dev-os/DEV_OS_VERSION)
+**Dev OS version:** see [jasmail-dev-os/DEV_OS_VERSION](jasmail-dev-os/DEV_OS_VERSION) · **Mode:** [DEV_OS_MODE](jasmail-dev-os/DEV_OS_MODE) (`maximum` = Option C)
 
 ## Orchestration
 
 | Skill | Slash | Purpose |
 |-------|-------|---------|
 | [jasmail-dev-os](jasmail-dev-os/SKILL.md) | `/jasmail-dev-os` | Full release pipeline |
+| [jasmail-upstream-maintainer](jasmail-upstream-maintainer/SKILL.md) | `/jasmail-upstream-maintainer` | Merge upstream changes |
 
 ## Implementation
 
@@ -24,11 +25,12 @@
 | [jasmail-security-reviewer](jasmail-security-reviewer/SKILL.md) | Yes |
 | [jasmail-test-reviewer](jasmail-test-reviewer/SKILL.md) | Yes |
 | [jasmail-plan-reviewer](jasmail-plan-reviewer/SKILL.md) | Yes |
-| [jasmail-a11y-reviewer](jasmail-a11y-reviewer/SKILL.md) | If `diff:scope` → `ui` |
-| [jasmail-i18n-reviewer](jasmail-i18n-reviewer/SKILL.md) | If `i18n` or `ui` |
-| [jasmail-stack-maintainer](jasmail-stack-maintainer/SKILL.md) | If `stack` |
+| [jasmail-a11y-reviewer](jasmail-a11y-reviewer/SKILL.md) | Always (maximum mode) |
+| [jasmail-i18n-reviewer](jasmail-i18n-reviewer/SKILL.md) | Always (maximum mode) |
+| [jasmail-stack-maintainer](jasmail-stack-maintainer/SKILL.md) | Always (maximum mode) |
+| [jasmail-upstream-maintainer](jasmail-upstream-maintainer/SKILL.md) | Upstream merges (+8th) |
 
-Run `npm run diff:scope` for deterministic flags.
+Policy: [docs/DEV_OS_POLICY.md](../../docs/DEV_OS_POLICY.md)
 
 ## Documentation bots (post SHIP CLEAR)
 

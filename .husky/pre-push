@@ -5,5 +5,5 @@ if [ -n "$tag" ]; then
   version=$(echo "$tag" | sed 's/^v//')
   echo "pre-push: validating release tag $tag"
   node scripts/validate-review-artifact.mjs "$version" || exit 1
-  node scripts/ship-gate.mjs --full --version "$version" || exit 1
+  node scripts/ship-gate.mjs --maximum --version "$version" || exit 1
 fi

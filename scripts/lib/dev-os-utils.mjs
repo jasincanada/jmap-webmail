@@ -51,3 +51,9 @@ export function loadDevOsVersion() {
   const path = join(ROOT, '.grok/skills/jasmail-dev-os/DEV_OS_VERSION');
   return existsSync(path) ? readFileSync(path, 'utf8').trim() : 'unknown';
 }
+
+export function loadDevOsMode() {
+  const path = join(ROOT, '.grok/skills/jasmail-dev-os/DEV_OS_MODE');
+  const fromFile = existsSync(path) ? readFileSync(path, 'utf8').trim() : '';
+  return process.env.DEV_OS_MODE || fromFile || 'standard';
+}
