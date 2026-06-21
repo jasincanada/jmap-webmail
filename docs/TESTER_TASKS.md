@@ -1,6 +1,6 @@
 # Human tester tasks — mail dedupe & webmail addon
 
-Manual QA checklist for the Stalwart + JMAP webmail + dedupe stack. Use this after deploys or before release sign-off.
+Manual QA checklist for **JasMail** (Stalwart + JMAP webmail + dedupe stack). Use this after deploys or before release sign-off.
 
 **Tracking:** Code review findings and follow-up work live in [Epic #97](https://github.com/root-fr/jmap-webmail/issues/97).
 
@@ -21,7 +21,7 @@ Manual QA checklist for the Stalwart + JMAP webmail + dedupe stack. Use this aft
 | Step | Action |
 |------|--------|
 | 1 | `cd /home/jas/dockersites/email` |
-| 2 | `docker compose build jmap-webmail && docker compose up -d jmap-webmail` |
+| 2 | `docker compose build jasmail && docker compose up -d jasmail` |
 | 3 | Open webmail (default compose port **8080** unless overridden) |
 | 4 | Hard-refresh after deploy: **Ctrl+Shift+R** (or clear site cache) |
 | 5 | Log in with a test account that has **many messages** (e.g. All Mail 100k+) and some **known duplicates** in at least one folder |

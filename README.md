@@ -1,6 +1,8 @@
-# JMAP Webmail
+# JasMail
 
-A webmail client for [Stalwart Mail Server](https://stalw.art/), built with Next.js and the JMAP protocol.
+**JasMail** is a fork of [JMAP Webmail](https://github.com/root-fr/jmap-webmail) — a webmail client for [Stalwart Mail Server](https://stalw.art/), built with Next.js and the JMAP protocol, extended with mail dedupe and list enhancements.
+
+> Fork of `root-fr/jmap-webmail`. Upstream docs below still apply unless noted otherwise.
 
 ## Why Stalwart?
 

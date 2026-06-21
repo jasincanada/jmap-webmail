@@ -1,6 +1,6 @@
 {
   "login": {
-    "title": "Почта",
+    "title": "JasMail",
     "username_label": "Почта",
     "username_placeholder": "user@example.com",
     "password_label": "Пароль",
@@ -508,7 +508,7 @@
     "yes": "Да",
     "no": "Нет",
     "unknown": "Неизвестный",
-    "app_title": "Почта"
+    "app_title": "JasMail"
   },
   "notifications": {
     "email_sent": "Письмо успешно отправлено",

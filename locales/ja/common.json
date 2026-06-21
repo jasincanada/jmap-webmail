@@ -1,6 +1,6 @@
 {
   "login": {
-    "title": "ウェブメール",
+    "title": "JasMail",
     "username_label": "メールアドレス",
     "username_placeholder": "user@example.com",
     "password_label": "パスワード",
@@ -504,7 +504,7 @@
     "yes": "はい",
     "no": "いいえ",
     "unknown": "不明",
-    "app_title": "ウェブメール"
+    "app_title": "JasMail"
   },
   "notifications": {
     "email_sent": "メールを送信しました",

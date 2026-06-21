@@ -1,6 +1,6 @@
 {
   "login": {
-    "title": "Correo Web",
+    "title": "JasMail",
     "username_label": "Correo electrónico",
     "username_placeholder": "usuario@ejemplo.com",
     "password_label": "Contraseña",
@@ -504,7 +504,7 @@
     "yes": "Sí",
     "no": "No",
     "unknown": "Desconocido",
-    "app_title": "Correo Web"
+    "app_title": "JasMail"
   },
   "notifications": {
     "email_sent": "Correo enviado exitosamente",

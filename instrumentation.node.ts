@@ -19,7 +19,7 @@ const pkg = JSON.parse(
   readFileSync(`${process.cwd()}/package.json`, "utf-8")
 );
 const current: string = pkg.version ?? "0.0.0";
-console.info(`JMAP Webmail v${current}`);
+console.info(`JasMail v${current} (fork of jmap-webmail)`);
 
 if (process.env.NODE_ENV === "production") {
   fetch(VERSION_CHECK_URL, {

@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "JMAP Webmail",
-  description: "Minimalist webmail client using JMAP protocol",
+  title: "JasMail",
+  description: "JasMail — JMAP webmail with duplicate detection (fork of jmap-webmail)",
 };
 
 export default async function RootLayout({

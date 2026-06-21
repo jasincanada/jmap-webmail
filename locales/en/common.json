@@ -1,6 +1,6 @@
 {
   "login": {
-    "title": "Webmail",
+    "title": "JasMail",
     "username_label": "Email",
     "username_placeholder": "user@example.com",
     "password_label": "Password",
@@ -508,7 +508,7 @@
     "yes": "Yes",
     "no": "No",
     "unknown": "Unknown",
-    "app_title": "Webmail"
+    "app_title": "JasMail"
   },
   "notifications": {
     "email_sent": "Email sent successfully",

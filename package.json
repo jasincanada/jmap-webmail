@@ -1,16 +1,16 @@
 {
-  "name": "jmap-webmail",
+  "name": "jas-mail",
   "version": "1.5.2",
-  "description": "A modern JMAP webmail client built for Stalwart Mail Server",
-  "author": "Matthieu MALVACHE <matthieu@root.cloud>",
+  "description": "JasMail — JMAP webmail with duplicate detection (fork of root-fr/jmap-webmail)",
+  "author": "Jas <jas@cryptocomputing.ca>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/root-fr/jmap-webmail.git"
+    "url": "git+https://github.com/jasincanada/JasMail.git"
   },
-  "homepage": "https://github.com/root-fr/jmap-webmail",
+  "homepage": "https://github.com/jasincanada/JasMail",
   "bugs": {
-    "url": "https://github.com/root-fr/jmap-webmail/issues"
+    "url": "https://github.com/jasincanada/JasMail/issues"
   },
   "keywords": [
     "jmap",
