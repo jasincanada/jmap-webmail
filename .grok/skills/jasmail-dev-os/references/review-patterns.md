@@ -11,6 +11,8 @@ Reviewers and the bugfixer read this file every cycle. Append new patterns after
 | **i18n key skew** | `en` updated; other locales missing keys | `npm run locales:sync` then `check:locales` | v1.7 |
 | **Lint ships first** | Unused imports vars in initial commit | `npm run check:ship` pre-commit | v1.7 |
 | **Review bypass** | Tag pushed without persisted `SHIP CLEAR` | `.husky/pre-push` + `validate-review-artifact.mjs` | v1.7 |
+| **Gate script untested** | `ship-gate` / `upstream-status` regress silently | `lib/__tests__/dev-os-gate.test.ts` + `gate-logic.mjs` | v1.7.1 |
+| **Policy without enforcement** | `docker compose build` required but not in gate | `ship-gate.mjs --maximum` docker-build step | v1.7.1 |
 | **Stack orphan** | Compose volume/env changed outside git repo | Stack-maintainer reviews parent compose diff | v1.7 |
 | **Destructive default** | JMAP writes on scan or page load | Security-reviewer: no writes without Apply + confirm | v1.6 |
 | **Abort not honoured** | JMAP calls ignore `AbortSignal` | Test-reviewer: grep `signal` through call chain | v1.6 |

@@ -8,7 +8,10 @@
  *   node scripts/ship-gate.mjs --maximum          # full + dedupe suite + E2E + upstream CVE check
  *   node scripts/ship-gate.mjs --maximum --version 1.7.0  # + review artifact (pre-push / release)
  */
+import { existsSync } from 'node:fs';
 import { run, ROOT, loadDevOsMode } from './lib/dev-os-utils.mjs';
+
+const COMPOSE_STACK = '/home/jas/dockersites/email';
 
 const args = process.argv.slice(2);
 const isMaximum = args.includes('--maximum');
@@ -37,6 +40,13 @@ if (isMaximum) {
     name: 'upstream-cve-check',
     cmd: 'node scripts/upstream-status.mjs --fetch --strict',
   });
+  if (existsSync(`${COMPOSE_STACK}/docker-compose.yml`)) {
+    steps.push({
+      name: 'docker-build',
+      cmd: 'docker compose build jasmail',
+      cwd: COMPOSE_STACK,
+    });
+  }
 }
 
 if (version) {
@@ -53,7 +63,7 @@ console.log(`\nJasMail ship-gate (${label}, mode=${mode})${version ? ` v${versio
 const failed = [];
 for (const step of steps) {
   try {
-    run(step.cmd, { cwd: ROOT });
+    run(step.cmd, { cwd: step.cwd || ROOT });
     console.log(`✓ ${step.name}\n`);
   } catch {
     failed.push(step.name);

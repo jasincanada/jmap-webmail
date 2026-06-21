@@ -3,9 +3,10 @@
 | Field | Value |
 |-------|-------|
 | Date | YYYY-MM-DD |
-| Plan | docs/plans/….md |
+| Plan | docs/plans/….md or regression (dev-os proof) |
 | Commits | `abc1234` … `def5678` |
 | Orchestrator | jasmail-dev-os |
+| Mode | maximum (Option C) |
 
 ## Specialist verdicts
 
@@ -15,9 +16,9 @@
 | jasmail-security-reviewer | SHIP CLEAR / BLOCKED | 0 | no |
 | jasmail-test-reviewer | SHIP CLEAR / BLOCKED | 0 | no |
 | jasmail-plan-reviewer | SHIP CLEAR / BLOCKED | 0 | no |
-| jasmail-a11y-reviewer | SHIP CLEAR / BLOCKED / SKIPPED | 0 | UI unchanged |
-| jasmail-i18n-reviewer | SHIP CLEAR / BLOCKED / SKIPPED | 0 | no strings |
-| jasmail-stack-maintainer | SHIP CLEAR / BLOCKED / SKIPPED | 0 | no infra |
+| jasmail-a11y-reviewer | SHIP CLEAR / BLOCKED | 0 | no |
+| jasmail-i18n-reviewer | SHIP CLEAR / BLOCKED | 0 | no |
+| jasmail-stack-maintainer | SHIP CLEAR / BLOCKED | 0 | no |
 
 ## Merged findings
 
@@ -41,15 +42,10 @@
 
 | Gate | Result |
 |------|--------|
-| `npx eslint . --max-warnings 0` | pass |
-| `npm run typecheck` | pass |
-| `npm run test` | pass (N tests) |
-| `npm run check:locales` | pass |
-| `npm run build` | pass |
-| `docker compose build jasmail` | pass / skipped |
+| `npm run check:ship:maximum -- --version X.Y.Z` | pass |
+| `npm run diff:scope` (maximum mode) | all 7 specialists |
+| `docker compose build jasmail` | pass |
 
 ## Final verdict
 
 **SHIP CLEAR: 0**
-
-Tagging authorized: yes / no

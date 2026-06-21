@@ -1,5 +1,21 @@
 # Changelog
 
+## JasMail 1.7.1 (2026-06-20) — development OS proven (Option C)
+
+Full notes: [`docs/JASMAIL_CHANGELOG.md`](docs/JASMAIL_CHANGELOG.md). Review: [`docs/reviews/2026-06-20-v1.7.1-review.md`](docs/reviews/2026-06-20-v1.7.1-review.md).
+
+### Added
+
+- **Development OS 2.2.0** (Option C maximum quality): binding policy, upstream merge workflow, weekly triage, all-specialist reviews, `check:ship:maximum` gate (dedupe + E2E + Docker build + CVE check).
+- Inaugural **SHIP CLEAR** review artifact — first full release cycle completed.
+
+### Changed
+
+- Pre-push hook enforces maximum gate before tags.
+- E2E runs on port 3456; dedupe auth smoke tests added.
+
+---
+
 ## JasMail 1.7.0 (2026-06-20) — scan-first dedupe
 
 Full addon notes: [`docs/JASMAIL_CHANGELOG.md`](docs/JASMAIL_CHANGELOG.md). Plan: [`docs/plans/DEDUPE_V1.7.md`](docs/plans/DEDUPE_V1.7.md).

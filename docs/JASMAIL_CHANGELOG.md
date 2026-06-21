@@ -8,6 +8,19 @@ The matching **CLI** lives in the stack `dedupe/` directory (outside this repo).
 
 ---
 
+## 1.7.1 (2026-06-20)
+
+### Feature — Development OS 2.2.0 (Option C maximum quality)
+
+- **Policy:** `docs/DEV_OS_POLICY.md` — solo-dev maximum quality; you review upstream, agents execute.
+- **Upstream:** `npm run upstream:triage`, `UPSTREAM_VERSION`, `fork-only-paths.json`, CVE strict gate.
+- **Gates:** `check:ship:maximum` = build + dedupe suite + Playwright E2E + `docker compose build jasmail` + review artifact validation.
+- **Skills:** 16 agents including `jasmail-upstream-maintainer`; `DEV_OS_MODE=maximum` (all 7 reviewers every release).
+- **Tests:** 759 unit tests (+ dev-os gate logic, dedupe URL redirect V17-8).
+- **Review:** `docs/reviews/2026-06-20-v1.7.1-review.md` — inaugural SHIP CLEAR artifact.
+
+---
+
 ## 1.7.0 (2026-06-20)
 
 ### Feature — scan-first duplicate handling (v1.7 plan)

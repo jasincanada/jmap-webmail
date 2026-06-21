@@ -28,6 +28,7 @@ import {
   dedupeScanNeedsConfirmation,
   hasEnabledCriteria,
 } from '@/lib/dedupe-config';
+import { isLegacyRemoveAction, redirectRemoveToScanParams } from '@/lib/dedupe-url-utils';
 import { getExecutor } from '@/lib/dedupe-actions/registry';
 import type { DedupeActionId } from '@/lib/dedupe-actions/types';
 import {
@@ -225,10 +226,8 @@ export function DedupeOperationsView() {
 
 
   useEffect(() => {
-    if (rawActionParam === 'remove') {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('action', 'scan');
-      router.replace(`/dedupe?${params.toString()}`);
+    if (isLegacyRemoveAction(rawActionParam)) {
+      router.replace(`/dedupe?${redirectRemoveToScanParams(searchParams.toString())}`);
     }
   }, [rawActionParam, router, searchParams]);
 
@@ -585,7 +584,7 @@ export function DedupeOperationsView() {
   }, [destinationMailboxId, keeperPolicy, runApply, scanPayload, selectedAction]);
 
   useEffect(() => {
-    if (!client || rawActionParam === 'remove') return;
+    if (!client || isLegacyRemoveAction(rawActionParam)) return;
 
     const signature = `${scopeParam}:scan:${folderParam ?? 'all'}`;
     if (startedRef.current === signature) return;

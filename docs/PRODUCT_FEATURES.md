@@ -22,6 +22,13 @@ User-facing feature catalog for JasMail (jasincanada/JasMail fork).
 - Server-side SQLite audit trail (scan/apply progress, per-message change log)
 - Daily purge of messages held in `deleted/` past retention period
 
+## Development operating system (v1.7.1+)
+
+- **Option C maximum quality** release pipeline for solo maintainers
+- Mechanical gates: lint, 759 tests, locales, build, dedupe regression, E2E smoke, Docker image build
+- Upstream merge workflow with fork-only path protection and weekly CVE triage
+- Documented in `docs/DEV_OS.md` and `docs/DEV_OS_POLICY.md`
+
 ## Planned (see ROADMAP.md)
 
 - v1.8: Audit log UI, resume interrupted scans, per-group keeper override

@@ -6,6 +6,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT } from './lib/dev-os-utils.mjs';
+import { validateReviewArtifactContent } from './lib/gate-logic.mjs';
 
 const version = process.argv[2]?.replace(/^v/, '');
 if (!version) {
@@ -24,25 +25,9 @@ if (!match) {
 }
 
 const content = readFileSync(join(reviewsDir, match), 'utf8');
-const required = [
-  '## Specialist verdicts',
-  '## Final verdict',
-];
-
-for (const section of required) {
-  if (!content.includes(section)) {
-    console.error(`Review artifact ${match} missing section: ${section}`);
-    process.exit(1);
-  }
-}
-
-if (!/SHIP CLEAR:\s*0/.test(content)) {
-  console.error(`Review artifact ${match} does not contain "SHIP CLEAR: 0"`);
-  process.exit(1);
-}
-
-if (/SHIP BLOCKED:\s*[1-9]/.test(content)) {
-  console.error(`Review artifact ${match} contains SHIP BLOCKED with open issues`);
+const validation = validateReviewArtifactContent(content);
+if (!validation.ok) {
+  console.error(`Review artifact ${match}: ${validation.error}`);
   process.exit(1);
 }
 

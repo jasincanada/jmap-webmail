@@ -6,7 +6,8 @@ Update this file at the **start** of each development cycle. All reviewer bots r
 |-------|-------|
 | Version | 1.8.0 (planned) |
 | Plan | `docs/plans/` — add next plan when approved |
-| Previous shipped | v1.7.0 @ `854998b` |
+| Previous shipped | v1.7.1 @ review artifact `2026-06-20-v1.7.1-review.md` |
+| Dev OS | 2.2.0 Option C — **proven** |
 | Repo | `/home/jas/dockersites/email/jmap-webmail/` |
 | Compose stack | `/home/jas/dockersites/email/docker-compose.yml` |
 | Remote | `fork` → `https://github.com/jasincanada/JasMail.git` |

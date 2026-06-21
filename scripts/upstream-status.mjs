@@ -9,6 +9,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROOT, git, readJson, run } from './lib/dev-os-utils.mjs';
+import { classifyFile, detectCveCommits, parseUpstreamVersionLines } from './lib/gate-logic.mjs';
 
 const args = process.argv.slice(2);
 const doFetch = args.includes('--fetch');
@@ -16,22 +17,12 @@ const human = args.includes('--human');
 const strict = args.includes('--strict');
 const upstreamRemote = process.env.UPSTREAM_REMOTE || 'origin';
 
-const CVE_PATTERN = /cve|security|ssrf|xss|vuln|auth.?bypass|rce|sqli|csrf/i;
-
 function parseUpstreamVersion() {
   const path = join(ROOT, 'UPSTREAM_VERSION');
   if (!existsSync(path)) {
     return { version: 'unknown', mergeBase: null, lastChecked: null, lastMerge: null };
   }
-  const lines = readFileSync(path, 'utf8').trim().split('\n');
-  const out = { version: lines[0]?.trim() || 'unknown' };
-  for (const line of lines.slice(1)) {
-    const [key, val] = line.split(':').map((s) => s.trim());
-    if (key === 'merge-base') out.mergeBase = val;
-    if (key === 'last-checked') out.lastChecked = val;
-    if (key === 'last-merge') out.lastMerge = val;
-  }
-  return out;
+  return parseUpstreamVersionLines(readFileSync(path, 'utf8'));
 }
 
 function listLines(cmd) {
@@ -41,16 +32,6 @@ function listLines(cmd) {
   } catch {
     return [];
   }
-}
-
-function classifyFile(file, manifest) {
-  const allFork = Object.values(manifest.categories).flat();
-  for (const prefix of allFork) {
-    if (file === prefix || file.startsWith(prefix)) return 'fork-only';
-  }
-  if (manifest.shared_hotspots.some((p) => file === p || file.startsWith(p))) return 'shared-hotspot';
-  if (manifest.upstream_owned.some((p) => file === p || file.startsWith(p))) return 'upstream-owned';
-  return 'shared';
 }
 
 function nearestUpstreamTag() {
@@ -80,7 +61,7 @@ for (const file of upstreamChangedFiles) {
   classified[bucket].push(file);
 }
 
-const cveCommits = upstreamAhead.filter((c) => CVE_PATTERN.test(c));
+const cveCommits = detectCveCommits(upstreamAhead);
 const hasCve = cveCommits.length > 0;
 
 const report = {

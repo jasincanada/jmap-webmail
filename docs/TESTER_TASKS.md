@@ -16,6 +16,20 @@ Manual QA checklist for **JasMail** (Stalwart + JMAP webmail + dedupe stack). Us
 
 ---
 
+## Pass 13 — v1.7.1 (development OS proof)
+
+**Goal:** Verify Option C gates and dev-os docs; no user-facing dedupe behaviour change.
+
+| # | Task | Pass / Fail / Skip |
+|---|------|-------------------|
+| 13.1 | `npm run upstream:triage` reports `Status: current` | |
+| 13.2 | `npm run check:ship:maximum` passes locally | |
+| 13.3 | Tag `v1.7.1` exists; `docs/reviews/2026-06-20-v1.7.1-review.md` contains `SHIP CLEAR: 0` | |
+| 13.4 | `docker compose up -d jasmail` — login and open dedupe page (auth redirect OK) | |
+| 13.5 | Legacy URL `/dedupe?action=remove` redirects to `action=scan` (no auto-remove) | |
+
+---
+
 ## Setup
 
 | Step | Action |
