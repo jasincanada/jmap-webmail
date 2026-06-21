@@ -34,7 +34,6 @@ import {
   FolderInput,
   Copy,
   Loader2,
-  Play,
 } from "lucide-react";
 import { canDedupeMailbox } from "@/lib/mail-dedupe";
 import { hasEnabledCriteria } from "@/lib/dedupe-config";
@@ -785,7 +784,6 @@ export function Sidebar({
   const { dragType, endDrag: globalEndDrag } = useDragDropContext();
   const { client } = useAuthStore();
   const dedupeConfig = useDedupeConfigStore((state) => state.config);
-  const { getMailboxHighlight } = useDedupeHighlightStore();
   const { emptyFolder, createMailbox, renameMailbox, moveMailbox, deleteMailbox } = useEmailStore();
   const { sidebarWidth, updateSetting } = useSettingsStore();
 

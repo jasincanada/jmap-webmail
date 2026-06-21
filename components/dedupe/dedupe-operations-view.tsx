@@ -222,7 +222,7 @@ export function DedupeOperationsView() {
   const folderParam = searchParams.get('folder');
   const rawActionParam = searchParams.get('action') || 'scan';
   const scopeParam = searchParams.get('scope') === 'account' ? 'account' : 'folder';
-  const actionParam = rawActionParam === 'remove' ? 'scan' : rawActionParam;
+
 
   useEffect(() => {
     if (rawActionParam === 'remove') {
