@@ -13,6 +13,20 @@ interface DedupeRecentRunsProps {
   className?: string;
 }
 
+const RUN_TYPES = new Set(['scan', 'apply', 'purge']);
+const RUN_SCOPES = new Set(['folder', 'account']);
+const RUN_STATUSES = new Set(['running', 'paused', 'complete', 'error', 'cancelled']);
+
+function translateRunField(
+  t: ReturnType<typeof useTranslations<'dedupe.runs'>>,
+  prefix: 'type' | 'scope' | 'status',
+  value: string,
+  allowed: Set<string>,
+): string {
+  if (!allowed.has(value)) return value;
+  return t(`${prefix}_${value}` as Parameters<typeof t>[0]);
+}
+
 export function DedupeRecentRuns({ activeRunId, refreshKey = 0, className }: DedupeRecentRunsProps) {
   const t = useTranslations('dedupe.runs');
   const [runs, setRuns] = useState<DedupeRunRecord[]>([]);
@@ -89,11 +103,17 @@ export function DedupeRecentRuns({ activeRunId, refreshKey = 0, className }: Ded
           const moved = typeof stats.moved === 'number' ? stats.moved : null;
           const isActive = run.id === activeRunId || run.status === 'running';
 
+          const detailId = `dedupe-run-detail-${run.id}`;
+          const isExpanded = expandedRunId === run.id;
+
           return (
             <li key={run.id}>
               <button
                 type="button"
                 onClick={() => void toggleRun(run.id)}
+                aria-expanded={isExpanded}
+                aria-controls={detailId}
+                aria-label={`${translateRunField(t, 'type', run.type, RUN_TYPES)} · ${translateRunField(t, 'scope', run.scope, RUN_SCOPES)}`}
                 className={cn(
                   'w-full text-left px-4 py-3 hover:bg-muted/50 transition-colors',
                   isActive && 'bg-primary/5',
@@ -102,11 +122,14 @@ export function DedupeRecentRuns({ activeRunId, refreshKey = 0, className }: Ded
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground">
-                      {t(`type_${run.type}`)} · {t(`scope_${run.scope}`)}
+                      {translateRunField(t, 'type', run.type, RUN_TYPES)} · {translateRunField(t, 'scope', run.scope, RUN_SCOPES)}
                     </p>
                     <p className="text-xs text-muted-foreground font-mono truncate">{run.id}</p>
                   </div>
-                  <StatusBadge status={run.status} label={t(`status_${run.status}`)} />
+                  <StatusBadge
+                    status={run.status}
+                    label={translateRunField(t, 'status', run.status, RUN_STATUSES)}
+                  />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {scanned != null && t('stat_scanned', { count: formatMailboxCount(scanned) })}
@@ -114,8 +137,11 @@ export function DedupeRecentRuns({ activeRunId, refreshKey = 0, className }: Ded
                   {moved != null && ` · ${t('stat_moved', { count: formatMailboxCount(moved) })}`}
                 </p>
               </button>
-              {expandedRunId === run.id && detailMessage && (
-                <div className="px-4 pb-3 text-xs text-muted-foreground border-t border-border bg-muted/20">
+              {isExpanded && detailMessage && (
+                <div
+                  id={detailId}
+                  className="px-4 pb-3 text-xs text-muted-foreground border-t border-border bg-muted/20"
+                >
                   {detailMessage}
                 </div>
               )}

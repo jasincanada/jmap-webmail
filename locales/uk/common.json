@@ -1734,41 +1734,41 @@
       }
     },
     "cli": {
-      "title": "Large folder? Use the server CLI",
-      "description": "Browser scans are capped by your mail server's JMAP batch size. For folders above those limits, run dedupe on the host where your Docker stack lives.",
-      "compose_hint": "Run these from the directory that contains docker-compose.yml (your email stack root, e.g. dockersites/email/). JMAP_USER and JMAP_PASSWORD must be set in that compose file or .env.",
-      "command_help": "Show CLI options",
-      "command_dry_run": "Dry-run (no moves)",
-      "copy": "Copy",
-      "copy_done": "Command copied to clipboard",
-      "copy_failed": "Could not copy command"
+      "title": "Велика тека? Використовуйте CLI сервера",
+      "description": "Сканування в браузері обмежене розміром пакета JMAP вашого поштового сервера. Для тек понад ці ліміти запускайте дедуплікацію на хості з Docker-стеком.",
+      "compose_hint": "Виконуйте ці команди з каталогу з docker-compose.yml (корінь поштового стеку, напр. dockersites/email/). JMAP_USER і JMAP_PASSWORD мають бути в compose або .env.",
+      "command_help": "Показати параметри CLI",
+      "command_dry_run": "Пробний запуск (без переміщень)",
+      "copy": "Копіювати",
+      "copy_done": "Команду скопійовано в буфер обміну",
+      "copy_failed": "Не вдалося скопіювати команду"
     },
     "limits": {
-      "title": "Browser limits (from your server)",
-      "description": "Derived from the JMAP session maxObjectsInGet cap reported by Stalwart (or your server). JasMail batches reads and writes to stay within it.",
-      "server_batch": "JMAP batch size",
-      "confirm_threshold": "Confirm above",
-      "body_max": "Body match max",
-      "browser_max": "Browser scan max"
+      "title": "Ліміти браузера (з сервера)",
+      "description": "На основі ліміту maxObjectsInGet сесії JMAP (Stalwart або ваш сервер). JasMail групує читання й запис з урахуванням цього ліміту.",
+      "server_batch": "Розмір пакета JMAP",
+      "confirm_threshold": "Підтвердження понад",
+      "body_max": "Макс. порівняння тіла",
+      "browser_max": "Макс. сканування в браузері"
     },
     "runs": {
-      "title": "Recent dedupe runs",
-      "empty": "No dedupe runs recorded yet. Scans and applies from this browser are logged here.",
-      "loading": "Loading run history…",
-      "detail_unavailable": "Could not load run details.",
-      "type_scan": "Scan",
-      "type_apply": "Apply",
-      "type_purge": "Purge",
-      "scope_folder": "Folder",
-      "scope_account": "Account",
-      "status_running": "Running",
-      "status_paused": "Paused",
-      "status_complete": "Complete",
-      "status_error": "Error",
-      "status_cancelled": "Cancelled",
-      "stat_scanned": "Scanned {count}",
-      "stat_duplicates": "{count} duplicates",
-      "stat_moved": "{count} moved"
+      "title": "Останні запуски дедуплікації",
+      "empty": "Запусків ще немає. Сканування та застосування з цього браузера записуються тут.",
+      "loading": "Завантаження історії…",
+      "detail_unavailable": "Не вдалося завантажити деталі.",
+      "type_scan": "Сканування",
+      "type_apply": "Застосувати",
+      "type_purge": "Очищення",
+      "scope_folder": "Тека",
+      "scope_account": "Обліковий запис",
+      "status_running": "Виконується",
+      "status_paused": "Пауза",
+      "status_complete": "Завершено",
+      "status_error": "Помилка",
+      "status_cancelled": "Скасовано",
+      "stat_scanned": "Переглянуто {count}",
+      "stat_duplicates": "{count} дублікатів",
+      "stat_moved": "{count} переміщено"
     }
   }
 }

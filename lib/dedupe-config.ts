@@ -149,7 +149,10 @@ export function hasEnabledCriteria(config: DedupeMatchConfig): boolean {
   return CRITERIA_KEYS.some((key) => config[key]);
 }
 
-/** JMAP fields are typed as strings but servers may return null, arrays, or numbers. */
+/**
+ * JMAP fields are typed as strings but servers may return null, arrays, or numbers.
+ * Plain objects are treated as empty — malformed server data must not crash scans.
+ */
 export function coerceJmapString(value: unknown): string {
   if (value == null) return '';
   if (typeof value === 'string') return value;
@@ -235,7 +238,7 @@ function compositeParts(email: Email, config: DedupeMatchConfig, includeMessageI
     parts.push(`body:${extractBodyText(email)}`);
   }
   if (config.threadId) {
-    parts.push(`thread:${email.threadId ?? ''}`);
+    parts.push(`thread:${coerceJmapString(email.threadId)}`);
   }
 
   return parts;

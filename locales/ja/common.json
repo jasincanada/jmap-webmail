@@ -1734,41 +1734,41 @@
       }
     },
     "cli": {
-      "title": "Large folder? Use the server CLI",
-      "description": "Browser scans are capped by your mail server's JMAP batch size. For folders above those limits, run dedupe on the host where your Docker stack lives.",
-      "compose_hint": "Run these from the directory that contains docker-compose.yml (your email stack root, e.g. dockersites/email/). JMAP_USER and JMAP_PASSWORD must be set in that compose file or .env.",
-      "command_help": "Show CLI options",
-      "command_dry_run": "Dry-run (no moves)",
-      "copy": "Copy",
-      "copy_done": "Command copied to clipboard",
-      "copy_failed": "Could not copy command"
+      "title": "大きなフォルダ？サーバー CLI を使用",
+      "description": "ブラウザでのスキャンはメールサーバーの JMAP バッチサイズで上限があります。それを超えるフォルダは Docker スタックがあるホストで重複排除を実行してください。",
+      "compose_hint": "docker-compose.yml があるディレクトリ（メールスタックのルート、例: dockersites/email/）で実行してください。JMAP_USER と JMAP_PASSWORD はその compose または .env に設定されている必要があります。",
+      "command_help": "CLI オプションを表示",
+      "command_dry_run": "ドライラン（移動なし）",
+      "copy": "コピー",
+      "copy_done": "コマンドをクリップボードにコピーしました",
+      "copy_failed": "コマンドをコピーできませんでした"
     },
     "limits": {
-      "title": "Browser limits (from your server)",
-      "description": "Derived from the JMAP session maxObjectsInGet cap reported by Stalwart (or your server). JasMail batches reads and writes to stay within it.",
-      "server_batch": "JMAP batch size",
-      "confirm_threshold": "Confirm above",
-      "body_max": "Body match max",
-      "browser_max": "Browser scan max"
+      "title": "ブラウザ制限（サーバー由来）",
+      "description": "JMAP セッションの maxObjectsInGet 上限（Stalwart またはサーバー）から算出。JasMail は読み書きをこの上限に合わせてバッチ処理します。",
+      "server_batch": "JMAP バッチサイズ",
+      "confirm_threshold": "確認が必要な件数",
+      "body_max": "本文照合の上限",
+      "browser_max": "ブラウザスキャン上限"
     },
     "runs": {
-      "title": "Recent dedupe runs",
-      "empty": "No dedupe runs recorded yet. Scans and applies from this browser are logged here.",
-      "loading": "Loading run history…",
-      "detail_unavailable": "Could not load run details.",
-      "type_scan": "Scan",
-      "type_apply": "Apply",
-      "type_purge": "Purge",
-      "scope_folder": "Folder",
-      "scope_account": "Account",
-      "status_running": "Running",
-      "status_paused": "Paused",
-      "status_complete": "Complete",
-      "status_error": "Error",
-      "status_cancelled": "Cancelled",
-      "stat_scanned": "Scanned {count}",
-      "stat_duplicates": "{count} duplicates",
-      "stat_moved": "{count} moved"
+      "title": "最近の重複排除実行",
+      "empty": "まだ実行履歴がありません。このブラウザからのスキャンと適用がここに記録されます。",
+      "loading": "履歴を読み込み中…",
+      "detail_unavailable": "実行詳細を読み込めませんでした。",
+      "type_scan": "スキャン",
+      "type_apply": "適用",
+      "type_purge": "パージ",
+      "scope_folder": "フォルダ",
+      "scope_account": "アカウント",
+      "status_running": "実行中",
+      "status_paused": "一時停止",
+      "status_complete": "完了",
+      "status_error": "エラー",
+      "status_cancelled": "キャンセル",
+      "stat_scanned": "スキャン {count} 件",
+      "stat_duplicates": "重複 {count} 件",
+      "stat_moved": "移動 {count} 件"
     }
   }
 }

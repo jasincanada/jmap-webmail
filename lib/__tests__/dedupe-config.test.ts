@@ -61,6 +61,17 @@ describe('validateDedupeScan', () => {
       expect((error as DedupeScanError).suggestCli).toBe(true);
     }
   });
+
+  it('tags folder_too_large errors for CLI guidance', () => {
+    const limits = deriveDedupeLimits(500);
+    try {
+      validateDedupeScan(limits.browserHardMax + 1, DEFAULT_DEDUPE_MATCH_CONFIG, limits);
+    } catch (error) {
+      expect(error).toBeInstanceOf(DedupeScanError);
+      expect((error as DedupeScanError).code).toBe('folder_too_large');
+      expect((error as DedupeScanError).suggestCli).toBe(true);
+    }
+  });
 });
 
 describe('dedupeScanNeedsConfirmation', () => {
@@ -114,5 +125,18 @@ describe('buildDedupeKey', () => {
     };
     expect(() => buildDedupeKey(email, DEFAULT_DEDUPE_MATCH_CONFIG)).not.toThrow();
     expect(buildDedupeKey(email, DEFAULT_DEDUPE_MATCH_CONFIG)).toBe('mid:dup@example.com');
+  });
+
+  it('coerces non-string threadId when thread criterion is enabled', () => {
+    const config = { ...DEFAULT_DEDUPE_MATCH_CONFIG, messageId: false, threadId: true };
+    const email = {
+      ...baseEmail,
+      messageId: undefined,
+      threadId: ['thread-array'] as unknown as string,
+      subject: 'Hello',
+      from: [{ email: 'user@example.com' }],
+    };
+    const key = buildDedupeKey(email, config);
+    expect(key).toContain('thread:thread-array');
   });
 });

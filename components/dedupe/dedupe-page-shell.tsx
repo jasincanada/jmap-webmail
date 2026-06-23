@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { useAuthStore } from '@/stores/auth-store';
 import { useEmailStore } from '@/stores/email-store';
@@ -18,6 +19,7 @@ interface DedupePageShellProps {
 }
 
 export function DedupePageShell({ children }: DedupePageShellProps) {
+  const t = useTranslations('dedupe.operations');
   const router = useRouter();
   const { client, logout } = useAuthStore();
   const {
@@ -60,9 +62,6 @@ export function DedupePageShell({ children }: DedupePageShellProps) {
     await logout();
     router.push('/login');
   };
-
-  const currentMailboxName =
-    mailboxes.find((mailbox) => mailbox.id === selectedMailbox)?.name ?? 'Mail';
 
   return (
     <DragDropProvider>
@@ -111,7 +110,7 @@ export function DedupePageShell({ children }: DedupePageShellProps) {
 
         <div className="flex flex-col flex-1 min-w-0 h-full">
           {(isMobile || isTablet) && (
-            <MobileHeader title={currentMailboxName} />
+            <MobileHeader title={t('title')} />
           )}
 
           <main className="flex-1 overflow-y-auto min-h-0">{children}</main>

@@ -1734,41 +1734,41 @@
       }
     },
     "cli": {
-      "title": "Large folder? Use the server CLI",
-      "description": "Browser scans are capped by your mail server's JMAP batch size. For folders above those limits, run dedupe on the host where your Docker stack lives.",
-      "compose_hint": "Run these from the directory that contains docker-compose.yml (your email stack root, e.g. dockersites/email/). JMAP_USER and JMAP_PASSWORD must be set in that compose file or .env.",
-      "command_help": "Show CLI options",
-      "command_dry_run": "Dry-run (no moves)",
-      "copy": "Copy",
-      "copy_done": "Command copied to clipboard",
-      "copy_failed": "Could not copy command"
+      "title": "Cartella grande? Usa la CLI del server",
+      "description": "Le scansioni dal browser sono limitate dalla dimensione batch JMAP del server di posta. Per cartelle oltre questi limiti, esegui la deduplica sull’host dove gira lo stack Docker.",
+      "compose_hint": "Esegui questi comandi dalla directory che contiene docker-compose.yml (radice dello stack email, es. dockersites/email/). JMAP_USER e JMAP_PASSWORD devono essere impostati in quel compose o .env.",
+      "command_help": "Mostra opzioni CLI",
+      "command_dry_run": "Prova a secco (nessuno spostamento)",
+      "copy": "Copia",
+      "copy_done": "Comando copiato negli appunti",
+      "copy_failed": "Impossibile copiare il comando"
     },
     "limits": {
-      "title": "Browser limits (from your server)",
-      "description": "Derived from the JMAP session maxObjectsInGet cap reported by Stalwart (or your server). JasMail batches reads and writes to stay within it.",
-      "server_batch": "JMAP batch size",
-      "confirm_threshold": "Confirm above",
-      "body_max": "Body match max",
-      "browser_max": "Browser scan max"
+      "title": "Limiti browser (dal server)",
+      "description": "Derivati dal limite maxObjectsInGet della sessione JMAP (Stalwart o il tuo server). JasMail raggruppa letture e scritture di conseguenza.",
+      "server_batch": "Dimensione batch JMAP",
+      "confirm_threshold": "Conferma oltre",
+      "body_max": "Max corrispondenza corpo",
+      "browser_max": "Max scansione browser"
     },
     "runs": {
-      "title": "Recent dedupe runs",
-      "empty": "No dedupe runs recorded yet. Scans and applies from this browser are logged here.",
-      "loading": "Loading run history…",
-      "detail_unavailable": "Could not load run details.",
-      "type_scan": "Scan",
-      "type_apply": "Apply",
-      "type_purge": "Purge",
-      "scope_folder": "Folder",
+      "title": "Esecuzioni deduplica recenti",
+      "empty": "Nessuna esecuzione registrata. Scansioni e applicazioni da questo browser sono registrate qui.",
+      "loading": "Caricamento cronologia…",
+      "detail_unavailable": "Impossibile caricare i dettagli.",
+      "type_scan": "Scansione",
+      "type_apply": "Applica",
+      "type_purge": "Pulizia",
+      "scope_folder": "Cartella",
       "scope_account": "Account",
-      "status_running": "Running",
-      "status_paused": "Paused",
-      "status_complete": "Complete",
-      "status_error": "Error",
-      "status_cancelled": "Cancelled",
-      "stat_scanned": "Scanned {count}",
-      "stat_duplicates": "{count} duplicates",
-      "stat_moved": "{count} moved"
+      "status_running": "In corso",
+      "status_paused": "In pausa",
+      "status_complete": "Completato",
+      "status_error": "Errore",
+      "status_cancelled": "Annullato",
+      "stat_scanned": "Scansionati {count}",
+      "stat_duplicates": "{count} duplicati",
+      "stat_moved": "{count} spostati"
     }
   }
 }

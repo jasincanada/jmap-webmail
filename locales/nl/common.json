@@ -1734,41 +1734,41 @@
       }
     },
     "cli": {
-      "title": "Large folder? Use the server CLI",
-      "description": "Browser scans are capped by your mail server's JMAP batch size. For folders above those limits, run dedupe on the host where your Docker stack lives.",
-      "compose_hint": "Run these from the directory that contains docker-compose.yml (your email stack root, e.g. dockersites/email/). JMAP_USER and JMAP_PASSWORD must be set in that compose file or .env.",
-      "command_help": "Show CLI options",
-      "command_dry_run": "Dry-run (no moves)",
-      "copy": "Copy",
-      "copy_done": "Command copied to clipboard",
-      "copy_failed": "Could not copy command"
+      "title": "Grote map? Gebruik de server-CLI",
+      "description": "Browserscans zijn begrensd door de JMAP-batchgrootte van uw mailserver. Voor mappen boven die limieten voert u deduplicatie uit op de host waar uw Docker-stack draait.",
+      "compose_hint": "Voer deze commando’s uit vanuit de map met docker-compose.yml (e-mailstack-root, bijv. dockersites/email/). JMAP_USER en JMAP_PASSWORD moeten in dat compose-bestand of .env staan.",
+      "command_help": "CLI-opties tonen",
+      "command_dry_run": "Proefrun (geen verplaatsingen)",
+      "copy": "Kopiëren",
+      "copy_done": "Commando gekopieerd naar klembord",
+      "copy_failed": "Kon commando niet kopiëren"
     },
     "limits": {
-      "title": "Browser limits (from your server)",
-      "description": "Derived from the JMAP session maxObjectsInGet cap reported by Stalwart (or your server). JasMail batches reads and writes to stay within it.",
-      "server_batch": "JMAP batch size",
-      "confirm_threshold": "Confirm above",
-      "body_max": "Body match max",
-      "browser_max": "Browser scan max"
+      "title": "Browserlimieten (van uw server)",
+      "description": "Afgeleid van de maxObjectsInGet-limiet van de JMAP-sessie (Stalwart of uw server). JasMail batched lees- en schrijfbewerkingen dienovereenkomstig.",
+      "server_batch": "JMAP-batchgrootte",
+      "confirm_threshold": "Bevestigen boven",
+      "body_max": "Max. body-vergelijking",
+      "browser_max": "Max. browserscan"
     },
     "runs": {
-      "title": "Recent dedupe runs",
-      "empty": "No dedupe runs recorded yet. Scans and applies from this browser are logged here.",
-      "loading": "Loading run history…",
-      "detail_unavailable": "Could not load run details.",
+      "title": "Recente deduplicatie-runs",
+      "empty": "Nog geen runs geregistreerd. Scans en toepassingen vanuit deze browser worden hier gelogd.",
+      "loading": "Geschiedenis laden…",
+      "detail_unavailable": "Kon run-details niet laden.",
       "type_scan": "Scan",
-      "type_apply": "Apply",
-      "type_purge": "Purge",
-      "scope_folder": "Folder",
+      "type_apply": "Toepassen",
+      "type_purge": "Opschonen",
+      "scope_folder": "Map",
       "scope_account": "Account",
-      "status_running": "Running",
-      "status_paused": "Paused",
-      "status_complete": "Complete",
-      "status_error": "Error",
-      "status_cancelled": "Cancelled",
-      "stat_scanned": "Scanned {count}",
-      "stat_duplicates": "{count} duplicates",
-      "stat_moved": "{count} moved"
+      "status_running": "Bezig",
+      "status_paused": "Gepauzeerd",
+      "status_complete": "Voltooid",
+      "status_error": "Fout",
+      "status_cancelled": "Geannuleerd",
+      "stat_scanned": "{count} gescand",
+      "stat_duplicates": "{count} duplicaten",
+      "stat_moved": "{count} verplaatst"
     }
   }
 }
