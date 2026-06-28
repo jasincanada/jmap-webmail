@@ -1,7 +1,9 @@
-# Check for AI attribution in commit message
-if grep -qi "co-authored-by.*claude\|co-authored-by.*anthropic\|claude code\|claude sonnet\|claude opus" "$1"; then
-  echo "❌ ERROR: Commit message contains AI attribution (Claude/Anthropic)"
-  echo "   This violates project policy in CLAUDE.md"
-  echo "   Remove 'Co-Authored-By: Claude' and similar references"
+# Block AI CO-AUTHORSHIP only — public authorship credit stays with the human author.
+# An "Assisted-by:" trailer (records assistance, NOT authorship) is allowed for bot traceability.
+if grep -qiE "co-authored-by:[[:space:]]*.*(claude|anthropic|copilot)" "$1"; then
+  echo "❌ ERROR: AI co-authorship is not allowed in commit messages."
+  echo "   Remove the 'Co-Authored-By: Claude/Anthropic' line — public credit is the author's."
+  echo "   To record AI assistance, use an 'Assisted-by:' trailer instead, e.g.:"
+  echo "       Assisted-by: Claude Opus 4.8 (claude-opus-4-8)"
   exit 1
 fi
