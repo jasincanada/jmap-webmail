@@ -197,6 +197,43 @@ describe('parseSpamLLM', () => {
     expect(parseSpamLLM('some random header')).toBeNull();
     expect(parseSpamLLM('')).toBeNull();
   });
+
+  it('parses Stalwart comma-separated spam verdict', () => {
+    expect(
+      parseSpamLLM('Unsolicited,High,The email contains promotional content without consent'),
+    ).toEqual({
+      verdict: 'SPAM',
+      explanation: 'The email contains promotional content without consent',
+      category: 'Unsolicited',
+      confidence: 'High',
+    });
+  });
+
+  it('parses Stalwart verdict with commas in explanation', () => {
+    expect(
+      parseSpamLLM('Commercial,Medium,Offers a discount, free shipping, and limited-time deal'),
+    ).toEqual({
+      verdict: 'SPAM',
+      explanation: 'Offers a discount, free shipping, and limited-time deal',
+      category: 'Commercial',
+      confidence: 'Medium',
+    });
+  });
+
+  it('maps Stalwart Harmful to SUSPICIOUS and Legitimate to LEGITIMATE', () => {
+    expect(parseSpamLLM('Harmful,High,Phishing link detected')).toEqual({
+      verdict: 'SUSPICIOUS',
+      explanation: 'Phishing link detected',
+      category: 'Harmful',
+      confidence: 'High',
+    });
+    expect(parseSpamLLM('Legitimate,Low,Expected transactional message')).toEqual({
+      verdict: 'LEGITIMATE',
+      explanation: 'Expected transactional message',
+      category: 'Legitimate',
+      confidence: 'Low',
+    });
+  });
 });
 
 describe('extractListHeaders', () => {

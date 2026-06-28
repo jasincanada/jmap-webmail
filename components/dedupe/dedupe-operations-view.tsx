@@ -30,6 +30,7 @@ import { dedupeAuditClient } from '@/lib/dedupe-audit/client';
 import {
   DedupeScanError,
   dedupeScanNeedsConfirmation,
+  formatDedupeScanErrorMessage,
   hasEnabledCriteria,
 } from '@/lib/dedupe-config';
 import { isLegacyRemoveAction, redirectRemoveToScanParams } from '@/lib/dedupe-url-utils';
@@ -264,6 +265,7 @@ export function DedupeOperationsView() {
     reset();
     startedRef.current = null;
     setAwaitingConfirm(null);
+    setSuggestCli(false);
   }, [reset, setScanningMailbox]);
 
   const cancelOperation = useCallback(() => {
@@ -275,6 +277,8 @@ export function DedupeOperationsView() {
   }, [handleAbort, runId]);
 
   const runScan = useCallback(async () => {
+    setSuggestCli(false);
+
     if (!client) {
       fail(t('not_connected'));
       return;
@@ -403,10 +407,13 @@ export function DedupeOperationsView() {
         handleAbort();
         return;
       }
-      const message = err instanceof Error ? err.message : t('failed');
-      if (err instanceof DedupeScanError && err.suggestCli) {
-        setSuggestCli(true);
-      }
+      const message =
+        err instanceof DedupeScanError
+          ? formatDedupeScanErrorMessage(t, err)
+          : err instanceof Error
+            ? err.message
+            : t('failed');
+      setSuggestCli(err instanceof DedupeScanError && err.suggestCli);
       fail(message);
       toast.error(message);
     } finally {
@@ -531,7 +538,13 @@ export function DedupeOperationsView() {
         handleAbort();
         return;
       }
-      const message = err instanceof Error ? err.message : t('failed');
+      const message =
+        err instanceof DedupeScanError
+          ? formatDedupeScanErrorMessage(t, err)
+          : err instanceof Error
+            ? err.message
+            : t('failed');
+      setSuggestCli(err instanceof DedupeScanError && err.suggestCli);
       fail(message);
       toast.error(message);
     } finally {

@@ -169,22 +169,69 @@ export function getSecurityStatus(result?: string): {
   }
 }
 
-/**
- * Parse X-Spam-LLM header to extract verdict and explanation
- */
-export function parseSpamLLM(header: string): { verdict: string; explanation: string } | null {
-  // Format: "LEGITIMATE (explanation)" or "SPAM (explanation)"
-  // Trim the header first to remove any leading/trailing whitespace
-  const trimmed = header.trim();
-  const match = trimmed.match(/^(LEGITIMATE|SPAM|SUSPICIOUS)\s*\((.+)\)\s*$/i);
+export interface SpamLLMResult {
+  verdict: string;
+  explanation: string;
+  category?: string;
+  confidence?: string;
+}
 
-  if (match) {
+const STALWART_CATEGORIES = new Set(['unsolicited', 'commercial', 'harmful', 'legitimate']);
+const STALWART_CONFIDENCE = new Set(['high', 'medium', 'low']);
+
+function mapStalwartCategoryToVerdict(category: string): string {
+  switch (category.toLowerCase()) {
+    case 'legitimate':
+      return 'LEGITIMATE';
+    case 'harmful':
+      return 'SUSPICIOUS';
+    case 'unsolicited':
+    case 'commercial':
+      return 'SPAM';
+    default:
+      return 'SUSPICIOUS';
+  }
+}
+
+/**
+ * Parse X-Spam-LLM header to extract verdict and explanation.
+ * Supports legacy "VERDICT (explanation)" and Stalwart "Category,Confidence,Explanation".
+ */
+export function parseSpamLLM(header: string): SpamLLMResult | null {
+  const trimmed = header.trim();
+  if (!trimmed) return null;
+
+  const legacyMatch = trimmed.match(/^(LEGITIMATE|SPAM|SUSPICIOUS)\s*\((.+)\)\s*$/i);
+  if (legacyMatch) {
     return {
-      verdict: match[1].toUpperCase(),
-      explanation: match[2].trim()
+      verdict: legacyMatch[1].toUpperCase(),
+      explanation: legacyMatch[2].trim(),
     };
   }
-  return null;
+
+  const firstComma = trimmed.indexOf(',');
+  if (firstComma === -1) return null;
+  const secondComma = trimmed.indexOf(',', firstComma + 1);
+  if (secondComma === -1) return null;
+
+  const category = trimmed.slice(0, firstComma).trim();
+  const confidence = trimmed.slice(firstComma + 1, secondComma).trim();
+  const explanation = trimmed.slice(secondComma + 1).trim();
+
+  if (
+    !STALWART_CATEGORIES.has(category.toLowerCase()) ||
+    !STALWART_CONFIDENCE.has(confidence.toLowerCase()) ||
+    !explanation
+  ) {
+    return null;
+  }
+
+  return {
+    verdict: mapStalwartCategoryToVerdict(category),
+    explanation,
+    category,
+    confidence,
+  };
 }
 
 /**

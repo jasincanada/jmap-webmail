@@ -1345,6 +1345,12 @@ export function EmailViewer({
                                       : "text-amber-700 dark:text-amber-400"
                                   )}>
                                     Spam Analysis: {email.spamLLM.verdict}
+                                    {email.spamLLM.category && (
+                                      <span className="normal-case font-medium text-gray-600 dark:text-gray-400">
+                                        {' '}· {email.spamLLM.category}
+                                        {email.spamLLM.confidence && ` (${email.spamLLM.confidence})`}
+                                      </span>
+                                    )}
                                   </span>
                                 </div>
                                 <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">

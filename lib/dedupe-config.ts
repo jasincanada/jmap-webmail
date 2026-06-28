@@ -61,6 +61,8 @@ export class DedupeScanError extends Error {
   readonly code: DedupeScanErrorCode;
   readonly suggestCli: boolean;
   readonly messageCount?: number;
+  readonly scanPosition?: number;
+  readonly scanTotal?: number;
   readonly limits: DedupeBrowserLimits;
 
   constructor(options: {
@@ -68,6 +70,8 @@ export class DedupeScanError extends Error {
     code: DedupeScanErrorCode;
     suggestCli?: boolean;
     messageCount?: number;
+    scanPosition?: number;
+    scanTotal?: number;
     limits?: DedupeBrowserLimits;
   }) {
     super(options.message);
@@ -75,7 +79,38 @@ export class DedupeScanError extends Error {
     this.code = options.code;
     this.suggestCli = options.suggestCli ?? false;
     this.messageCount = options.messageCount;
+    this.scanPosition = options.scanPosition;
+    this.scanTotal = options.scanTotal;
     this.limits = options.limits ?? STALWART_DEFAULT_LIMITS;
+  }
+}
+
+export type DedupeScanErrorMessageKey =
+  | 'error_folder_too_large'
+  | 'error_body_limit'
+  | 'error_scan_interrupted';
+
+export function formatDedupeScanErrorMessage(
+  t: (key: DedupeScanErrorMessageKey, values?: Record<string, string | number>) => string,
+  err: DedupeScanError,
+): string {
+  switch (err.code) {
+    case 'folder_too_large':
+      return t('error_folder_too_large', {
+        count: err.messageCount ?? 0,
+        limit: err.limits.browserHardMax,
+        batch: err.limits.maxObjectsInGet,
+      });
+    case 'body_limit':
+      return t('error_body_limit', {
+        count: err.messageCount ?? 0,
+        limit: err.limits.bodyMaxFolderMessages,
+      });
+    case 'scan_interrupted':
+      return t('error_scan_interrupted', {
+        position: err.scanPosition ?? 0,
+        total: err.scanTotal ?? 0,
+      });
   }
 }
 

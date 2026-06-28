@@ -659,6 +659,8 @@ export async function scanFolderDuplicates(
         throw new DedupeScanError({
           code: 'scan_interrupted',
           limits,
+          scanPosition: position,
+          scanTotal: total,
           message:
             `Scan interrupted: no messages returned at position ${position.toLocaleString()} of ${total.toLocaleString()}.`,
         });

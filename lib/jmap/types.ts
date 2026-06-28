@@ -35,6 +35,8 @@ export interface Email {
   spamLLM?: {
     verdict: string;
     explanation: string;
+    category?: string;
+    confidence?: string;
   };
 }
 

@@ -13,6 +13,7 @@ import {
   dedupeFetchProperties,
   dedupeScanNeedsConfirmation,
   deriveDedupeLimits,
+  formatDedupeScanErrorMessage,
   normalizeMessageId,
   validateDedupeScan,
 } from '@/lib/dedupe-config';
@@ -71,6 +72,37 @@ describe('validateDedupeScan', () => {
       expect((error as DedupeScanError).code).toBe('folder_too_large');
       expect((error as DedupeScanError).suggestCli).toBe(true);
     }
+  });
+});
+
+describe('formatDedupeScanErrorMessage', () => {
+  const t = (key: string, values?: Record<string, string | number>) =>
+    `${key}:${JSON.stringify(values ?? {})}`;
+
+  it('maps folder_too_large to i18n key with limit params', () => {
+    const limits = deriveDedupeLimits(500);
+    const err = new DedupeScanError({
+      code: 'folder_too_large',
+      suggestCli: true,
+      messageCount: 60_000,
+      limits,
+      message: 'ignored in UI',
+    });
+    expect(formatDedupeScanErrorMessage(t, err)).toBe(
+      'error_folder_too_large:{"count":60000,"limit":50000,"batch":500}',
+    );
+  });
+
+  it('maps scan_interrupted to position params', () => {
+    const err = new DedupeScanError({
+      code: 'scan_interrupted',
+      scanPosition: 1000,
+      scanTotal: 5000,
+      message: 'ignored in UI',
+    });
+    expect(formatDedupeScanErrorMessage(t, err)).toBe(
+      'error_scan_interrupted:{"position":1000,"total":5000}',
+    );
   });
 });
 

@@ -1693,7 +1693,10 @@
       "confirm_apply_body": "This will affect {count, plural, one {# message} other {# messages}} using “{action}”. You can cancel while the operation runs.",
       "confirm_apply_start": "Confirm and apply",
       "confirm_cancel": "Cancel",
-      "cancel_operation": "Cancel"
+      "cancel_operation": "Cancel",
+      "error_folder_too_large": "This folder has {count, number} messages — too large for browser dedupe (limit {limit, number} for batch size {batch, number}). Use the mail-dedupe CLI instead.",
+      "error_body_limit": "Body matching is disabled for folders over {limit, number} messages ({count, number} here). Disable body criterion or use the CLI.",
+      "error_scan_interrupted": "Scan interrupted: no messages returned at position {position, number} of {total, number}."
     },
     "actions": {
       "title": "Choose action",
